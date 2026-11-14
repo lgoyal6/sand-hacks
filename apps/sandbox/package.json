@@ -1,0 +1,12 @@
+{
+  "name": "@unprompted/sandbox",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sandbox quiz site that our own agents attack (workstream A). Zero dependencies.",
+  "scripts": {
+    "dev": "node --watch server.mjs",
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs"
+  }
+}
