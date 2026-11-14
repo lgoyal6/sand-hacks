@@ -1,0 +1,18 @@
+{
+  "name": "openstax-is2e",
+  "purpose": "Phase 0 kill test #3: do real textbook exercises show up on study sites? Used ONLY as exact-phrase search queries.",
+  "attribution": "Exercise text from Introductory Statistics 2e, OpenStax (Illowsky, Dean, et al.), https://openstax.org/books/introductory-statistics-2e. Excerpts, quoted exactly; not modified.",
+  "license": "CC BY-NC-SA 4.0. OpenStax also states the book may not be ingested into large language models or generative AI offerings without prior written permission. DO NOT send these stems to Gemini, GMI or any LLM (no embeddings, no transforms, no agents).",
+  "items": [
+    { "id": "openstax-is2e-7.72", "url": "https://openstax.org/books/introductory-statistics-2e/pages/7-homework", "stem": "Which of the following is NOT TRUE about the theoretical distribution of sums?" },
+    { "id": "openstax-is2e-7.91", "url": "https://openstax.org/books/introductory-statistics-2e/pages/7-homework", "stem": "NeverReady batteries has engineered a newer, longer lasting AAA battery." },
+    { "id": "openstax-is2e-8.100", "url": "https://openstax.org/books/introductory-statistics-2e/pages/8-homework", "stem": "What is meant by the term “90% confident” when constructing a confidence interval for a mean?" },
+    { "id": "openstax-is2e-8.103", "url": "https://openstax.org/books/introductory-statistics-2e/pages/8-homework", "stem": "The average height of young adult males has a normal distribution with standard deviation of 2.5 inches." },
+    { "id": "openstax-is2e-3.99", "url": "https://openstax.org/books/introductory-statistics-2e/pages/3-homework", "stem": "In a box of assorted cookies, 36% contain chocolate and 12% contain nuts." },
+    { "id": "openstax-is2e-9.63", "url": "https://openstax.org/books/introductory-statistics-2e/pages/9-homework", "stem": "Over the past few decades, public health officials have examined the link between weight concerns and teen girls' smoking." },
+    { "id": "openstax-is2e-9.64", "url": "https://openstax.org/books/introductory-statistics-2e/pages/9-homework", "stem": "A statistics instructor believes that fewer than 20% of Evergreen Valley College (EVC) students attended the opening night" },
+    { "id": "openstax-is2e-9.68", "url": "https://openstax.org/books/introductory-statistics-2e/pages/9-homework", "stem": "Suppose the null hypothesis is “the drug is unsafe.” What is the Type II Error?" },
+    { "id": "openstax-is2e-9.71", "url": "https://openstax.org/books/introductory-statistics-2e/pages/9-homework", "stem": "Previously, an organization reported that teenagers spent 4.5 hours per week, on average, on the phone." },
+    { "id": "openstax-is2e-9.107", "url": "https://openstax.org/books/introductory-statistics-2e/pages/9-homework", "stem": "According to the Center for Disease Control website, in 2022 at least 2% of high school students reported they had smoked a" }
+  ]
+}

@@ -1,0 +1,115 @@
+// Bright Data clients. SERP API for search results; Browser API for evidence screenshots.
+// Rules (CONTRACTS.md): public pages only, keep snippets/URLs/screenshots, never copyrighted solutions,
+// and never solve CAPTCHAs. The Browser API auto-solves CAPTCHAs by default, so we turn that off
+// and skip any page that shows a challenge. Web Unlocker is deliberately not used.
+
+export interface SerpResult {
+  title: string;
+  url: string;
+  snippet: string;
+  rank: number;
+}
+
+export interface SearchClient {
+  search(query: string): Promise<SerpResult[]>;
+}
+
+export interface BrightDataConfig {
+  token: string;
+  serpZone: string;
+  /** Browser API websocket endpoint (wss://brd-customer-...-zone-...:password@brd.superproxy.io:9222). */
+  browserWss?: string;
+}
+
+export function brightDataFromEnv(env = process.env): BrightDataConfig | null {
+  const token = env.BRIGHTDATA_API_TOKEN;
+  const serpZone = env.BRIGHTDATA_SERP_ZONE;
+  if (!token || !serpZone) return null;
+  let browserWss = env.BRIGHTDATA_BROWSER_WSS || undefined;
+  if (!browserWss && env.BRIGHTDATA_CUSTOMER_ID && env.BRIGHTDATA_BROWSER_ZONE && env.BRIGHTDATA_BROWSER_PASSWORD) {
+    browserWss = `wss://brd-customer-${env.BRIGHTDATA_CUSTOMER_ID}-zone-${env.BRIGHTDATA_BROWSER_ZONE}:${env.BRIGHTDATA_BROWSER_PASSWORD}@brd.superproxy.io:9222`;
+  }
+  return { token, serpZone, browserWss };
+}
+
+interface GoogleParsed {
+  organic?: { link?: string; url?: string; title?: string; description?: string; snippet?: string; rank?: number; global_rank?: number }[];
+}
+
+/** Google results through the Bright Data SERP API (parsed JSON via brd_json=1). */
+export class BrightDataSerp implements SearchClient {
+  constructor(private cfg: BrightDataConfig, private opts: { num?: number; endpoint?: string; retries?: number } = {}) {}
+
+  /** Retries transient failures (empty or non-JSON bodies, 429, 5xx) with backoff. */
+  async search(query: string): Promise<SerpResult[]> {
+    const attempts = this.opts.retries ?? 3;
+    let last: unknown;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        return await this.searchOnce(query);
+      } catch (e) {
+        last = e;
+        if (!(e as { transient?: boolean }).transient) throw e;
+        await new Promise((r) => setTimeout(r, 1000 * 2 ** i));
+      }
+    }
+    throw last;
+  }
+
+  private async searchOnce(query: string): Promise<SerpResult[]> {
+    const q = encodeURIComponent(query);
+    const res = await fetch(this.opts.endpoint ?? "https://api.brightdata.com/request", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${this.cfg.token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        zone: this.cfg.serpZone,
+        url: `https://www.google.com/search?q=${q}&hl=en&gl=us&num=${this.opts.num ?? 20}&brd_json=1`,
+        format: "raw",
+      }),
+    });
+    const text = await res.text();
+    if (!res.ok) throw Object.assign(new Error(`Bright Data SERP ${res.status}: ${text.slice(0, 300)}`), { transient: res.status === 429 || res.status >= 500 });
+    let parsed: GoogleParsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw Object.assign(new Error(`Bright Data SERP returned non-JSON (${text.length} bytes): ${text.slice(0, 200)}`), { transient: true });
+    }
+    return (parsed.organic ?? [])
+      .map((o, i) => ({
+        title: o.title ?? "",
+        url: o.link ?? o.url ?? "",
+        snippet: o.description ?? o.snippet ?? "",
+        rank: o.rank ?? o.global_rank ?? i + 1,
+      }))
+      .filter((r) => r.url);
+  }
+}
+
+const CHALLENGE = /captcha|are you a robot|verify you are human|unusual traffic|access denied|cf-challenge|just a moment/i;
+
+/**
+ * Screenshot a public page through the Bright Data Browser API with CAPTCHA auto-solve disabled.
+ * Returns null (and the reason) when the page is gated, so callers fall back to snippet evidence.
+ */
+export async function screenshot(wss: string, url: string, outPath: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const { chromium } = await import("playwright-core");
+  const browser = await chromium.connectOverCDP(wss, { timeout: 60_000 });
+  try {
+    const page = await browser.newPage();
+    const cdp = await page.context().newCDPSession(page);
+    try {
+      await cdp.send("Captcha.setAutoSolve" as never, { autoSolve: false } as never);
+    } catch {
+      return { ok: false, reason: "could not disable CAPTCHA auto-solve; refusing to load the page" };
+    }
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    const title = await page.title();
+    const body = (await page.locator("body").innerText({ timeout: 10_000 }).catch(() => "")).slice(0, 4000);
+    if (CHALLENGE.test(title) || CHALLENGE.test(body)) return { ok: false, reason: "page shows a bot challenge; skipped" };
+    await page.screenshot({ path: outPath, fullPage: false });
+    return { ok: true };
+  } finally {
+    await browser.close();
+  }
+}
