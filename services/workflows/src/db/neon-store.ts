@@ -48,7 +48,14 @@ export class NeonBranchStore implements BranchStore {
   }
 
   static fromEnv(env = process.env): NeonBranchStore | null {
-    const { NEON_API_KEY, NEON_PROJECT_ID, DATABASE_URL } = env;
+    // Empty, whitespace-only or comment-only values ("KEY=   # note") count as unset.
+    const val = (k: string) => {
+      const v = env[k]?.trim();
+      return v && !v.startsWith("#") ? v : undefined;
+    };
+    const NEON_API_KEY = val("NEON_API_KEY");
+    const NEON_PROJECT_ID = val("NEON_PROJECT_ID");
+    const DATABASE_URL = val("DATABASE_URL");
     if (!NEON_API_KEY || !NEON_PROJECT_ID || !DATABASE_URL) return null;
     return new NeonBranchStore({ apiKey: NEON_API_KEY, projectId: NEON_PROJECT_ID, mainUrl: DATABASE_URL });
   }
