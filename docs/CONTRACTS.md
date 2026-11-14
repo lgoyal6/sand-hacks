@@ -11,9 +11,9 @@ Paths are relative to the repo root. Only edit files you own. If you need someth
 | Workstream | Session | Branch | Worktree | Owns |
 |---|---|---|---|---|
 | A: agents and red-team | datnguyen-8f | `a/agents` | `~/Desktop/PROJECTS/sand-hacks-a` | `apps/sandbox/**`, `services/agents/**`, `data/fixtures/agent_runs.json`, `data/fixtures/solve_rates.json` |
-| B: transform engine | datnguyen-76 | `b/transform` | `~/Desktop/PROJECTS/sand-hacks-b` | `services/workflows/**`, `db/neon/**`, `apps/web/app/studio/**`, `apps/web/lib/canvas/**`, `data/fixtures/variants.json` |
+| B: transform engine | datnguyen-f6 | `b/transform` | `~/Desktop/PROJECTS/sand-hacks-b` | `services/workflows/**`, `db/neon/**`, `apps/web/app/studio/**`, `apps/web/lib/canvas/**`, `data/fixtures/variants.json` |
 | C: student runtime, voice, telemetry | datnguyen-fb | `c/runtime` | `~/Desktop/PROJECTS/sand-hacks-c` | the `apps/web` scaffold (package.json, next config, root layout, `lib/db`), `apps/web/app/(student)/**`, `apps/web/app/course/**`, `apps/web/lib/telemetry/**`, `apps/web/components/quiz/**`, `apps/web/components/probe/**`, `data/fixtures/attempts.json`, `data/fixtures/probes.json` |
-| D: data, leak scan, dashboards, design, deploy | datnguyen-f6 | `d/dashboards` | `~/Desktop/PROJECTS/sand-hacks-d` | `services/leakscan/**`, `services/models/**`, `db/tiger/**`, `infra/**`, **the visual design system** (`apps/web/app/globals.css`, `apps/web/components/ui/**`, `apps/web/components/dashboard/**`), `apps/web/app/professor/**`, `apps/web/app/progress/**`, `data/fixtures/leaks.json` |
+| D: data, leak scan, dashboards, design, deploy | datnguyen-76 | `d/dashboards` | `~/Desktop/PROJECTS/sand-hacks-d` | `services/leakscan/**`, `services/models/**`, `db/tiger/**`, `infra/**`, **the visual design system** (`apps/web/app/globals.css`, `apps/web/components/ui/**`, `apps/web/components/dashboard/**`), `apps/web/app/professor/**`, `apps/web/app/progress/**`, `data/fixtures/leaks.json` |
 | Shared, change by agreement | | | | `packages/shared/**` (the TypeScript types), `docs/CONTRACTS.md`, root `package.json` and `pnpm-workspace.yaml` |
 
 ## Stack (decided, don't relitigate)
