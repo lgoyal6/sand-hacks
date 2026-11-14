@@ -1,5 +1,5 @@
 // Import a Markdown quiz into main and write data/fixtures/quiz-<id>.json.
-//   pnpm --filter @unprompted/workflows ingest data/quizzes/sample-stats.md --quiz-id stats-q1 --course-id stats-101
+//   pnpm --filter @unprompted/workflows ingest data/quizzes/sample-stats.md (quiz id defaults to the file slug, here sample-stats)
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";

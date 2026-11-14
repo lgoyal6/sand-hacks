@@ -7,18 +7,18 @@ const SAMPLE = new URL("../../../data/quizzes/sample-stats.md", import.meta.url)
 
 describe("markdown quiz ingest", async () => {
   const md = await readFile(SAMPLE, "utf8");
-  const quiz = parseMarkdownQuiz(md, { quizId: "stats-101", courseId: "stats-101" });
+  const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "sandbox-course" });
   const store = await PGliteBranchStore.create(await loadSchema());
   afterAll(() => store.close());
 
   it("parses every item of the sample quiz with its answer key and objective", () => {
     expect(quiz.title).toBe("Sample quiz: Intro Statistics (OpenStax-style, written by us)");
     expect(quiz.items.map((i) => [i.id, i.type, i.answerKey])).toEqual([
-      ["stats-101-q1", "mcq", "b"],
-      ["stats-101-q2", "mcq", "b"],
-      ["stats-101-q3", "numeric", "1/6"],
-      ["stats-101-q4", "mcq", "b"],
-      ["stats-101-q5", "mcq", "b"],
+      ["sample-stats-q1", "mcq", "b"],
+      ["sample-stats-q2", "mcq", "b"],
+      ["sample-stats-q3", "numeric", "1/6"],
+      ["sample-stats-q4", "mcq", "b"],
+      ["sample-stats-q5", "mcq", "b"],
     ]);
     expect(quiz.items[0]!.choices).toHaveLength(4);
     expect(quiz.items[0]!.choices![1]).toEqual({ id: "b", text: "2" });
@@ -35,6 +35,6 @@ describe("markdown quiz ingest", async () => {
     const main = await store.main();
     await saveQuiz(main.db, quiz);
     await saveQuiz(main.db, quiz);
-    expect(await loadQuiz(main.db, "stats-101")).toEqual(quiz);
+    expect(await loadQuiz(main.db, "sample-stats")).toEqual(quiz);
   });
 });

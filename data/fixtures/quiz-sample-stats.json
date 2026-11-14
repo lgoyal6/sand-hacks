@@ -1,12 +1,12 @@
 {
-  "id": "stats-101",
+  "id": "sample-stats",
   "courseId": "sandbox-course",
   "title": "Sample quiz: Intro Statistics (OpenStax-style, written by us)",
   "sourceFormat": "markdown",
   "items": [
     {
-      "id": "stats-101-q1",
-      "quizId": "stats-101",
+      "id": "sample-stats-q1",
+      "quizId": "sample-stats",
       "stem": "A sample of 25 has mean 40 and standard deviation 10. What is the standard error of the mean?",
       "type": "mcq",
       "choices": [
@@ -32,8 +32,8 @@
       "originalItemId": null
     },
     {
-      "id": "stats-101-q2",
-      "quizId": "stats-101",
+      "id": "sample-stats-q2",
+      "quizId": "sample-stats",
       "stem": "If the sample size quadruples and nothing else changes, the width of a 95% confidence interval for the mean:",
       "type": "mcq",
       "choices": [
@@ -59,8 +59,8 @@
       "originalItemId": null
     },
     {
-      "id": "stats-101-q3",
-      "quizId": "stats-101",
+      "id": "sample-stats-q3",
+      "quizId": "sample-stats",
       "stem": "A fair die is rolled twice. What is the probability that the sum is 7? Give a fraction.",
       "type": "numeric",
       "answerKey": "1/6",
@@ -68,8 +68,8 @@
       "originalItemId": null
     },
     {
-      "id": "stats-101-q4",
-      "quizId": "stats-101",
+      "id": "sample-stats-q4",
+      "quizId": "sample-stats",
       "stem": "A study finds a p-value of 0.03 at alpha = 0.05. Which statement is correct?",
       "type": "mcq",
       "choices": [
@@ -95,8 +95,8 @@
       "originalItemId": null
     },
     {
-      "id": "stats-101-q5",
-      "quizId": "stats-101",
+      "id": "sample-stats-q5",
+      "quizId": "sample-stats",
       "stem": "Which change reduces the probability of a Type II error, holding alpha fixed?",
       "type": "mcq",
       "choices": [
