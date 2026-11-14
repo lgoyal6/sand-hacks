@@ -5,11 +5,13 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "killtest:neon": "tsx --env-file-if-exists=../../.env.local scripts/neon-killtest.ts"
+    "killtest:neon": "tsx --env-file-if-exists=../../.env.local scripts/neon-killtest.ts",
+    "ingest": "tsx --env-file-if-exists=../../.env.local src/cli/ingest.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",
-    "@neondatabase/serverless": "^1.2.1"
+    "@neondatabase/serverless": "^1.2.1",
+    "@unprompted/shared": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
