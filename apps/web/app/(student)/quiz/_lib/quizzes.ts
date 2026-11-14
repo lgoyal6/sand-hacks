@@ -1,10 +1,11 @@
 // Quiz loading and grading. Server only: answer keys never leave this module.
-// Source today: data/quizzes/<id>.md (the sample format). Later: Neon `item` rows (owner B).
+// Sources, in order: B's canonical ingest output data/fixtures/quiz-<id>.json (ids like stats-q1-i1),
+// then a raw data/quizzes/<id>.md. Later: Neon `item` rows (owner B).
 import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { Item, ItemType, Quiz } from "@unprompted/shared";
-import { DATA_DIR } from "@/lib/db/fixtures";
+import { DATA_DIR, fixturePath, readJson } from "@/lib/db/fixtures";
 
 export type PublicItem = Omit<Item, "answerKey">;
 export type PublicQuiz = Omit<Quiz, "items"> & { items: PublicItem[] };
@@ -14,7 +15,7 @@ const CHOICE_RE = /^\s*-\s*([a-z])\)\s*(.+?)\s*$/;
 
 export function parseMarkdownQuiz(id: string, md: string): Quiz {
   const lines = md.split(/\r?\n/);
-  const title = (lines.find((l) => l.startsWith("# ")) ?? `# ${id}`).slice(2).replace(/^Sample quiz:\s*/i, "").replace(/\s*\([^)]*\)\s*$/, "").trim();
+  const title = (lines.find((l) => l.startsWith("# ")) ?? `# ${id}`).slice(2);
   const items: Item[] = [];
   let cur: Item | null = null;
   for (const line of lines) {
@@ -43,11 +44,17 @@ export function parseMarkdownQuiz(id: string, md: string): Quiz {
     const o = line.match(/^\s*objective:\s*(.+?)\s*$/i);
     if (o) cur.objective = o[1];
   }
-  return { id, courseId: "stats-101", title, sourceFormat: "markdown", items };
+  return { id, courseId: "stats-101", title: displayTitle(title), sourceFormat: "markdown", items };
+}
+
+export function displayTitle(title: string) {
+  return title.replace(/^Sample quiz:\s*/i, "").replace(/\s*\([^)]*\)\s*$/, "").trim();
 }
 
 export async function getQuiz(id: string): Promise<Quiz | null> {
   if (!/^[a-z0-9-]+$/i.test(id)) return null;
+  const canonical = await readJson<Quiz | null>(fixturePath(`quiz-${id}.json`), null);
+  if (canonical?.items?.length) return { ...canonical, title: displayTitle(canonical.title) };
   try {
     const md = await fs.readFile(path.join(DATA_DIR, "quizzes", `${id}.md`), "utf8");
     return parseMarkdownQuiz(id, md);
@@ -56,9 +63,11 @@ export async function getQuiz(id: string): Promise<Quiz | null> {
   }
 }
 
+// Quizzes students can take: B's ingested fixtures (data/fixtures/quiz-*.json).
 export async function listQuizzes(): Promise<Quiz[]> {
-  const files = await fs.readdir(path.join(DATA_DIR, "quizzes")).catch(() => [] as string[]);
-  const quizzes = await Promise.all(files.filter((f) => f.endsWith(".md")).map((f) => getQuiz(f.replace(/\.md$/, ""))));
+  const files = await fs.readdir(path.join(DATA_DIR, "fixtures")).catch(() => [] as string[]);
+  const ids = files.filter((f) => /^quiz-.+\.json$/.test(f)).map((f) => f.slice(5, -5));
+  const quizzes = await Promise.all(ids.map((id) => getQuiz(id)));
   return quizzes.filter((q): q is Quiz => q !== null);
 }
 

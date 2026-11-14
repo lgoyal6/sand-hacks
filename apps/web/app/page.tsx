@@ -9,7 +9,7 @@ export default function Home() {
       </p>
       <ul className="list-disc pl-6">
         <li><Link className="underline" href="/course">Course home</Link></li>
-        <li><Link className="underline" href="/quiz/sample-stats">Sample quiz</Link></li>
+        <li><Link className="underline" href="/quiz/stats-q1">Sample quiz</Link></li>
         <li><Link className="underline" href="/studio">Professor studio</Link></li>
       </ul>
     </section>

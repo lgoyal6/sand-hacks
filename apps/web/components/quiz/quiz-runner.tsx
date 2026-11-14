@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { ItemView } from "./item-view";
 import type { Answer, Mode, PublicQuiz } from "./types";
 
@@ -144,10 +146,17 @@ export function QuizRunner({ quiz }: { quiz: PublicQuiz }) {
         else goNext();
       }}
     >
-      <p id="item-progress" className="text-sm text-muted-foreground">
-        Question {index + 1} of {quiz.items.length} · {mode === "practice" ? "Practice" : "Graded"}
-      </p>
-      <ItemView key={item.id} item={item} value={answer} onChange={setAnswer} disabled={phase !== "answering" || busy} />
+      <div className="space-y-2">
+        <p id="item-progress" className="text-sm text-muted-foreground">
+          Question {index + 1} of {quiz.items.length} · {mode === "practice" ? "Practice" : "Graded"}
+        </p>
+        <Progress value={(index / quiz.items.length) * 100} aria-hidden="true" />
+      </div>
+      <Card>
+        <CardContent>
+          <ItemView key={item.id} item={item} value={answer} onChange={setAnswer} disabled={phase !== "answering" || busy} />
+        </CardContent>
+      </Card>
 
       {phase === "feedback" && lastCorrect !== null && (
         <p id="item-feedback" role="status" data-correct={lastCorrect} className={lastCorrect ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}>
