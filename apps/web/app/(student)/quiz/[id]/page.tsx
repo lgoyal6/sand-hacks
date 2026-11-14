@@ -1,28 +1,34 @@
 // Owner: C. Student quiz runtime.
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import { AppShell, STUDENT_COURSE_NAV } from "@/components/ui/app-shell";
 import { QuizRunner } from "@/components/quiz/quiz-runner";
 import { getQuiz, toPublic } from "../_lib/quizzes";
+import { COURSE } from "../../_lib/course";
 
-async function QuizBody({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+async function QuizBody({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const [{ id }, sp] = await Promise.all([params, searchParams]);
   const quiz = await getQuiz(id);
   if (!quiz) notFound();
   const pub = toPublic(quiz);
   return (
-    <>
-      <h1 id="quiz-title" className="text-2xl font-semibold">{pub.title}</h1>
-      <QuizRunner quiz={pub} />
-    </>
+    <AppShell
+      course={{ name: COURSE.name, term: COURSE.term, nav: STUDENT_COURSE_NAV }}
+      breadcrumbs={[{ label: COURSE.name, href: "/course" }, { label: "Quizzes", href: "/course/quizzes" }, { label: pub.title }]}
+      title={pub.title}
+    >
+      <h1 id="quiz-title" className="sr-only">{pub.title}</h1>
+      <div className="max-w-3xl">
+        <QuizRunner quiz={pub} suggestedMode={sp.mode === "graded" ? "graded" : "practice"} />
+      </div>
+    </AppShell>
   );
 }
 
-export default function QuizPage({ params }: PageProps<"/quiz/[id]">) {
+export default function QuizPage({ params, searchParams }: PageProps<"/quiz/[id]">) {
   return (
-    <section className="space-y-6">
-      <Suspense fallback={<p className="text-muted-foreground">Loading quiz...</p>}>
-        <QuizBody params={params} />
-      </Suspense>
-    </section>
+    <Suspense fallback={<p className="p-8 text-muted-foreground">Loading quiz...</p>}>
+      <QuizBody params={params} searchParams={searchParams} />
+    </Suspense>
   );
 }

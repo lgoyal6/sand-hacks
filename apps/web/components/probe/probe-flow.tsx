@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { VoiceOrb, type VoiceOrbState } from "@/components/ui/siri-orb";
 import { ConfidenceScale } from "./confidence-scale";
 
 type Step = "intro" | "before" | "explain" | "cf_loading" | "cf" | "after" | "done";
@@ -133,13 +134,18 @@ export function ProbeFlow({ attemptId, itemId, practice, onDone }: ProbeFlowProp
     mark("prompt", 0);
   };
 
+  const orb: VoiceOrbState = step === "cf_loading" ? "thinking" : step === "explain" || step === "cf" ? "listening" : "idle";
+
   return (
     <Card id="probe" data-step={step} data-probe-id={probeId ?? ""}>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-start gap-4">
+        <VoiceOrb state={orb} size="56px" />
+        <div className="space-y-1.5">
         <CardTitle>Think it through out loud</CardTitle>
         <CardDescription>
           A quick check on how you got your answer. Explaining your reasoning is one of the best ways to lock it in. It isn&apos;t a trick, and wording or accent never counts.
-        </CardDescription>
+          </CardDescription>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {step === "intro" && (

@@ -15,7 +15,7 @@ function isEmpty(a: Answer) {
   return Array.isArray(a) ? a.length === 0 : a.trim() === "";
 }
 
-export function QuizRunner({ quiz }: { quiz: PublicQuiz }) {
+export function QuizRunner({ quiz, suggestedMode = "practice" }: { quiz: PublicQuiz; suggestedMode?: Mode }) {
   const [phase, setPhase] = useState<Phase>("start");
   const [mode, setMode] = useState<Mode>("practice");
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -117,10 +117,10 @@ export function QuizRunner({ quiz }: { quiz: PublicQuiz }) {
           {quiz.items.length} questions. Practice mode shows how you did after each one. Graded mode shows your results at the end.
         </p>
         <div className="flex gap-3">
-          <Button id="start-practice" onClick={() => start("practice")} disabled={busy}>
+          <Button id="start-practice" variant={suggestedMode === "practice" ? "default" : "outline"} onClick={() => start("practice")} disabled={busy}>
             Start practice
           </Button>
-          <Button id="start-graded" variant="outline" onClick={() => start("graded")} disabled={busy}>
+          <Button id="start-graded" variant={suggestedMode === "graded" ? "default" : "outline"} onClick={() => start("graded")} disabled={busy}>
             Start graded quiz
           </Button>
         </div>
