@@ -50,7 +50,7 @@ export function parseMarkdownQuiz(md: string, opts: { quizId: string; courseId: 
       const multiChoice = type === "mcq" || type === "multi";
       cur = {
         _line: i + 1,
-        id: `${opts.quizId}-i${head[1]}`,
+        id: `${opts.quizId}-q${head[1]}`,
         quizId: opts.quizId,
         stem: head[3]!.trim(),
         type,

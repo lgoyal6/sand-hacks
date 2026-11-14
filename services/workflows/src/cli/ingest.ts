@@ -9,7 +9,7 @@ import { parseMarkdownQuiz, saveQuiz } from "../ingest/markdown.js";
 const ROOT = path.resolve(import.meta.dirname, "../../../..");
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { "quiz-id": { type: "string" }, "course-id": { type: "string", default: "stats-101" } },
+  options: { "quiz-id": { type: "string" }, "course-id": { type: "string", default: "sandbox-course" } },
 });
 const file = positionals[0] ?? "data/quizzes/sample-stats.md";
 const quizId = values["quiz-id"] ?? path.basename(file, ".md");

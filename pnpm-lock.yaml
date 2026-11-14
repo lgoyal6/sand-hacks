@@ -8,6 +8,8 @@ importers:
 
   .: {}
 
+  apps/sandbox: {}
+
   apps/web:
     dependencies:
       '@base-ui/react':
