@@ -49,7 +49,7 @@ export const SiriOrb: React.FC<SiriOrbProps> = ({
     bg: "var(--background)",
     c1: "var(--primary)",
     c2: "var(--chart-2)",
-    c3: "var(--near-miss)",
+    c3: "var(--chart-4)",
   };
   const finalColors = { ...defaultColors, ...colors };
   const sizeValue = Number.parseInt(size.replace("px", ""), 10);

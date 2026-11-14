@@ -8,7 +8,7 @@ import * as React from "react";
 import { BarChart3, BookOpen, FlaskConical, Gauge, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OrbAvatar } from "@/components/ui/orb-avatar";
-import { SidebarRail, SidebarRailBody, SidebarRailLink, type RailLink } from "@/components/ui/sidebar-rail";
+import { SidebarRail, SidebarRailBody, SidebarRailBrand, SidebarRailLink, type RailLink } from "@/components/ui/sidebar-rail";
 
 export const GLOBAL_NAV: RailLink[] = [
   { label: "Dashboard", href: "/", icon: <LayoutDashboard /> },
@@ -128,12 +128,7 @@ export function AppShell({ children, course, breadcrumbs, title, actions, wide, 
     <div className="flex min-h-svh w-full flex-col bg-background md:flex-row">
       <SidebarRail>
         <SidebarRailBody>
-          <Link href="/" className="mb-3 flex h-12 items-center gap-3 px-2" aria-label="Unprompted home">
-            <span className="flex w-[44px] shrink-0 justify-center">
-              <OrbAvatar size="sm" color="blue" />
-            </span>
-            <span className="whitespace-pre text-sm font-semibold">Unprompted</span>
-          </Link>
+          <SidebarRailBrand mark={<OrbAvatar size="sm" color="blue" />} name="Unprompted" />
           {GLOBAL_NAV.map((l) => (
             <SidebarRailLink key={l.href} link={l} />
           ))}

@@ -121,6 +121,26 @@ function isActive(pathname: string, link: RailLink) {
   return prefixes.some((p) => (p === "/" ? pathname === "/" : pathname === p || pathname.startsWith(p + "/")));
 }
 
+/** Brand row at the top of the rail: the mark is always visible, the name only when expanded. */
+export function SidebarRailBrand({ href = "/", mark, name }: { href?: string; mark: React.ReactNode; name: string }) {
+  const { open, animate } = useRail();
+  const expanded = !animate || open;
+  return (
+    <Link href={href} className="mb-3 flex h-12 items-center gap-3 px-2" aria-label={`${name} home`}>
+      <span className="flex w-[44px] shrink-0 justify-center">{mark}</span>
+      <motion.span
+        initial={false}
+        animate={{ opacity: expanded ? 1 : 0 }}
+        transition={{ duration: 0.12 }}
+        className={cn("whitespace-pre text-sm font-semibold", !expanded && "pointer-events-none absolute")}
+        aria-hidden
+      >
+        {name}
+      </motion.span>
+    </Link>
+  );
+}
+
 export function SidebarRailLink({ link, className }: { link: RailLink; className?: string }) {
   const { open, animate } = useRail();
   const pathname = usePathname() ?? "/";
