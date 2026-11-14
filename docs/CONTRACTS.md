@@ -69,3 +69,9 @@ API keys go in a repo-root `.env.local` (template: `.env.example`, never commit)
 - Agents only attack our own sandboxes, never real courses or accounts.
 - Store leak snippets, URLs and screenshots only, never copyrighted solutions.
 - Report real numbers, including bad ones. No faked results in the demo.
+
+## IDs (decided)
+
+- Quiz id = the quiz file's slug: `data/quizzes/sample-stats.md` gives quiz id `sample-stats`.
+- Item id = `<quizId>-q<n>`, with n the 1-based number in the Markdown (`sample-stats-q1`). Variants: `<itemId>-v<k>`.
+- B's Markdown parser (`services/workflows/src/ingest/markdown.ts`) is the single source of truth. C and A consume it, or its fixture output, and don't re-derive ids.
