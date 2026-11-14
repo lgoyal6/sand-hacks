@@ -25,11 +25,14 @@ export interface AttemptRecord {
   consentAudio: boolean;
   userAgent?: string;
   responses: ResponseRecord[];
+  // Server-only probe policy state. Never returned to the client.
+  probePlan?: string[];
+  probesTriggered?: string[];
 }
 
 const FILE = fixturePath("attempts.json");
 
-export async function createAttempt(input: { quizId: string; mode: AttemptMode; studentPseudonym?: string; consentAudio?: boolean; userAgent?: string }) {
+export async function createAttempt(input: { quizId: string; mode: AttemptMode; studentPseudonym?: string; consentAudio?: boolean; userAgent?: string; probePlan?: string[] }) {
   const attempt: AttemptRecord = {
     id: `att_${randomUUID().slice(0, 12)}`,
     studentPseudonym: input.studentPseudonym || `student-${randomUUID().slice(0, 6)}`,
@@ -39,6 +42,8 @@ export async function createAttempt(input: { quizId: string; mode: AttemptMode; 
     consentAudio: Boolean(input.consentAudio),
     userAgent: input.userAgent,
     responses: [],
+    probePlan: input.probePlan ?? [],
+    probesTriggered: [],
   };
   await updateJson<AttemptRecord[]>(FILE, [], (all) => [...all, attempt]);
   return attempt;
@@ -62,7 +67,7 @@ export async function recordResponse(attemptId: string, r: Omit<ResponseRecord, 
   return saved as ResponseRecord | null;
 }
 
-export async function updateAttempt(attemptId: string, patch: Partial<Pick<AttemptRecord, "finishedAt" | "consentAudio">>) {
+export async function updateAttempt(attemptId: string, patch: Partial<Pick<AttemptRecord, "finishedAt" | "consentAudio" | "probesTriggered">>) {
   let out: AttemptRecord | null = null;
   await updateJson<AttemptRecord[]>(FILE, [], (all) =>
     all.map((a) => (a.id === attemptId ? (out = { ...a, ...patch }) : a)),

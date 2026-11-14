@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useTelemetry } from "@/lib/telemetry/use-telemetry";
+import { ProbeFlow } from "@/components/probe/probe-flow";
 import { ItemView } from "./item-view";
 import type { Answer, Mode, PublicQuiz } from "./types";
 
-type Phase = "start" | "answering" | "feedback" | "done";
+type Phase = "start" | "answering" | "probe" | "feedback" | "done";
 type Result = { itemId: string; answered: boolean; correct: boolean };
 
 function isEmpty(a: Answer) {
@@ -94,15 +95,14 @@ export function QuizRunner({ quiz }: { quiz: PublicQuiz }) {
         body: JSON.stringify({ itemId: item.id, answer, seconds: Math.round(seconds * 10) / 10 }),
       });
       if (!res.ok) throw new Error("Your answer didn't save. Try again.");
-      const data = (await res.json()) as { correct?: boolean };
+      const data = (await res.json()) as { correct?: boolean; probe?: boolean };
       telemetry.emit("answer", { type: "submit", value: answer, seconds: Math.round(seconds * 10) / 10 });
       telemetry.flush();
-      if (mode === "practice") {
-        setLastCorrect(Boolean(data.correct));
-        setPhase("feedback");
-      } else {
-        await goNext();
-      }
+      if (mode === "practice") setLastCorrect(Boolean(data.correct));
+      // The probe comes before practice feedback, so knowing the result doesn't color the explanation.
+      if (data.probe) setPhase("probe");
+      else if (mode === "practice") setPhase("feedback");
+      else await goNext();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -171,6 +171,19 @@ export function QuizRunner({ quiz }: { quiz: PublicQuiz }) {
         </CardContent>
       </Card>
 
+      {phase === "probe" && attemptId && (
+        <ProbeFlow
+          key={item.id}
+          attemptId={attemptId}
+          itemId={item.id}
+          practice={mode === "practice"}
+          onDone={() => {
+            if (mode === "practice") setPhase("feedback");
+            else goNext();
+          }}
+        />
+      )}
+
       {phase === "feedback" && lastCorrect !== null && (
         <p id="item-feedback" role="status" data-correct={lastCorrect} className={lastCorrect ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}>
           {lastCorrect ? "Correct." : "Not quite. Worth a second look before the graded quiz."}
@@ -178,7 +191,7 @@ export function QuizRunner({ quiz }: { quiz: PublicQuiz }) {
       )}
       {error && <p role="alert" className="text-destructive">{error}</p>}
 
-      {phase === "answering" ? (
+      {phase === "probe" ? null : phase === "answering" ? (
         <Button id="submit-answer" type="submit" disabled={busy || isEmpty(answer)}>
           {mode === "graded" && isLast ? "Submit quiz" : "Submit answer"}
         </Button>
