@@ -23,9 +23,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 
 export type { ColumnDef } from "@tanstack/react-table";
+/** A column over rows of TData. Cell values are heterogeneous across columns, which is why TanStack types them as any. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type DataColumn<TData> = ColumnDef<TData, any>;
 
 export interface DataTableProps<TData> {
-  columns: ColumnDef<TData, any>[];
+  columns: DataColumn<TData>[];
   data: TData[];
   /** Placeholder for the global search box. Omit to hide search. */
   searchPlaceholder?: string;
@@ -67,7 +70,7 @@ export function DataTable<TData>({
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [showColumns, setShowColumns] = React.useState(false);
 
-  const allColumns = React.useMemo<ColumnDef<TData, any>[]>(() => {
+  const allColumns = React.useMemo<DataColumn<TData>[]>(() => {
     if (!selectable) return columns;
     return [
       {
@@ -96,6 +99,8 @@ export function DataTable<TData>({
     ];
   }, [columns, selectable]);
 
+  // TanStack's table instance can't be memoized by the React Compiler (known, harmless here).
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns: allColumns,

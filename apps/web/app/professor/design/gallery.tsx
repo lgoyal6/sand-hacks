@@ -3,7 +3,7 @@ import * as React from "react";
 import { AgentState, type AgentStatus } from "@/components/ui/agent-state";
 import { VoiceOrb, type VoiceOrbState } from "@/components/ui/siri-orb";
 import { OrbAvatar } from "@/components/ui/orb-avatar";
-import { DataTable, inFacet, type ColumnDef } from "@/components/ui/data-table";
+import { DataTable, inFacet, type DataColumn } from "@/components/ui/data-table";
 import { SampleBadge } from "@/components/ui/sample-badge";
 import { Button } from "@/components/ui/button";
 
@@ -23,7 +23,7 @@ const QUADRANT_CLASS: Record<string, string> = {
   near_miss: "bg-near-miss-soft text-near-miss",
   wrong_unexplained: "bg-unexplained-soft text-unexplained",
 };
-const columns: ColumnDef<Row, any>[] = [
+const columns: DataColumn<Row>[] = [
   { accessorKey: "student", header: "Student" },
   { accessorKey: "item", header: "Question" },
   { accessorKey: "correct", header: "Correct", cell: ({ getValue }) => (getValue() ? "Yes" : "No") },
