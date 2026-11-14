@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useTelemetry } from "@/lib/telemetry/use-telemetry";
 import { ItemView } from "./item-view";
 import type { Answer, Mode, PublicQuiz } from "./types";
 
@@ -27,6 +28,15 @@ export function QuizRunner({ quiz }: { quiz: PublicQuiz }) {
 
   const item = quiz.items[index];
   const isLast = index === quiz.items.length - 1;
+  const telemetry = useTelemetry(attemptId, item?.id, phase !== "start" && phase !== "done");
+
+  const changeAnswer = useCallback(
+    (v: Answer) => {
+      setAnswer(v);
+      telemetry.emit("answer", { type: "change", value: v, sinceShownMs: Math.round(performance.now() - shownAt.current) });
+    },
+    [telemetry],
+  );
 
   const start = useCallback(
     async (m: Mode) => {
@@ -69,7 +79,8 @@ export function QuizRunner({ quiz }: { quiz: PublicQuiz }) {
     setLastCorrect(null);
     shownAt.current = performance.now();
     setPhase("answering");
-  }, [isLast, finish]);
+    telemetry.emit("answer", { type: "item_shown", index: index + 1 }, quiz.items[index + 1]?.id);
+  }, [isLast, finish, telemetry, index, quiz.items]);
 
   const submit = useCallback(async () => {
     if (!attemptId || !item || isEmpty(answer)) return;
@@ -84,6 +95,8 @@ export function QuizRunner({ quiz }: { quiz: PublicQuiz }) {
       });
       if (!res.ok) throw new Error("Your answer didn't save. Try again.");
       const data = (await res.json()) as { correct?: boolean };
+      telemetry.emit("answer", { type: "submit", value: answer, seconds: Math.round(seconds * 10) / 10 });
+      telemetry.flush();
       if (mode === "practice") {
         setLastCorrect(Boolean(data.correct));
         setPhase("feedback");
@@ -95,7 +108,7 @@ export function QuizRunner({ quiz }: { quiz: PublicQuiz }) {
     } finally {
       setBusy(false);
     }
-  }, [attemptId, item, answer, mode, goNext]);
+  }, [attemptId, item, answer, mode, goNext, telemetry]);
 
   if (phase === "start") {
     return (
@@ -154,7 +167,7 @@ export function QuizRunner({ quiz }: { quiz: PublicQuiz }) {
       </div>
       <Card>
         <CardContent>
-          <ItemView key={item.id} item={item} value={answer} onChange={setAnswer} disabled={phase !== "answering" || busy} />
+          <ItemView key={item.id} item={item} value={answer} onChange={changeAnswer} disabled={phase !== "answering" || busy} />
         </CardContent>
       </Card>
 
