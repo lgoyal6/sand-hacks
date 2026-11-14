@@ -11,6 +11,9 @@ import { gradeItem } from "./grade.mjs";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.SANDBOX_PORT ?? 3101);
 export const STUDENT = { username: "student1", password: "sandbox" };
+// The runner API (/api/runs, /api/quizzes) needs this header so the attacking agent, which can run code in the page,
+// can't grade itself. Set the same SANDBOX_RUNNER_TOKEN for the sandbox and the runner.
+const RUNNER_TOKEN = process.env.SANDBOX_RUNNER_TOKEN ?? "dev-runner-token";
 
 /** quizId -> Quiz (shape: packages/shared Quiz) */
 const quizzes = new Map();
@@ -136,6 +139,9 @@ async function handle(req, res) {
 
   // ---------- runner API (not linked from the UI) ----------
   if (p === "/api/health") return json(res, 200, { ok: true, quizzes: [...quizzes.keys()] });
+
+  const isRunner = req.headers["x-runner-token"] === RUNNER_TOKEN;
+  if ((p === "/api/quizzes" || p.startsWith("/api/runs/")) && !isRunner) return json(res, 403, { error: "runner token required" });
 
   if (p === "/api/quizzes" && req.method === "POST") {
     // Register a quiz (e.g. B's variant candidates) so agents can attack it. Body: Quiz.

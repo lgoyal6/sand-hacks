@@ -28,6 +28,7 @@ test("gradeItem mcq / multi / short", () => {
   assert.ok(gradeItem({ type: "short", answerKey: ["Median"] }, " median "));
 });
 
+const RUNNER = { "x-runner-token": "dev-runner-token" };
 let server, base;
 before(async () => {
   server = await start(0);
@@ -58,7 +59,8 @@ test("full flow: login with run id, take quiz, results graded server-side", asyn
   const submit = await fetch(`${base}/quiz/stats-101/submit`, { method: "POST", headers: { cookie }, body: form });
   assert.equal(submit.status, 200);
 
-  const run = await (await fetch(`${base}/api/runs/run-test`)).json();
+  assert.equal((await fetch(`${base}/api/runs/run-test`)).status, 403, "agent without token can't read results");
+  const run = await (await fetch(`${base}/api/runs/run-test`, { headers: RUNNER })).json();
   assert.equal(run.attempts.length, 1);
   const byId = Object.fromEntries(run.attempts[0].items.map((i) => [i.itemId, i]));
   assert.equal(byId["stats-101-q1"].correct, true);
@@ -70,7 +72,7 @@ test("full flow: login with run id, take quiz, results graded server-side", asyn
 
 test("register a variant quiz", async () => {
   const quiz = { id: "v-1", courseId: "c", title: "Variant", sourceFormat: "markdown", items: [{ id: "v-1-q1", quizId: "v-1", type: "short", stem: "Say hi", answerKey: "hi", objective: "x" }] };
-  const r = await fetch(`${base}/api/quizzes`, { method: "POST", body: JSON.stringify(quiz) });
+  const r = await fetch(`${base}/api/quizzes`, { method: "POST", headers: RUNNER, body: JSON.stringify(quiz) });
   assert.equal(r.status, 201);
   assert.match((await r.json()).url, /\/quiz\/v-1$/);
 });
