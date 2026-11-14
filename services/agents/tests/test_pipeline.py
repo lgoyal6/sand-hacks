@@ -16,7 +16,7 @@ from unprompted_agents.sandbox import Sandbox
 from unprompted_agents.stats import solve_rates, wilson
 
 REPO = Path(__file__).resolve().parents[3]
-QUIZ = json.loads((REPO / "apps/sandbox/quizzes/stats-101.json").read_text())
+QUIZ = json.loads((REPO / "apps/sandbox/quizzes/sample-stats.json").read_text())
 
 
 def _free_port() -> int:
@@ -54,12 +54,12 @@ def scripted_runner(answers: dict):
 
 
 def test_attack_grades_server_side(sandbox):
-    answers = {"stats-101-q1": "b", "stats-101-q2": "b", "stats-101-q3": "1/6", "stats-101-q4": "a", "stats-101-q5": "b"}
+    answers = {"sample-stats-q1": "b", "sample-stats-q2": "b", "sample-stats-q3": "1/6", "sample-stats-q4": "a", "sample-stats-q5": "b"}
     res = attack(QUIZ, sandbox=sandbox, repeats=2, models=["test:scripted"], runners={"browser-use": scripted_runner(answers)}, log=lambda m: None)
     assert len(res["agentRuns"]) == 10
     rates = {r["itemId"]: r for r in res["solveRates"]}
-    assert rates["stats-101-q1"]["solveRate"] == 1.0 and rates["stats-101-q1"]["agentSolvable"]
-    assert rates["stats-101-q4"]["solveRate"] == 0.0 and not rates["stats-101-q4"]["agentSolvable"]
+    assert rates["sample-stats-q1"]["solveRate"] == 1.0 and rates["sample-stats-q1"]["agentSolvable"]
+    assert rates["sample-stats-q4"]["solveRate"] == 0.0 and not rates["sample-stats-q4"]["agentSolvable"]
     assert res["summary"]["accuracy"] == 0.8
     assert all(m["submitted"] for m in res["runs"])
 

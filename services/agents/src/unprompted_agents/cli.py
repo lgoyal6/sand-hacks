@@ -1,6 +1,6 @@
 """attack CLI.
 
-  uv run attack --quiz ../../apps/sandbox/quizzes/stats-101.json --models gemini:gemini-2.5-flash --repeats 3
+  uv run attack --quiz ../../apps/sandbox/quizzes/sample-stats.json --models gemini:gemini-2.5-flash --repeats 3
 
 Writes data/fixtures/agent_runs.json, solve_rates.json and attack_summary.json (repo root), full traces to traces/.
 With --json, prints the result to stdout instead of writing fixtures (what B's workflow uses).

@@ -8,7 +8,7 @@ open the quiz, answer, submit. Correctness comes from the sandbox's server-side 
 ```sh
 pnpm --filter @unprompted/sandbox start          # terminal 1: sandbox on :3101
 cd services/agents && uv sync
-uv run attack --quiz ../../apps/sandbox/quizzes/stats-101.json \
+uv run attack --quiz ../../apps/sandbox/quizzes/sample-stats.json \
   --models gemini:gemini-2.5-flash --repeats 3   # needs GEMINI_API_KEY in repo-root .env.local
 ```
 
@@ -23,14 +23,14 @@ Python:
 
 ```python
 from unprompted_agents.attack import attack
-res = attack(quiz, ["stats-101-q1"], models=["gemini:gemini-2.5-flash"], repeats=3)
+res = attack(quiz, ["sample-stats-q1"], models=["gemini:gemini-2.5-flash"], repeats=3)
 res["agentRuns"]; res["solveRates"]; res["summary"]
 ```
 
 CLI (from TypeScript/Mastra, spawn it and read stdout; logs go to stderr):
 
 ```sh
-echo "$QUIZ_JSON" | uv run --directory services/agents attack --quiz - --items stats-101-q1 --repeats 3 --json
+echo "$QUIZ_JSON" | uv run --directory services/agents attack --quiz - --items sample-stats-q1 --repeats 3 --json
 ```
 
 `quiz` is a shared `Quiz`. Variant candidates are just quizzes whose items carry `originalItemId`; the sandbox registers

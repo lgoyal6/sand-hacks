@@ -1,12 +1,12 @@
 {
-  "id": "stats-101",
+  "id": "sample-stats",
   "courseId": "sandbox-course",
   "title": "Intro Statistics: Quiz 1",
   "sourceFormat": "markdown",
   "items": [
     {
-      "id": "stats-101-q1",
-      "quizId": "stats-101",
+      "id": "sample-stats-q1",
+      "quizId": "sample-stats",
       "type": "mcq",
       "stem": "A sample of 25 has mean 40 and standard deviation 10. What is the standard error of the mean?",
       "choices": [
@@ -19,8 +19,8 @@
       "objective": "compute standard error from s and n"
     },
     {
-      "id": "stats-101-q2",
-      "quizId": "stats-101",
+      "id": "sample-stats-q2",
+      "quizId": "sample-stats",
       "type": "mcq",
       "stem": "If the sample size quadruples and nothing else changes, the width of a 95% confidence interval for the mean:",
       "choices": [
@@ -33,16 +33,16 @@
       "objective": "relationship between n and CI width"
     },
     {
-      "id": "stats-101-q3",
-      "quizId": "stats-101",
+      "id": "sample-stats-q3",
+      "quizId": "sample-stats",
       "type": "numeric",
       "stem": "A fair die is rolled twice. What is the probability that the sum is 7? Give a fraction.",
       "answerKey": "1/6",
       "objective": "enumerate outcomes in a joint sample space"
     },
     {
-      "id": "stats-101-q4",
-      "quizId": "stats-101",
+      "id": "sample-stats-q4",
+      "quizId": "sample-stats",
       "type": "mcq",
       "stem": "A study finds a p-value of 0.03 at alpha = 0.05. Which statement is correct?",
       "choices": [
@@ -55,8 +55,8 @@
       "objective": "interpret a p-value"
     },
     {
-      "id": "stats-101-q5",
-      "quizId": "stats-101",
+      "id": "sample-stats-q5",
+      "quizId": "sample-stats",
       "type": "mcq",
       "stem": "Which change reduces the probability of a Type II error, holding alpha fixed?",
       "choices": [

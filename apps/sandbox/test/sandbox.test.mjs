@@ -45,29 +45,29 @@ test("full flow: login with run id, take quiz, results graded server-side", asyn
   assert.equal(login.status, 303);
   const cookie = login.headers.get("set-cookie").split(";")[0];
 
-  const quizPage = await (await fetch(`${base}/quiz/stats-101`, { headers: { cookie } })).text();
+  const quizPage = await (await fetch(`${base}/quiz/sample-stats`, { headers: { cookie } })).text();
   assert.ok(!quizPage.includes("answerKey"), "page must not leak keys");
   const attemptId = quizPage.match(/name="attemptId" value="([^"]+)"/)[1];
 
   await fetch(`${base}/api/attempts/${attemptId}/events`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ itemId: "stats-101-q1", value: "b" }),
+    body: JSON.stringify({ itemId: "sample-stats-q1", value: "b" }),
   });
 
-  const form = new URLSearchParams({ attemptId, "stats-101-q1": "b", "stats-101-q2": "a", "stats-101-q3": "1/6" });
-  const submit = await fetch(`${base}/quiz/stats-101/submit`, { method: "POST", headers: { cookie }, body: form });
+  const form = new URLSearchParams({ attemptId, "sample-stats-q1": "b", "sample-stats-q2": "a", "sample-stats-q3": "1/6" });
+  const submit = await fetch(`${base}/quiz/sample-stats/submit`, { method: "POST", headers: { cookie }, body: form });
   assert.equal(submit.status, 200);
 
   assert.equal((await fetch(`${base}/api/runs/run-test`)).status, 403, "agent without token can't read results");
   const run = await (await fetch(`${base}/api/runs/run-test`, { headers: RUNNER })).json();
   assert.equal(run.attempts.length, 1);
   const byId = Object.fromEntries(run.attempts[0].items.map((i) => [i.itemId, i]));
-  assert.equal(byId["stats-101-q1"].correct, true);
-  assert.equal(byId["stats-101-q2"].correct, false);
-  assert.equal(byId["stats-101-q3"].correct, true);
-  assert.equal(byId["stats-101-q4"].answered, false);
-  assert.equal(byId["stats-101-q1"].answerChanges, 1);
+  assert.equal(byId["sample-stats-q1"].correct, true);
+  assert.equal(byId["sample-stats-q2"].correct, false);
+  assert.equal(byId["sample-stats-q3"].correct, true);
+  assert.equal(byId["sample-stats-q4"].answered, false);
+  assert.equal(byId["sample-stats-q1"].answerChanges, 1);
 });
 
 test("register a variant quiz", async () => {
