@@ -9,7 +9,7 @@ const BASE = "https://canvas.example.edu";
 async function fakeCanvas(opts: { status?: number; evilNext?: boolean } = {}) {
   const calls: { url: string; method: string; auth: string | null; body?: unknown }[] = [];
   const routes: Record<string, { body: unknown; link?: string }> = {
-    "/api/v1/courses?enrollment_type=teacher&state[]=available&per_page=50": {
+    "/api/v1/courses?enrollment_type=teacher&state[]=available&state[]=unpublished&per_page=50": {
       body: await fx("courses-page1"),
       link: opts.evilNext ? `<https://evil.example.com/steal?page=2>; rel="next"` : `<${BASE}/api/v1/courses?page=2&per_page=50>; rel="next", <${BASE}/api/v1/courses?page=1>; rel="first"`,
     },

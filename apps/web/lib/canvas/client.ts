@@ -102,9 +102,9 @@ export class CanvasClient {
   async self(): Promise<{ id: number; name: string }> {
     return (await this.request<{ id: number; name: string }>("/api/v1/users/self")).data;
   }
-  /** Courses where the token's user teaches. */
+  /** Courses where the token's user teaches, including unpublished ones (a new course starts unpublished). */
   listCourses(): Promise<CanvasCourse[]> {
-    return this.all<CanvasCourse>("/api/v1/courses?enrollment_type=teacher&state[]=available&per_page=50");
+    return this.all<CanvasCourse>("/api/v1/courses?enrollment_type=teacher&state[]=available&state[]=unpublished&per_page=50");
   }
   listQuizzes(courseId: number): Promise<CanvasQuiz[]> {
     return this.all<CanvasQuiz>(`/api/v1/courses/${courseId}/quizzes?per_page=50`);

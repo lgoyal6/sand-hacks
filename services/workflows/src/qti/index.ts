@@ -29,7 +29,7 @@ export function numericKey(key: string): { value: number; margin: number } {
 
 function itemXml(it: QtiItem, figureHref?: string): string {
   const id = ident(it.id);
-  const html = `<div><p>${esc(it.stem)}</p>${figureHref ? `<p><img src="$IMS-CC-FILEBASE$/${figureHref}" alt="${esc(it.figure?.alt ?? "")}"></p>` : ""}</div>`;
+  const html = `<div><p>${esc(it.stem)}</p>${figureHref ? `<p><img src="$IMS-CC-FILEBASE$/${encodeURI(figureHref)}" alt="${esc(it.figure?.alt ?? "")}"></p>` : ""}</div>`;
   const stem = `<material><mattext texttype="text/html">${esc(html)}</mattext></material>`;
   const correct = Array.isArray(it.answerKey) ? it.answerKey : [it.answerKey];
   if (it.type === "mcq" || it.type === "multi") {
