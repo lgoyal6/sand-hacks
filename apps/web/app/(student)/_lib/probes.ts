@@ -23,6 +23,8 @@ export type ProbeRecord = Probe & {
   counterfactualModel?: string;
   retried?: boolean;
   conversationId?: string; // ElevenLabs conversation, when voice
+  counterfactualLatencySource?: "scribe" | "vad" | "typed";
+  scribeWords?: { t: string; s: number; e: number; spk?: string }[];
 };
 
 export type ProbePhase = "prompt" | "speech_start" | "speech_end" | "cf_prompt" | "cf_speech_start" | "cf_speech_end";
@@ -54,6 +56,8 @@ type ProbeRow = {
   counterfactual_model: string | null;
   conversation_id: string | null;
   retried: boolean | null;
+  counterfactual_latency_source?: "scribe" | "vad" | "typed" | null;
+  scribe_words_json?: { t: string; s: number; e: number; spk?: string }[] | null;
 };
 
 const u = <T,>(v: T | null) => (v === null ? undefined : v);
@@ -80,6 +84,8 @@ function fromRow(r: ProbeRow): ProbeRecord {
     counterfactualModel: u(r.counterfactual_model),
     conversationId: u(r.conversation_id),
     retried: u(r.retried),
+    counterfactualLatencySource: u(r.counterfactual_latency_source ?? null),
+    scribeWords: u(r.scribe_words_json ?? null),
   };
 }
 
@@ -97,6 +103,8 @@ const COLS: Partial<Record<keyof ProbeRecord, string>> = {
   counterfactualModel: "counterfactual_model",
   conversationId: "conversation_id",
   retried: "retried",
+  counterfactualLatencySource: "counterfactual_latency_source",
+  scribeWords: "scribe_words_json",
 };
 
 async function neonGetProbe(id: string): Promise<ProbeRecord | null> {
@@ -164,8 +172,8 @@ export async function patchProbe(id: string, patch: Partial<ProbeRecord>) {
     for (const [k, v] of Object.entries(patch) as [keyof ProbeRecord, unknown][]) {
       const col = COLS[k];
       if (!col) continue;
-      vals.push(v === undefined ? null : v); // undefined clears (used by the one-time "start over")
-      sets.push(`${col} = $${vals.length}`);
+      vals.push(v === undefined ? null : col.endsWith("_json") ? JSON.stringify(v) : v); // undefined clears (one-time "start over")
+      sets.push(`${col} = $${vals.length}${col.endsWith("_json") ? "::jsonb" : ""}`);
     }
     try {
       if (sets.length) await db.query(`update probe set ${sets.join(", ")} where id = $1`, vals);

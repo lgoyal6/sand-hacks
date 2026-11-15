@@ -220,7 +220,7 @@ async function main() {
   const latency = marks.cf_prompt && marks.cf_speech_start ? marks.cf_speech_start - marks.cf_prompt : undefined;
   const fin = await api(`/api/probes/${probe.probeId}/voice/finish`, { conversationId });
   await api(`/api/probes/${probe.probeId}`, { confidenceAfter: 5, counterfactualLatencyMs: latency }, "PATCH");
-  log(`transcript finalized: ${fin.turns} turns, ${fin.durationSecs ?? "?"} s call`);
+  log(`transcript finalized: ${fin.turns} turns, ${fin.durationSecs ?? "?"} s call; Scribe latency ${fin.latency ? fin.latency.latencyMs + " ms" : "n/a"}`);
 
   // Scribe word timestamps on the call recording.
   let words = [];
@@ -264,6 +264,9 @@ async function main() {
   const lat = (await tiger.query("select cf_latency_ms from probe_latency where probe_id = $1", [probe.probeId]).catch(() => ({ rows: [] }))).rows[0]?.cf_latency_ms;
   check(typeof lat === "number" || typeof lat === "string", `D's probe_latency view computes cf latency: ${lat === undefined ? "n/a" : Math.round(Number(lat))} ms`);
   if (lat !== undefined) check(Number(lat) > 200 && Number(lat) < 10000, "counterfactual latency is sane (0.2-10 s)");
+  check(row?.counterfactual_latency_source === "scribe", `stored latency source: ${row?.counterfactual_latency_source} (${row?.counterfactual_latency_ms} ms)`);
+  check(Array.isArray(row?.scribe_words_json) && row.scribe_words_json.length > 10, `Scribe words stored in Neon: ${row?.scribe_words_json?.length ?? 0}`);
+  if (fin.latency && latency !== undefined) console.log(`  (info) VAD estimate ${latency} ms vs Scribe ${fin.latency.latencyMs} ms: VAD lag ${latency - fin.latency.latencyMs} ms`);
   check(words.length > 10 && words.every((w) => typeof w.start === "number" && typeof w.end === "number"), `Scribe word timestamps: ${words.length} words`);
   await Promise.all([neon.end(), tiger.end()]);
 
@@ -271,7 +274,8 @@ async function main() {
   const rel = (p) => (marks[p] && marks.prompt ? `${((marks[p] - marks.prompt) / 1000).toFixed(2)} s` : "n/a");
   for (const p of ["prompt", "speech_start", "speech_end", "cf_prompt", "cf_speech_start", "cf_speech_end"]) console.log(`  ${p.padEnd(16)} +${rel(p)}`);
   console.log(`  speech onset after the opening: ${marks.speech_start && marks.prompt ? marks.speech_start - marks.prompt : "n/a"} ms`);
-  console.log(`  counterfactual latency (cf_prompt -> cf_speech_start): ${latency ?? "n/a"} ms`);
+  console.log(`  counterfactual latency, live VAD estimate: ${latency ?? "n/a"} ms`);
+  console.log(`  counterfactual latency, Scribe word timestamps (stored): ${fin.latency?.latencyMs ?? "n/a"} ms (question ends ${fin.latency?.cfEndSec?.toFixed(2)} s, answer starts ${fin.latency?.answerStartSec?.toFixed(2)} s into the call)`);
   if (words.length) console.log(`  first words: ${words.slice(0, 6).map((w) => `${w.text}@${w.start.toFixed(2)}s`).join(" ")}`);
   console.log(`  probe ${probe.probeId}, attempt ${att.attemptId}, conversation ${conversationId}`);
 

@@ -26,7 +26,11 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/probes/[id]">)
   if (typeof b.explanation === "string") patch.explanation = b.explanation.slice(0, 4000);
   if (typeof b.counterfactualAnswer === "string") patch.counterfactualAnswer = b.counterfactualAnswer.slice(0, 4000);
   if (typeof b.conversationId === "string") patch.conversationId = b.conversationId.slice(0, 128);
-  if (Number.isFinite(b.counterfactualLatencyMs)) patch.counterfactualLatencyMs = Math.max(0, Math.round(b.counterfactualLatencyMs!));
+  // A Scribe-measured latency (set when the voice call is finalized) beats the browser's VAD estimate.
+  if (Number.isFinite(b.counterfactualLatencyMs) && probe.counterfactualLatencySource !== "scribe") {
+    patch.counterfactualLatencyMs = Math.max(0, Math.round(b.counterfactualLatencyMs!));
+    patch.counterfactualLatencySource = probe.mode === "voice" ? "vad" : "typed";
+  }
   if (b.confidenceAfter !== undefined) {
     const c = Number(b.confidenceAfter);
     if (!Number.isInteger(c) || c < 1 || c > 7) return NextResponse.json({ error: "confidenceAfter must be 1..7" }, { status: 400 });

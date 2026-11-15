@@ -70,3 +70,62 @@ export function formatTranscript(turns: TranscriptTurn[]) {
     .map((t) => `[${t.time_in_call_secs.toFixed(0).padStart(3, " ")}s] ${t.role === "agent" ? "Unprompted" : "Student (voice)"}: ${t.message}`)
     .join("\n");
 }
+
+// ---------- Scribe word timestamps (precise counterfactual latency) ----------
+export interface ScribeWord {
+  text: string;
+  start: number; // seconds into the call
+  end: number;
+  speaker_id?: string;
+}
+
+/** Transcribes the call recording with Scribe (word timestamps + diarization). Null if unavailable. */
+export async function scribeCall(conversationId: string): Promise<ScribeWord[] | null> {
+  const audio = await fetch(`${API}/convai/conversations/${encodeURIComponent(conversationId)}/audio`, { headers: { "xi-api-key": key() }, cache: "no-store" });
+  if (!audio.ok) return null;
+  const blob = new Blob([await audio.arrayBuffer()], { type: "audio/mpeg" });
+  for (const model of ["scribe_v2", "scribe_v1"]) {
+    const fd = new FormData();
+    fd.append("model_id", model);
+    fd.append("file", blob, "call.mp3");
+    fd.append("timestamps_granularity", "word");
+    fd.append("diarize", "true");
+    const r = await fetch(`${API}/speech-to-text`, { method: "POST", headers: { "xi-api-key": key() }, body: fd });
+    if (!r.ok) continue;
+    const words = ((await r.json()) as { words?: (ScribeWord & { type?: string })[] }).words ?? [];
+    return words.filter((w) => (w.type ?? "word") === "word" && typeof w.start === "number");
+  }
+  return null;
+}
+
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").split(/\s+/).filter(Boolean);
+
+/**
+ * Counterfactual latency from word timestamps: end of the agent's last word of the follow-up question
+ * -> start of the student's first word after it. The question is located by its closing words (spoken
+ * numbers can differ from the written text, so we match the tail), falling back to diarized turns
+ * around the follow-up's time in the call.
+ */
+export function cfLatencyFromWords(words: ScribeWord[], cfPrompt: string, cfTurnSecs?: number) {
+  const toks = words.map((w) => norm(w.text).join(" "));
+  const tail = norm(cfPrompt).slice(-3);
+  let endIdx = -1;
+  if (tail.length === 3) {
+    for (let i = 2; i < toks.length; i++) {
+      if (toks[i - 2] === tail[0] && toks[i - 1] === tail[1] && toks[i] === tail[2]) endIdx = i; // last match wins
+    }
+  }
+  if (endIdx < 0 && cfTurnSecs !== undefined && words.some((w) => w.speaker_id)) {
+    // Fallback: the agent's diarized segment that starts nearest the follow-up turn.
+    const startIdx = words.reduce((best, w, i) => (Math.abs(w.start - cfTurnSecs) < Math.abs(words[best].start - cfTurnSecs) ? i : best), 0);
+    const spk = words[startIdx].speaker_id;
+    endIdx = startIdx;
+    while (endIdx + 1 < words.length && words[endIdx + 1].speaker_id === spk) endIdx++;
+  }
+  if (endIdx < 0 || endIdx + 1 >= words.length) return null;
+  const agentSpk = words[endIdx].speaker_id;
+  const next = words.slice(endIdx + 1).find((w) => !agentSpk || w.speaker_id !== agentSpk) ?? words[endIdx + 1];
+  const latencyMs = Math.round((next.start - words[endIdx].end) * 1000);
+  if (latencyMs < 0 || latencyMs > 30000) return null;
+  return { cfEndSec: words[endIdx].end, answerStartSec: next.start, latencyMs };
+}
