@@ -92,7 +92,7 @@ export function LeakRadar({ data, className }: { data: LeakRadarData; className?
           {online === 0 ? "None of the questions were found online" : `${online} of ${data.itemsTotal} questions are online`}
         </span>
         <span className="text-xs text-muted-foreground">
-          Web search{data.archiveWatch.status === "on" ? " · archive watch runs daily" : ""}
+          Web search{data.archiveWatch.status === "on" ? " · web archive watch" : ""}
         </span>
       </div>
 
@@ -137,6 +137,14 @@ export function LeakRadar({ data, className }: { data: LeakRadarData; className?
       <div className="flex flex-wrap gap-x-3 gap-y-1 border-t border-border bg-muted/30 px-[18px] py-3 text-xs text-muted-foreground">
         {clean.length > 0 && <span>{clean.map((c) => c.label).join(", ")} not found.</span>}
         <span>New since release: {fresh ? fresh : "none yet"}.</span>
+        {data.archiveWatch.status === "on" && (
+          <span>
+            Archive watch (last 24h
+            {data.archiveWatch.lastRunAt ? `, ran ${new Date(data.archiveWatch.lastRunAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : ""}):{" "}
+            {data.items.reduce((n, i) => n + (i.archiveCandidates ?? 0), 0) || "no"} candidate page
+            {data.items.reduce((n, i) => n + (i.archiveCandidates ?? 0), 0) === 1 ? "" : "s"}.
+          </span>
+        )}
         <span>Snippets and links only; we never store answer content.</span>
       </div>
     </section>

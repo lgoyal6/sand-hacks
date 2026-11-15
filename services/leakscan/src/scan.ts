@@ -14,6 +14,8 @@ export interface ScanOptions {
   threshold?: number;
   /** Run the keyword pass restricted to study sites when the exact pass finds nothing. */
   fuzzy?: boolean;
+  /** Exact-phrase windows per item (default 2). */
+  windows?: number;
   now?: () => Date;
 }
 
@@ -60,7 +62,7 @@ function toFinding(item: ScanItem, query: string, r: SerpResult, score: number, 
  * answer keys live.
  */
 export async function scanItem(item: ScanItem, client: SearchClient, opts: ScanOptions = {}): Promise<ItemScan> {
-  const { threshold = 0.5, fuzzy = true, now = () => new Date() } = opts;
+  const { threshold = 0.5, fuzzy = true, windows = 2, now = () => new Date() } = opts;
   const byUrl = new Map<string, LeakFinding>();
   const queries: QueryLog[] = [];
 
@@ -76,7 +78,7 @@ export async function scanItem(item: ScanItem, client: SearchClient, opts: ScanO
     }
   };
 
-  for (const w of exactWindows(item.stem)) {
+  for (const w of exactWindows(item.stem, { count: windows })) {
     const query = `"${w}"`;
     try {
       const results = await client.search(query);

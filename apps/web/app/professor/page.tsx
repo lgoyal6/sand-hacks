@@ -15,6 +15,7 @@ import { sessionSignals, whoFromPseudonym, type SessionRow } from "@/components/
 import {
   itemLabels,
   loadAgentRuns,
+  loadArchiveWatch,
   loadAttackSummary,
   loadAttempts,
   loadLeaks,
@@ -142,7 +143,7 @@ async function AgentAttackPanel() {
 
 async function LeakPanel() {
   await connection();
-  const [leaks, quiz] = await Promise.all([loadLeaks(), loadQuiz()]);
+  const [leaks, quiz, archive] = await Promise.all([loadLeaks(), loadQuiz(), loadArchiveWatch()]);
   if (leaks.origin === "none" || !quiz.data) {
     return (
       <Panel title="Found online" description="Search results whose text matches a question.">
@@ -150,7 +151,7 @@ async function LeakPanel() {
       </Panel>
     );
   }
-  const radar = buildLeakRadar(quiz.data, leaks.data);
+  const radar = buildLeakRadar(quiz.data, leaks.data, { archive: archive.data ?? undefined });
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 px-1">

@@ -75,6 +75,8 @@ export const loadSolveRates = () => fixture<SolveRate[]>("solve_rates.json", [])
 export const loadAgentRuns = () => fixture<AgentRun[]>("agent_runs.json", []);
 export const loadAttackSummary = () => fixture<AttackSummary | null>("attack_summary.json", null);
 export const loadLeaks = () => fixture<LeakFinding[]>("leaks.json", []);
+export const loadArchiveWatch = () =>
+  fixture<{ runAt: string; items: { itemId: string; candidates: number }[] } | null>("archive_watch.json", null);
 export const loadVariants = () => fixture<VariantExperiment[]>("variants.json", []);
 export const loadAttempts = () => fixture<AttemptRow[]>("attempts.json", []);
 export const loadProbes = () => fixture<Probe[]>("probes.json", []);

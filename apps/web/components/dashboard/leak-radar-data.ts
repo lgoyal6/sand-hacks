@@ -26,6 +26,8 @@ export interface LeakRadarItem {
   topic: string;
   hits: LeakHit[];
   newSinceRelease: boolean;
+  /** Archive watch (last 24h): pages whose URL carries this question's words. Candidates, not confirmed. */
+  archiveCandidates?: number;
 }
 
 export interface LeakRadarData {
@@ -78,7 +80,12 @@ function topicOf(it: Quiz["items"][number]) {
 export function buildLeakRadar(
   quiz: Pick<Quiz, "id" | "title" | "items">,
   findings: (LeakFinding & { via?: "search" | "archive" })[],
-  opts: { releasedAt?: string; archiveWatch?: LeakRadarData["archiveWatch"] } = {},
+  opts: {
+    releasedAt?: string;
+    archiveWatch?: LeakRadarData["archiveWatch"];
+    /** From services/leakscan archive-watch (data/fixtures/archive_watch.json). */
+    archive?: { runAt: string; items: { itemId: string; candidates: number }[] };
+  } = {},
 ): LeakRadarData {
   const byItem = new Map<string, LeakHit[]>();
   let lastScanAt: string | undefined;
@@ -115,6 +122,7 @@ export function buildLeakRadar(
       topic: topicOf(it),
       hits,
       newSinceRelease: !!opts.releasedAt && hits.some((h) => h.foundAt > opts.releasedAt!),
+      archiveCandidates: opts.archive?.items.find((a) => a.itemId === it.id)?.candidates,
     };
   });
   return {
@@ -124,7 +132,7 @@ export function buildLeakRadar(
     items,
     releasedAt: opts.releasedAt,
     lastScanAt,
-    archiveWatch: opts.archiveWatch ?? { status: "off" },
+    archiveWatch: opts.archiveWatch ?? (opts.archive ? { status: "on", lastRunAt: opts.archive.runAt } : { status: "off" }),
   };
 }
 
