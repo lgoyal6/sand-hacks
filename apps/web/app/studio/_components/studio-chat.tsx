@@ -166,20 +166,30 @@ export function StudioChat({ data }: { data: StudioData }) {
     }
   }, [offerRewrite, push, quiz?.items.length, say, solvable]);
 
+  // After any import: open the imported quiz and scan it for leaks right away.
+  const openAndScan = useCallback((quizId: string) => router.push(`/studio?quiz=${encodeURIComponent(quizId)}&check=online`), [router]);
+  const importedActions = useCallback(
+    (quizId: string): Action[] => [
+      { label: "Check which are already online", primary: true, run: () => openAndScan(quizId) },
+      { label: "Open it here", run: () => router.push(`/studio?quiz=${encodeURIComponent(quizId)}`) },
+    ],
+    [openAndScan, router],
+  );
+
   const importQuiz = useCallback(
     async (markdown: string) => {
       push({ id: nid(), role: "user", text: "Imported a quiz from Markdown" });
       const res = await fetch("/studio/api/import", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ markdown }) });
       const body = (await res.json()) as { quizId?: string; message?: string; error?: string };
-      say(res.ok ? `${body.message ?? "Imported."} Saved as ${body.quizId}.` : (body.error ?? "Import failed."));
+      say(res.ok ? `${body.message ?? "Imported."} Saved as ${body.quizId}.` : (body.error ?? "Import failed."), res.ok && body.quizId ? { actions: importedActions(body.quizId) } : {});
     },
-    [push, say],
+    [importedActions, push, say],
   );
 
   // Leak scout (Mastra agent behind /api/agents): streams AgentEvents to the panel, findings -> D's LeakRadar.
-  const checkLeaks = useCallback(async () => {
+  const checkLeaks = useCallback(async (fresh = false) => {
     if (!quiz) return;
-    push({ id: nid(), role: "user", text: "Is any of this quiz already online?" });
+    push({ id: nid(), role: "user", text: fresh ? "Which of these imported questions are already online?" : "Is any of this quiz already online?" });
     const id = nid();
     push({ id, role: "assistant", agent: "Leak scout", kind: "leaks", text: "", radar: null, done: false });
     const patch = (p: Partial<Extract<Msg, { kind: "leaks" }>>) => setMsgs((ms) => ms.map((m) => (m.id === id ? ({ ...m, ...p } as Msg) : m)));
@@ -187,7 +197,11 @@ export function StudioChat({ data }: { data: StudioData }) {
       const res = await studioFetch("/api/agents/leak-scout/turn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: `Is anything from my quiz "${quiz.id}" (quizId ${quiz.id}) already online?` }),
+        body: JSON.stringify({
+          input: fresh
+            ? `I just imported quiz "${quiz.id}" (quizId ${quiz.id}). Nothing is on record for it yet: search the web now for every question and tell me which are already online.`
+            : `Is anything from my quiz "${quiz.id}" (quizId ${quiz.id}) already online?`,
+        }),
       });
       if (!res.ok || !res.body) {
         const b = (await res.json().catch(() => ({}))) as { error?: string };
@@ -228,6 +242,23 @@ export function StudioChat({ data }: { data: StudioData }) {
     }
   }, [push, quiz]);
 
+  // ?check=online (set by openAndScan): run the fresh leak scan once for the quiz that just opened.
+  const scannedRef = useRef(false);
+  useEffect(() => {
+    if (scannedRef.current || !quiz) return;
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("check") !== "online" || u.searchParams.get("quiz") !== quiz.id) return;
+    // Deferred (not setState inside the effect body); the ref is set when it actually runs, so a
+    // StrictMode mount/unmount/mount still scans exactly once.
+    const t = setTimeout(() => {
+      scannedRef.current = true;
+      u.searchParams.delete("check");
+      window.history.replaceState(null, "", u.toString());
+      void checkLeaks(true);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [checkLeaks, quiz]);
+
   // Canvas QTI round trip: import an export zip, export the delivered quiz (approved variants in place).
   const fileRef = useRef<HTMLInputElement>(null);
   const importCanvas = useCallback(
@@ -239,9 +270,9 @@ export function StudioChat({ data }: { data: StudioData }) {
       const r = (await res.json().catch(() => ({}))) as { quizId?: string; title?: string; items?: number; skipped?: { title: string; type: string }[]; error?: string };
       if (!res.ok) return say(r.error ?? "Import failed.");
       const skipped = r.skipped?.length ? ` Skipped ${r.skipped.length} question${r.skipped.length === 1 ? "" : "s"} of a type we don't support yet (${[...new Set(r.skipped.map((x) => x.type.replace(/_question$/, "").replace(/_/g, " ")))].join(", ")}).` : "";
-      say(`Imported "${r.title}" from Canvas: ${r.items} question${r.items === 1 ? "" : "s"}, saved as ${r.quizId}.${skipped}`);
+      say(`Imported "${r.title}" from Canvas: ${r.items} question${r.items === 1 ? "" : "s"}, saved as ${r.quizId}.${skipped}`, r.quizId ? { actions: importedActions(r.quizId) } : {});
     },
-    [push, say],
+    [importedActions, push, say],
   );
   const exportCanvas = useCallback(async () => {
     if (!quiz) return;
@@ -444,7 +475,7 @@ export function StudioChat({ data }: { data: StudioData }) {
           <CanvasCard
             onImported={(r) =>
               say(`Imported "${r.title}" from Canvas: ${r.items} question${r.items === 1 ? "" : "s"}${r.skipped?.length ? `, ${r.skipped.length} skipped (unsupported types)` : ""}.`, {
-                actions: [{ label: "Open it here and attack it", primary: true, run: () => router.push(`/studio?quiz=${encodeURIComponent(r.quizId)}`) }],
+                actions: importedActions(r.quizId),
               })
             }
           />
