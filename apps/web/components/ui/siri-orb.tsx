@@ -47,7 +47,7 @@ export const SiriOrb: React.FC<SiriOrbProps> = ({
 }) => {
   const defaultColors = {
     bg: "var(--background)",
-    c1: "var(--primary)",
+    c1: "var(--brand)",
     c2: "var(--chart-2)",
     c3: "var(--chart-4)",
   };
@@ -232,7 +232,7 @@ export function VoiceOrb({ state = "idle", size = "160px", showLabel = false, cl
     state === "thinking"
       ? { c1: "var(--chart-3)", c2: "var(--agent)", c3: "var(--chart-2)" }
       : state === "speaking"
-        ? { c1: "var(--primary)", c2: "var(--chart-2)", c3: "var(--near-miss)" }
+        ? { c1: "var(--brand)", c2: "var(--chart-2)", c3: "var(--near-miss)" }
         : undefined;
   return (
     <div className={cn("inline-flex flex-col items-center gap-3", className)} data-slot="voice-orb" data-state={state}>
@@ -242,7 +242,7 @@ export function VoiceOrb({ state = "idle", size = "160px", showLabel = false, cl
           state === "speaking" && "scale-105",
           state === "idle" && "opacity-80",
         )}
-        style={{ boxShadow: state === "listening" ? "0 0 0 6px color-mix(in oklch, var(--primary) 12%, transparent)" : undefined, borderRadius: "9999px" }}
+        style={{ boxShadow: state === "listening" ? "0 0 0 6px color-mix(in oklch, var(--brand) 12%, transparent)" : undefined, borderRadius: "9999px" }}
       >
         <SiriOrb size={size} animationDuration={STATE_DURATION[state]} colors={colors} />
       </div>

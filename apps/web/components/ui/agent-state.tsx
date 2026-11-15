@@ -13,8 +13,8 @@ const AGENT_STATE_CSS = `
 [data-slot="agent-state"]{--cream-fixed:oklch(0.99 0.005 250);--ink-fixed:var(--foreground);
   --agent-base:var(--chart-4);--agent-light:var(--chart-5);--agent-deep:var(--chart-3);
   display:flex;align-items:center;min-width:0;gap:0.75rem;color:var(--foreground)}
-[data-slot="agent-state"][data-status="thinking"]{--agent-base:var(--chart-2);--agent-light:var(--chart-5);--agent-deep:var(--primary)}
-[data-slot="agent-state"][data-status="working"]{--agent-base:var(--primary);--agent-light:var(--chart-4);--agent-deep:oklch(0.42 0.2 264)}
+[data-slot="agent-state"][data-status="thinking"]{--agent-base:var(--chart-2);--agent-light:var(--chart-5);--agent-deep:var(--brand)}
+[data-slot="agent-state"][data-status="working"]{--agent-base:var(--brand);--agent-light:var(--chart-4);--agent-deep:oklch(0.42 0.2 264)}
 [data-slot="agent-state"][data-status="needs-input"]{--agent-base:var(--gap);--agent-light:var(--gap-soft);--agent-deep:oklch(0.6 0.15 62)}
 [data-slot="agent-state"][data-status="complete"]{--agent-base:var(--verified);--agent-light:var(--verified-soft);--agent-deep:oklch(0.48 0.09 165)}
 [data-slot="agent-state"][data-status="error"]{--agent-base:oklch(0.78 0.11 30);--agent-light:var(--leak-soft);--agent-deep:var(--destructive)}

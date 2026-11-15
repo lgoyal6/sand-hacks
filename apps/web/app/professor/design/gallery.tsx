@@ -1,102 +1,146 @@
 "use client";
+// Interactive reference for the chat primitives (owner: D). Not product data: a scripted demo of the
+// layout, so B and C can see how the pieces fit. Open /professor/design.
 import * as React from "react";
-import { AgentState, type AgentStatus } from "@/components/ui/agent-state";
-import { VoiceOrb, type VoiceOrbState } from "@/components/ui/siri-orb";
-import { OrbAvatar } from "@/components/ui/orb-avatar";
-import { DataTable, inFacet, type DataColumn } from "@/components/ui/data-table";
-import { SampleBadge } from "@/components/ui/sample-badge";
-import { Button } from "@/components/ui/button";
+import { BookOpen, Lightbulb, Target } from "lucide-react";
+import { ChatLayout, Chip, Composer, Message, QuestionCard, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
+import type { VoiceOrbState } from "@/components/ui/siri-orb";
 
-const STATUSES: AgentStatus[] = ["idle", "thinking", "working", "needs-input", "complete", "error"];
-const ORB_STATES: VoiceOrbState[] = ["idle", "listening", "thinking", "speaking"];
-
-type Row = { student: string; item: string; correct: boolean; understanding: number | null; quadrant: string };
-const ROWS: Row[] = [
-  { student: "s-01", item: "Q1", correct: true, understanding: 4, quadrant: "correct_explained" },
-  { student: "s-02", item: "Q1", correct: true, understanding: 1, quadrant: "explain_gap" },
-  { student: "s-03", item: "Q2", correct: false, understanding: 3, quadrant: "near_miss" },
-  { student: "s-04", item: "Q4", correct: false, understanding: 0, quadrant: "wrong_unexplained" },
-];
-const QUADRANT_CLASS: Record<string, string> = {
-  correct_explained: "bg-understood-soft text-understood",
-  explain_gap: "bg-gap-soft text-gap",
-  near_miss: "bg-near-miss-soft text-near-miss",
-  wrong_unexplained: "bg-unexplained-soft text-unexplained",
+const SIDEBAR = {
+  groups: [
+    { label: "Today", items: [{ id: "s1", title: "Intro Stats · Quiz 1", meta: "Practice", href: "/professor/design" }] },
+    { label: "Yesterday", items: [{ id: "s2", title: "Confidence intervals", href: "#" }, { id: "s3", title: "Why n matters for SE", href: "#" }] },
+  ],
+  user: { name: "Sam", detail: "Intro Statistics" },
 };
-const columns: DataColumn<Row>[] = [
-  { accessorKey: "student", header: "Student" },
-  { accessorKey: "item", header: "Question" },
-  { accessorKey: "correct", header: "Correct", cell: ({ getValue }) => (getValue() ? "Yes" : "No") },
-  { accessorKey: "understanding", header: "Explanation (0-4)", cell: ({ getValue }) => <span className="num">{getValue() ?? "-"}</span> },
-  {
-    accessorKey: "quadrant",
-    header: "Quadrant",
-    filterFn: inFacet,
-    cell: ({ getValue }) => (
-      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${QUADRANT_CLASS[getValue() as string]}`}>
-        {(getValue() as string).replace("_", " ")}
-      </span>
-    ),
-  },
-];
 
-const SWATCHES = ["understood", "gap", "near-miss", "unexplained", "leak", "agent", "verified", "rejected"];
+type Turn =
+  | { kind: "tutor"; text: string }
+  | { kind: "student"; text: string }
+  | { kind: "question"; id: string }
+  | { kind: "thinking"; label: string };
+
+const AGENTS_IDLE: AgentInfo[] = [
+  { id: "tutor", name: "Tutor", status: "ready", state: "idle" },
+  { id: "checker", name: "Quiz checker", status: "tested 5 questions", state: "complete", steps: [{ text: "Ran 5 questions against practice agents", at: "9:41" }] },
+  { id: "coach", name: "Explain coach", status: "waiting for your answer", state: "idle" },
+  { id: "progress", name: "Progress", status: "updated", state: "complete" },
+];
 
 export function DesignGallery() {
+  const [turns, setTurns] = React.useState<Turn[]>([]);
+  const [answer, setAnswer] = React.useState<string | string[]>("");
+  const [graded, setGraded] = React.useState<{ correct: boolean; correctIds: string[] } | null>(null);
+  const [voice, setVoice] = React.useState<VoiceOrbState | null>(null);
+  const [agents, setAgents] = React.useState(AGENTS_IDLE);
+
+  const setAgent = (id: string, patch: Partial<AgentInfo>) => setAgents((a) => a.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+
+  const start = () => {
+    setTurns([
+      { kind: "student", text: "Start Quiz 1" },
+      { kind: "tutor", text: "Let's go. Five questions on sampling and inference. Take your time; after some answers I'll ask you to talk me through your thinking." },
+      { kind: "question", id: "q1" },
+    ]);
+    setAgent("tutor", { status: "presenting question 1", state: "working" });
+  };
+
+  const submit = () => {
+    const correct = answer === "b";
+    setGraded({ correct, correctIds: ["b"] });
+    setAgent("tutor", { status: "ready", state: "idle" });
+    setAgent("coach", { status: "preparing a follow-up", state: "working", steps: [{ text: "Read your answer", at: "now" }, { text: "Choosing a what-if question", at: "now", done: false }] });
+    setTurns((t) => [...t, { kind: "thinking", label: "Explain coach is preparing a follow-up" }]);
+    setTimeout(() => {
+      setTurns((t) => [
+        ...t.filter((x) => x.kind !== "thinking"),
+        { kind: "tutor", text: correct ? "That's right. Walk me through it: how did you get the standard error? Tap the mic and say it out loud, or type." : "Not quite. Tell me how you approached it, and we'll find the step together." },
+      ]);
+      setAgent("coach", { status: "listening", state: "needs-input" });
+    }, 1400);
+  };
+
+  const composer = (
+    <Composer
+      textareaId="demo-composer"
+      submitId="demo-send"
+      onMic={() => setVoice("listening")}
+      onAttach={() => undefined}
+      onSubmit={(v) => {
+        if (!turns.length) return start();
+        setTurns((t) => [...t, { kind: "student", text: v }]);
+      }}
+      voice={
+        voice
+          ? {
+              state: voice,
+              transcript: voice === "listening" ? "Standard error is s over root n, so 10 over 5..." : voice === "speaking" ? "Good. Now what happens if the sample doubled?" : undefined,
+              onStop: () => {
+                setVoice("thinking");
+                setTimeout(() => setVoice("speaking"), 900);
+                setTimeout(() => setVoice(null), 3200);
+              },
+              onSwitchToTyping: () => setVoice(null),
+            }
+          : null
+      }
+    />
+  );
+
   return (
-    <div className="space-y-10">
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Voice orb (C: probe)</h2>
-        <div className="flex flex-wrap items-end gap-10">
-          {ORB_STATES.map((s) => (
-            <VoiceOrb key={s} state={s} size="120px" showLabel />
-          ))}
-          <div className="flex items-center gap-2">
-            <OrbAvatar size="sm" /> <OrbAvatar size="md" /> <OrbAvatar size="lg" />
-          </div>
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Agent state (B: studio, A: replay)</h2>
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
-          {STATUSES.map((s) => (
-            <AgentState key={s} status={s} description={`status="${s}"`} />
-          ))}
-          <AgentState status="complete" tone="muted" label="Rejected" description="Agent still solves it 3 of 3" />
-          <AgentState status="working" size="sm" label="browser-use · gemini" />
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold">Data table</h2>
-          <SampleBadge />
-        </div>
-        <DataTable
-          columns={columns}
-          data={ROWS}
-          searchPlaceholder="Search students"
-          facet={{ columnId: "quadrant", label: "Quadrant", format: (v) => v.replace("_", " ") }}
-          selectable
-        />
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Semantic colors and buttons</h2>
-        <div className="flex flex-wrap gap-2">
-          {SWATCHES.map((s) => (
-            <span key={s} className="rounded-md border border-border px-3 py-1.5 text-xs" style={{ background: `var(--${s}-soft, var(--muted))`, color: `var(--${s})` }}>
-              {s}
-            </span>
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <Button>Primary</Button>
-          <Button variant="outline">Outline</Button>
-          <Button variant="ghost">Ghost</Button>
-        </div>
-      </section>
-    </div>
+    <ChatLayout
+      sidebar={SIDEBAR}
+      agents={agents}
+      empty={turns.length === 0}
+      title={turns.length ? "Intro Stats · Quiz 1" : undefined}
+      home={{
+        greeting: "What are we learning today?",
+        sub: "Intro Statistics",
+        chips: (
+          <>
+            <Chip icon={<Target />} onClick={start}>
+              Start Quiz 1
+            </Chip>
+            <Chip icon={<BookOpen />}>Practice a weak topic</Chip>
+            <Chip icon={<Lightbulb />}>Explain a concept</Chip>
+          </>
+        ),
+      }}
+      composer={composer}
+      composerNote="Practice mode. Explaining out loud is optional."
+    >
+      <Thread>
+        {turns.map((t, i) =>
+          t.kind === "student" ? (
+            <Message key={i} role="student">
+              {t.text}
+            </Message>
+          ) : t.kind === "tutor" ? (
+            <Message key={i} role="tutor" copyText={t.text}>
+              <p>{t.text}</p>
+            </Message>
+          ) : t.kind === "thinking" ? (
+            <Thinking key={i} label={t.label} />
+          ) : (
+            <QuestionCard
+              key={i}
+              label="Question 1 of 5 · Practice"
+              stem="A sample of 25 has mean 40 and standard deviation 10. What is the standard error of the mean?"
+              type="mcq"
+              choices={[
+                { id: "a", text: "0.4" },
+                { id: "b", text: "2" },
+                { id: "c", text: "10" },
+                { id: "d", text: "50" },
+              ]}
+              value={answer}
+              onChange={setAnswer}
+              onSubmit={submit}
+              result={graded ?? undefined}
+            />
+          ),
+        )}
+      </Thread>
+    </ChatLayout>
   );
 }

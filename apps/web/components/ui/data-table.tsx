@@ -48,7 +48,7 @@ export interface DataTableProps<TData> {
   dense?: boolean;
 }
 
-export function DataTable<TData>({
+function DataTableInner<TData>({
   columns,
   data,
   searchPlaceholder,
@@ -302,3 +302,15 @@ export function DataTable<TData>({
 /** Filter fn for faceted columns: value must be one of the selected strings. */
 export const inFacet = (row: { getValue: (id: string) => unknown }, id: string, value: string[]) =>
   !value?.length || value.includes(String(row.getValue(id)));
+
+/**
+ * TanStack Table reads Date.now() while rendering, which Next's cacheComponents treats as dynamic in a
+ * client component. The Suspense boundary here lets pages prerender without each caller wrapping it.
+ */
+export function DataTable<TData>(props: DataTableProps<TData>) {
+  return (
+    <React.Suspense fallback={<div className="h-24 animate-pulse rounded-lg bg-muted/50" />}>
+      <DataTableInner {...props} />
+    </React.Suspense>
+  );
+}
