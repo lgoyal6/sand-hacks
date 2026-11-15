@@ -18,7 +18,6 @@ import { applyApprovals, baselineSolveRates, DEFAULT_ATTACK_MODEL, loadExperimen
 import { envVal } from "../steps/llm.js";
 import { tutor } from "../agents/tutor.js";
 import { researcher } from "../agents/researcher.js";
-import { leakScout } from "../agents/leak-scout.js";
 
 // ---- live dependencies: built lazily from env, or injected (tests) ----
 let ctxPromise: Promise<TransformContext> | null = null;
@@ -156,6 +155,6 @@ function storage() {
 const store = storage();
 export const mastra = new Mastra({
   workflows: { transform: transformWorkflow },
-  agents: { tutor, researcher, leakScout },
+  agents: { tutor, researcher },
   ...(store ? { storage: store } : {}),
 });
