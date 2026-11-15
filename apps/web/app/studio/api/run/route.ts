@@ -1,12 +1,13 @@
 // Studio run stream (owner: B). Server-Sent Events of transform runner events.
 //   GET /studio/api/run?mode=replay&recording=variants_events.q1-real-partial.jsonl
 //   GET /studio/api/run?mode=live&items=sample-stats-q1&n=2&attack=0
+//   GET /studio/api/run?mode=live&quiz=<imported>&items=<id>&n=2&leaked=1   (found online: no agent baseline needed)
 // Live mode spawns the workflows CLI (one run at a time: the Gemini key is free tier).
 import type { ChildProcess } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { FIXTURES_DIR } from "@/lib/db/fixtures";
+import { FIXTURES_DIR, REPO_ROOT } from "@/lib/db/fixtures";
 import { spawnWorkflow } from "@/lib/workflows";
 import { mastraAvailable, streamTransform } from "../../_lib/mastra";
 
@@ -88,7 +89,10 @@ async function live(url: URL, send: (d: unknown) => void, closed: () => boolean,
 
   const eventsFile = path.join(os.tmpdir(), `unprompted-run-${Date.now()}.jsonl`);
   await fs.writeFile(eventsFile, "");
-  const args = ["--quiz", `data/quizzes/${quiz}.md`, "--items", items.join(","), "--n", String(n), "--events", eventsFile];
+  const md = path.join(REPO_ROOT, "data/quizzes", `${quiz}.md`);
+  const fromMd = await fs.access(md).then(() => true, () => false);
+  const args = [...(fromMd ? ["--quiz", `data/quizzes/${quiz}.md`] : ["--quiz-id", quiz]), "--items", items.join(","), "--n", String(n), "--events", eventsFile];
+  if (url.searchParams.get("leaked") === "1") args.push("--leaked", items.join(","));
   if (!attack) args.push("--no-attack");
   const child = spawnWorkflow("transform", args);
   child.stdin.end(); // nothing to send (was stdio "ignore")
@@ -134,7 +138,7 @@ async function viaMastra(url: URL, send: (d: unknown) => void, closed: () => boo
   if (!/^[\w-]+$/.test(quiz)) throw new Error("bad quiz id");
   // solveRates: null lets the workflow compute a like-for-like baseline (same agent model as the retake).
   const { runId, chunks } = await streamTransform(
-    { quizId: quiz, itemIds: items, solveRates: null, leakedItemIds: [], assumeSolveRate: null, candidatesPerItem: n },
+    { quizId: quiz, itemIds: items, solveRates: null, leakedItemIds: url.searchParams.get("leaked") === "1" ? items : [], assumeSolveRate: null, candidatesPerItem: n },
     signal,
   );
   send({ type: "run_started", mode: "live", label: `Mastra workflow run ${runId.slice(0, 8)} on ${items.join(", ")} (${n} candidate${n === 1 ? "" : "s"} each)`, runId });

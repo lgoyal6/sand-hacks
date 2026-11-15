@@ -70,7 +70,7 @@ def test_scan_card_and_record_without_page_text(site):
 
     out = scan(site, owner_confirmed=True, extract=extract, leakcheck=leakcheck, delay=0, log=lambda m: None)
     card, record = out["card"], out["record"]
-    assert card["headline"] == "1 of your 1 posted problems are already on homework sites"
+    assert card["headline"] == "1 of your 1 posted problems are already posted online"
     assert card["consent"] == "Only scan sites you own or teach."
     assert card["rows"][0]["stem"].startswith("A sample of 25")
     stored = json.dumps(record)

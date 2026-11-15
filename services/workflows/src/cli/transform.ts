@@ -32,6 +32,10 @@ const { values } = parseArgs({
     "assume-solve-rate": { type: "string" },
     concurrency: { type: "string", default: "2" },
     events: { type: "string" },
+    // An imported quiz (Canvas QTI / API): data/fixtures/quiz-<id>.json, written by the import.
+    "quiz-id": { type: "string" },
+    // Items found online by the leak scan: chosen even without an agent baseline.
+    leaked: { type: "string" },
   },
 });
 
@@ -43,9 +47,17 @@ async function readJson<T>(file: string): Promise<T | null> {
   }
 }
 
-const quizFile = path.resolve(ROOT, values.quiz!);
-const quizId = path.basename(quizFile, ".md");
-const quiz = parseMarkdownQuiz(await readFile(quizFile, "utf8"), { quizId, courseId: "sandbox-course" });
+let quizId: string;
+let quiz: import("@unprompted/shared").Quiz;
+if (values["quiz-id"]) {
+  quizId = values["quiz-id"];
+  if (!/^[\w-]+$/.test(quizId)) throw new Error("bad --quiz-id");
+  quiz = JSON.parse(await readFile(path.join(FIX, `quiz-${quizId}.json`), "utf8"));
+} else {
+  const quizFile = path.resolve(ROOT, values.quiz!);
+  quizId = path.basename(quizFile, ".md");
+  quiz = parseMarkdownQuiz(await readFile(quizFile, "utf8"), { quizId, courseId: "sandbox-course" });
+}
 
 // Which items to transform: agent-solvable (A) or leaked (D), unless --items says otherwise.
 // Like-for-like: baseline from A's runs with the same agent model the retake will use.
@@ -58,7 +70,7 @@ const leaks = (await readJson<LeakFinding[]>(path.join(FIX, "leaks.json"))) ?? [
 const assumed = values["assume-solve-rate"] != null ? Number(values["assume-solve-rate"]) : null;
 let picked;
 try {
-  picked = selectTargets(quiz, rates, leaks.map((l) => l.itemId), { itemIds: values.items?.split(",").map((s) => s.trim()), assumeSolveRate: assumed });
+  picked = selectTargets(quiz, rates, [...leaks.map((l) => l.itemId), ...(values.leaked?.split(",").map((x) => x.trim()) ?? [])], { itemIds: values.items?.split(",").map((s) => s.trim()), assumeSolveRate: assumed });
 } catch (e) {
   console.error(String((e as Error).message));
   process.exit(1);
@@ -150,6 +162,6 @@ await writeFile(path.join(FIX, "variants.json"), JSON.stringify(merged, null, 2)
 const count = (s: string) => experiments.filter((e) => e.status === s).length;
 console.log(
   `\n${experiments.length} candidates: ${count("verified")} verified, ${count("rejected")} rejected, ${count("proposed")} unverified (no re-attack). ` +
-    `${((Date.now() - t0) / 1000).toFixed(0)}s. Probe priority (nothing survived): ${result.probePriority.join(", ") || "none"}`,
+    `${((Date.now() - t0) / 1000).toFixed(0)}s. Probe priority (items with nothing verified): ${result.probePriority.join(", ") || "none"}`,
 );
 console.log(`Wrote data/fixtures/variants.json (${merged.length} total) and variants_events.jsonl`);

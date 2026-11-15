@@ -32,6 +32,8 @@ import { RaceCard } from "./race-card";
 import { buildRace, type RaceData } from "../_lib/race";
 
 type Action = { label: string; run: () => void; primary?: boolean };
+type LeakScanView = { radar: LeakRadarData; online: number; total: number; searched: number; fromCache: number; queries: number; queryErrors: number };
+
 type Msg =
   | { id: string; role: "user"; text: string }
   | { id: string; role: "assistant"; agent?: string; kind: "text"; text: string; actions?: Action[] }
@@ -40,6 +42,7 @@ type Msg =
   | { id: string; role: "assistant"; agent?: string; kind: "run"; runId: string }
   | { id: string; role: "assistant"; agent?: string; kind: "import" }
   | { id: string; role: "assistant"; agent?: string; kind: "leaks"; text: string; radar: LeakRadarData | null; done: boolean; error?: string }
+  | { id: string; role: "assistant"; agent?: string; kind: "scan"; quizId: string; quizTitle: string; result: LeakScanView | null; error?: string; replayed?: string }
   | { id: string; role: "assistant"; agent?: string; kind: "tree" }
   | { id: string; role: "assistant"; agent?: string; kind: "canvas" }
   | { id: string; role: "assistant"; agent?: string; kind: "appeal" };
@@ -129,8 +132,8 @@ export function StudioChat({ data }: { data: StudioData }) {
   }, [data.recordings, say, startRun]);
 
   const rewrite = useCallback(
-    (itemIds: string[], attack: boolean) => startRun(`mode=live&items=${itemIds.join(",")}&n=2&attack=${attack ? 1 : 0}`),
-    [startRun],
+    (itemIds: string[], attack: boolean) => startRun(`mode=live&quiz=${encodeURIComponent(quiz?.id ?? "sample-stats")}&items=${itemIds.join(",")}&n=2&attack=${attack ? 1 : 0}`),
+    [quiz?.id, startRun],
   );
 
   const offerRewrite = useCallback(
@@ -259,6 +262,32 @@ export function StudioChat({ data }: { data: StudioData }) {
     return () => clearTimeout(t);
   }, [checkLeaks, quiz]);
 
+  // Canvas import -> leak scan -> rewrite: scan every question (at most 2 searches each, cached), then offer a
+  // one-click rewrite for each question found online.
+  const scanQuiz = useCallback(
+    async (quizId: string, quizTitle: string) => {
+      const id = nid();
+      push({ id, role: "assistant", agent: "Leak scout", kind: "scan", quizId, quizTitle, result: null });
+      const patch = (p: Partial<Extract<Msg, { kind: "scan" }>>) => setMsgs((ms) => ms.map((m) => (m.id === id ? ({ ...m, ...p } as Msg) : m)));
+      try {
+        const res = await studioFetch("/studio/api/leakscan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ quizId }) });
+        const b = (await res.json().catch(() => ({}))) as LeakScanView & { error?: string };
+        if (!res.ok) return patch({ error: b.error ?? `Leak scan unavailable (${res.status}).` });
+        patch({ result: b, replayed: res.headers.get("X-Studio-Replay") ?? undefined });
+      } catch {
+        patch({ error: "Lost the connection to the leak scan." });
+      }
+    },
+    [push],
+  );
+  const writeNewVersion = useCallback(
+    (quizId: string, itemId: string, label: string) => {
+      push({ id: nid(), role: "user", text: `Write a new version of ${label}` });
+      startRun(`mode=live&quiz=${encodeURIComponent(quizId)}&items=${encodeURIComponent(itemId)}&n=2&attack=0&leaked=1`);
+    },
+    [push, startRun],
+  );
+
   // Canvas QTI round trip: import an export zip, export the delivered quiz (approved variants in place).
   const fileRef = useRef<HTMLInputElement>(null);
   const importCanvas = useCallback(
@@ -270,9 +299,10 @@ export function StudioChat({ data }: { data: StudioData }) {
       const r = (await res.json().catch(() => ({}))) as { quizId?: string; title?: string; items?: number; skipped?: { title: string; type: string }[]; error?: string };
       if (!res.ok) return say(r.error ?? "Import failed.");
       const skipped = r.skipped?.length ? ` Skipped ${r.skipped.length} question${r.skipped.length === 1 ? "" : "s"} of a type we don't support yet (${[...new Set(r.skipped.map((x) => x.type.replace(/_question$/, "").replace(/_/g, " ")))].join(", ")}).` : "";
-      say(`Imported "${r.title}" from Canvas: ${r.items} question${r.items === 1 ? "" : "s"}, saved as ${r.quizId}.${skipped}`, r.quizId ? { actions: importedActions(r.quizId) } : {});
+      say(`Imported "${r.title}" from Canvas: ${r.items} question${r.items === 1 ? "" : "s"}, saved as ${r.quizId}.${skipped} Now checking each question against the open web.`, r.quizId ? { actions: [{ label: "Open it here", run: () => router.push(`/studio?quiz=${encodeURIComponent(r.quizId!)}`) }] } : {});
+      if (r.quizId) void scanQuiz(r.quizId, r.title ?? r.quizId);
     },
-    [importedActions, push, say],
+    [push, router, say, scanQuiz],
   );
   const exportCanvas = useCallback(async () => {
     if (!quiz) return;
@@ -456,6 +486,48 @@ export function StudioChat({ data }: { data: StudioData }) {
               <Thinking label="Leak scout is checking the web" />
             </div>
           ) : null}
+        </Message>
+      );
+    }
+    if (m.kind === "scan") {
+      const r = m.result;
+      const leaked = r ? r.radar.items.filter((i) => i.hits.some((h) => !h.partial)) : [];
+      return (
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
+          {m.error ? (
+            <p className="text-muted-foreground">Couldn&apos;t check the web for {m.quizTitle}: {m.error}</p>
+          ) : !r ? (
+            <Thinking label={`Searching the web for each question in ${m.quizTitle} (at most 2 searches per question)`} />
+          ) : (
+            <>
+              <p>
+                <strong>
+                  {r.online} of your {r.total} question{r.total === 1 ? "" : "s"} {r.online === 1 ? "is" : "are"} already online.
+                </strong>{" "}
+                {r.online
+                  ? "Students can copy those answers. A rewrite keeps the skill and changes what's being asked, so a copied answer won't match."
+                  : "Nothing turned up for these questions."}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {r.searched
+                  ? `${r.queries} web search${r.queries === 1 ? "" : "es"} for ${r.searched} question${r.searched === 1 ? "" : "s"}${r.fromCache ? `; ${r.fromCache} reused from a scan in the last 24 h` : ""}${r.queryErrors ? `; ${r.queryErrors} failed` : ""}.`
+                  : `No new web searches: all ${r.fromCache} questions were scanned in the last 24 h.`}{" "}
+                Exact phrases only, at most 2 searches per question.
+              </p>
+              <div className="mt-3">
+                <LeakRadar data={r.radar} />
+              </div>
+              {leaked.length ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {leaked.map((i) => (
+                    <PillButton key={i.itemId} variant="primary" onClick={() => writeNewVersion(m.quizId, i.itemId, i.label)}>
+                      Write a new version of {i.label}
+                    </PillButton>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          )}
         </Message>
       );
     }

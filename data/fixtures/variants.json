@@ -87,7 +87,7 @@
     "neonBranch": "exp/sample-stats-q1/7",
     "strategy": "find_error",
     "candidate": {
-      "stem": "A student attempted to compute the standard error of the mean for a sample with size n = 36, sample mean x̄ = 85, and sample standard deviation s = 12. Their worked solution is below:\n\nStep 1: Identify the given sample values: n = 36, s = 12, x̄ = 85.\nStep 2: Recall the formula for the standard error: SE = s / √n.\nStep 3: Substitute the values into the formula: SE = 12 / 36.\nStep 4: Calculate the final result: SE ≈ 0.33.\n\nIn which step did the student make an error?",
+      "stem": "A student attempted to compute the standard error of the mean for a sample with size n = 36, sample mean x\u0304 = 85, and sample standard deviation s = 12. Their worked solution is below:\n\nStep 1: Identify the given sample values: n = 36, s = 12, x\u0304 = 85.\nStep 2: Recall the formula for the standard error: SE = s / \u221an.\nStep 3: Substitute the values into the formula: SE = 12 / 36.\nStep 4: Calculate the final result: SE \u2248 0.33.\n\nIn which step did the student make an error?",
       "type": "mcq",
       "choices": [
         {
@@ -118,7 +118,7 @@
       "unambiguous": true
     },
     "reasons": [
-      "changed the learning objective: Gemini 3.8 Flash (Gemini panel): Because Step 2 explicitly provides the formula SE = s / √n, students can spot the substitution error in Step 3 through pattern matching without actually knowing how to compute standard error."
+      "changed the learning objective: Gemini 3.8 Flash (Gemini panel): Because Step 2 explicitly provides the formula SE = s / \u221an, students can spot the substitution error in Step 3 through pattern matching without actually knowing how to compute standard error."
     ]
   },
   {
@@ -547,6 +547,500 @@
     },
     "reasons": [
       "already online: transtutors.com"
+    ]
+  },
+  {
+    "id": "sample-stats-q3-v2",
+    "itemId": "sample-stats-q3",
+    "neonBranch": "exp/sample-stats-q3/2",
+    "strategy": "application",
+    "candidate": {
+      "stem": "During a quality control check, two independent automated sensors (Sensor A and Sensor B) each randomly assign a severity rating from 1 to 4 with equal probability. Sensor A also logs the ambient temperature (22\u00b0C). What is the probability that the sum of the ratings from the two sensors equals 5?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "1/4"
+        },
+        {
+          "id": "b",
+          "text": "3/16"
+        },
+        {
+          "id": "c",
+          "text": "5/16"
+        },
+        {
+          "id": "d",
+          "text": "1/2"
+        }
+      ],
+      "answerKey": "a",
+      "objective": "enumerate outcomes in a joint sample space",
+      "originalItemId": "sample-stats-q3"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "sample-stats-q3-v1",
+    "itemId": "sample-stats-q3",
+    "neonBranch": "exp/sample-stats-q3/1",
+    "strategy": "isomorphic",
+    "candidate": {
+      "stem": "Two fair four-sided dice, with faces numbered 1 through 4, are rolled simultaneously. What is the probability that the absolute difference between the two numbers shown is equal to 1?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "1/4"
+        },
+        {
+          "id": "b",
+          "text": "3/8"
+        },
+        {
+          "id": "c",
+          "text": "1/2"
+        },
+        {
+          "id": "d",
+          "text": "5/16"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "enumerate outcomes in a joint sample space",
+      "originalItemId": "sample-stats-q3"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "sample-stats-q3-v3",
+    "itemId": "sample-stats-q3",
+    "neonBranch": "exp/sample-stats-q3/3",
+    "strategy": "counterfactual",
+    "candidate": {
+      "stem": "When rolling two standard fair 6-sided dice, 6 of the 36 possible outcomes yield a sum of 7, giving a probability of 1/6. Suppose the second die is replaced with a custom fair die whose faces are all doubled, displaying numbers {2, 4, 6, 8, 10, 12} instead of {1, 2, 3, 4, 5, 6}. What is the probability that the sum of the two dice is still 7?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "1/12"
+        },
+        {
+          "id": "b",
+          "text": "1/6"
+        },
+        {
+          "id": "c",
+          "text": "1/4"
+        },
+        {
+          "id": "d",
+          "text": "1/18"
+        }
+      ],
+      "answerKey": "a",
+      "objective": "enumerate outcomes in a joint sample space",
+      "originalItemId": "sample-stats-q3"
+    },
+    "status": "rejected",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": false,
+      "leakSources": [
+        "reddit.com"
+      ]
+    },
+    "reasons": [
+      "already online: reddit.com"
+    ]
+  },
+  {
+    "id": "sample-stats-q4-v2",
+    "itemId": "sample-stats-q4",
+    "neonBranch": "exp/sample-stats-q4/2",
+    "strategy": "application",
+    "candidate": {
+      "stem": "A marine biology lab tests whether a new fertilizer formulation alters the average daily growth rate of a cultured kelp species. After running a trial with 40 culture tanks, the data analyst reports a p-value of 0.018 for the two-tailed hypothesis test. How should the lab's lead scientist correctly interpret this result?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Assuming the new fertilizer has no real effect on growth rate, there is a 1.8% chance of obtaining a sample result at least as extreme as the observed one."
+        },
+        {
+          "id": "b",
+          "text": "There is a 1.8% probability that the new fertilizer formulation is ineffective."
+        },
+        {
+          "id": "c",
+          "text": "The new fertilizer increased the kelp growth rate by an average of 1.8% across the tanks."
+        },
+        {
+          "id": "d",
+          "text": "There is a 98.2% probability that the alternative hypothesis of a growth rate change is true."
+        }
+      ],
+      "answerKey": "a",
+      "objective": "interpret a p-value",
+      "originalItemId": "sample-stats-q4"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "sample-stats-q4-v1",
+    "itemId": "sample-stats-q4",
+    "neonBranch": "exp/sample-stats-q4/1",
+    "strategy": "isomorphic",
+    "candidate": {
+      "stem": "A marine biologist conducts a study to determine if a new water filtration system alters the average salinity level of a coastal habitat relative to a historical baseline. The statistical analysis yields a p-value of 0.012 at a significance threshold of alpha = 0.05. Which of the following is the correct interpretation of this p-value?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Assuming the filtration system causes no real change in average salinity, there is a 1.2% chance of obtaining results at least as extreme as those observed."
+        },
+        {
+          "id": "b",
+          "text": "There is a 1.2% probability that the baseline salinity was completely unaffected by the filtration system."
+        },
+        {
+          "id": "c",
+          "text": "The magnitude of the salinity change induced by the filtration system is guaranteed to be large."
+        },
+        {
+          "id": "d",
+          "text": "The experiment conclusively proves that the alternative hypothesis is true."
+        }
+      ],
+      "answerKey": "a",
+      "objective": "interpret a p-value",
+      "originalItemId": "sample-stats-q4"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "sample-stats-q4-v3",
+    "itemId": "sample-stats-q4",
+    "neonBranch": "exp/sample-stats-q4/3",
+    "strategy": "counterfactual",
+    "candidate": {
+      "stem": "A clinical trial yields an observed test statistic corresponding to a two-tailed p-value of 0.08 (an 8% chance of observing data at least this extreme in either direction under the null hypothesis). Consider a counterfactual scenario where the study had instead specified a one-tailed test in the direction of the observed data prior to data collection, resulting in a halved p-value of 0.04. What is the correct interpretation of this counterfactual 0.04 p-value?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "If the null hypothesis were true, there is a 4% chance of obtaining a test statistic as extreme as or more extreme than the observed value in the specified direction."
+        },
+        {
+          "id": "b",
+          "text": "The probability that the null hypothesis is true is reduced from 8% to 4%."
+        },
+        {
+          "id": "c",
+          "text": "There is a 96% probability that the alternative hypothesis is true."
+        },
+        {
+          "id": "d",
+          "text": "The estimated size of the treatment effect is twice as large as it was in the two-tailed analysis."
+        }
+      ],
+      "answerKey": "a",
+      "objective": "interpret a p-value",
+      "originalItemId": "sample-stats-q4"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "calc-derivatives-q2-v1",
+    "itemId": "calc-derivatives-q2",
+    "neonBranch": "exp/calc-derivatives-q2/1",
+    "strategy": "isomorphic",
+    "candidate": {
+      "stem": "If $g(x) = \\cos(3x^2)$, what is $g'(x)$?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "$-6x \\sin(3x^2)$"
+        },
+        {
+          "id": "b",
+          "text": "$6x \\sin(3x^2)$"
+        },
+        {
+          "id": "c",
+          "text": "$-3x \\sin(3x^2)$"
+        },
+        {
+          "id": "d",
+          "text": "$-\\sin(6x)$"
+        }
+      ],
+      "answerKey": "a",
+      "objective": "apply the chain rule to a composite function",
+      "originalItemId": "calc-derivatives-q2"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "calc-derivatives-q2-v2",
+    "itemId": "calc-derivatives-q2",
+    "neonBranch": "exp/calc-derivatives-q2/2",
+    "strategy": "application",
+    "candidate": {
+      "stem": "In a bioreactor, internal pressure $P$ (in kPa) depends on temperature $T$ (in \u00b0C) according to $P(T) = \\sin(T^2)$. The temperature increases over time $t$ (in minutes) according to $T(t) = 2t + 1$. The reactor maintains a constant volume of 50 L throughout the process. Which of the following expressions represents the instantaneous rate of change of pressure with respect to time, $\\frac{dP}{dt}$?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "$2 \\cos((2t + 1)^2)$"
+        },
+        {
+          "id": "b",
+          "text": "$4(2t + 1) \\cos((2t + 1)^2)$"
+        },
+        {
+          "id": "c",
+          "text": "$2(2t + 1) \\sin((2t + 1)^2)$"
+        },
+        {
+          "id": "d",
+          "text": "$4(2t + 1) \\sin((2t + 1)^2)$"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "apply the chain rule to a composite function",
+      "originalItemId": "calc-derivatives-q2"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "calc-derivatives-q2-v3",
+    "itemId": "calc-derivatives-q2",
+    "neonBranch": "exp/calc-derivatives-q2/3",
+    "strategy": "counterfactual",
+    "candidate": {
+      "stem": "Given that the derivative of $f(x) = \\sin(x^2)$ is $f'(x) = 2x \\cos(x^2)$, suppose the input $x$ is scaled by a factor of $3$ to form $g(x) = \\sin((3x)^2)$. What is $g'(x)$?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "18x \\cos(9x^2)"
+        },
+        {
+          "id": "b",
+          "text": "6x \\cos(9x^2)"
+        },
+        {
+          "id": "c",
+          "text": "2x \\cos(9x^2)"
+        },
+        {
+          "id": "d",
+          "text": "18x \\cos(3x^2)"
+        }
+      ],
+      "answerKey": "a",
+      "objective": "apply the chain rule to a composite function",
+      "originalItemId": "calc-derivatives-q2"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "econ-micro-q3-v1",
+    "itemId": "econ-micro-q3",
+    "neonBranch": "exp/econ-micro-q3/1",
+    "strategy": "isomorphic",
+    "candidate": {
+      "stem": "An online gaming platform recently increased its monthly subscription price by 8%. Following this price adjustment, the total number of active subscribers decreased by 12%. What is the absolute value of the price elasticity of demand for this subscription service?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0.67"
+        },
+        {
+          "id": "b",
+          "text": "1.5"
+        },
+        {
+          "id": "c",
+          "text": "4.0"
+        },
+        {
+          "id": "d",
+          "text": "1.67"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "compute price elasticity of demand from percentage changes",
+      "originalItemId": "econ-micro-q3"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "econ-micro-q3-v2",
+    "itemId": "econ-micro-q3",
+    "neonBranch": "exp/econ-micro-q3/2",
+    "strategy": "application",
+    "candidate": {
+      "stem": "A seasonal pricing report for a regional transit agency shows that after a fare increase of 12%, weekday passenger volume dropped by 18%. The agency's total operating fleet size remained constant at 250 buses. What is the absolute value of the price elasticity of demand for transit rides based on this data?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0.67"
+        },
+        {
+          "id": "b",
+          "text": "1.50"
+        },
+        {
+          "id": "c",
+          "text": "2.16"
+        },
+        {
+          "id": "d",
+          "text": "3.00"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "compute price elasticity of demand from percentage changes",
+      "originalItemId": "econ-micro-q3"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "econ-micro-q3-v3",
+    "itemId": "econ-micro-q3",
+    "neonBranch": "exp/econ-micro-q3/3",
+    "strategy": "counterfactual",
+    "candidate": {
+      "stem": "A firm initially calculates the price elasticity of demand (in absolute value) for a good to be 2.0. If the percentage change in quantity demanded remains the same, but the percentage change in price that triggered it is doubled, what is the new absolute value of the price elasticity of demand?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "4.0"
+        },
+        {
+          "id": "b",
+          "text": "2.0"
+        },
+        {
+          "id": "c",
+          "text": "1.0"
+        },
+        {
+          "id": "d",
+          "text": "0.5"
+        }
+      ],
+      "answerKey": "c",
+      "objective": "compute price elasticity of demand from percentage changes",
+      "originalItemId": "econ-micro-q3"
+    },
+    "status": "rejected",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": false,
+      "unambiguous": true
+    },
+    "reasons": [
+      "changed the learning objective: Gemini 3.8 Flash (Gemini panel): The rewrite tests proportional reasoning about how scaling variables affects elasticity rather than directly computing price elasticity of demand from given percentage changes."
     ]
   }
 ]

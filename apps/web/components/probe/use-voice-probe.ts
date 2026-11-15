@@ -11,6 +11,8 @@ import { emitAgentStatus } from "@/lib/telemetry/agent-status";
 
 export type ProbePhase = "prompt" | "speech_start" | "speech_end" | "cf_prompt" | "cf_speech_start" | "cf_speech_end";
 export type VoiceStage = "idle" | "connecting" | "explain" | "followup_loading" | "followup" | "closing" | "ended";
+/** Recoverable problems, each shown with a clear retry. */
+export type VoiceIssue = "denied" | "no-mic" | "slow" | "silent" | "dropped" | null;
 export interface VoiceLine {
   role: "agent" | "user";
   text: string;
@@ -30,6 +32,14 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
   const [stage, setStage] = useState<VoiceStage>("idle");
   const [lines, setLines] = useState<VoiceLine[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [issue, setIssue] = useState<VoiceIssue>(null);
+  const lastArgs = useRef<{ probeId: string; signedUrl: string; dynamicVariables: Record<string, string> } | null>(null);
+  const heardSpeech = useRef(false);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const clearTimers = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  };
   const stageRef = useRef<VoiceStage>("idle");
   const linesRef = useRef<VoiceLine[]>([]);
   const probeIdRef = useRef<string | null>(null);
@@ -107,7 +117,15 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
       go("explain");
       emitAgentStatus("explain-coach", "listening");
     },
-    onDisconnect: () => finish(),
+    onDisconnect: () => {
+      clearTimers();
+      // A drop before the agent wrapped up: offer a retry instead of silently finishing.
+      if (!finished.current && endedBy.current === null && stageRef.current !== "closing") {
+        setIssue("dropped");
+        return;
+      }
+      finish();
+    },
     onError: (message) => setError(String(message).slice(0, 200)),
     onMessage: ({ message, role, source }) => {
       if (!message?.trim()) return;
@@ -124,9 +142,15 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
       if (mode !== "listening" || !agentSpoke.current) return;
       if (stageRef.current === "explain") markOnce("prompt");
       if (stageRef.current === "followup") markOnce("cf_prompt");
+      // Silent mic: nothing heard 12 s after the coach finished asking.
+      if (!heardSpeech.current) timers.current.push(setTimeout(() => !heardSpeech.current && setIssue((i) => i ?? "silent"), 12000));
     },
     onVadScore: ({ vadScore }) => {
       if (vadScore < VAD_SPEECH) return;
+      if (!heardSpeech.current) {
+        heardSpeech.current = true;
+        setIssue((i) => (i === "silent" ? null : i));
+      }
       const m = marked.current;
       if (stageRef.current === "explain" && m.prompt !== undefined) markOnce("speech_start");
       if (stageRef.current === "followup" && m.cf_prompt !== undefined) markOnce("cf_speech_start");
@@ -139,7 +163,21 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
   }, [conversation.isSpeaking, markOnce]);
 
   const start = useCallback(
-    (args: { probeId: string; signedUrl: string; dynamicVariables: Record<string, string> }) => {
+    async (args: { probeId: string; signedUrl: string; dynamicVariables: Record<string, string> }) => {
+      lastArgs.current = args;
+      clearTimers();
+      setIssue(null);
+      heardSpeech.current = false;
+      // Mic pre-check, so a denied or missing microphone gets a clear message instead of a stuck orb.
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+      } catch (e) {
+        const name = (e as DOMException).name;
+        setIssue(name === "NotFoundError" || name === "OverconstrainedError" ? "no-mic" : "denied");
+        go("idle");
+        return;
+      }
       probeIdRef.current = args.probeId;
       convId.current = null;
       cfPrompt.current = "";
@@ -152,6 +190,7 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
       setError(null);
       go("connecting");
       emitAgentStatus("explain-coach", "connecting");
+      timers.current.push(setTimeout(() => stageRef.current === "connecting" && setIssue((i) => i ?? "slow"), 8000));
       conversation.startSession({ signedUrl: args.signedUrl, connectionType: "websocket", dynamicVariables: args.dynamicVariables });
     },
     [conversation],
@@ -162,6 +201,22 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
     conversation.endSession();
     finish();
   }, [conversation, finish]);
+
+  /** Retry after a problem. A signed URL is single-use, so the caller provides a fresh one. */
+  const retry = useCallback(
+    async (fresh?: { signedUrl: string; dynamicVariables: Record<string, string> }) => {
+      const prev = lastArgs.current;
+      if (!prev) return;
+      finished.current = true; // the old session must not report a finish
+      try {
+        conversation.endSession();
+      } catch {
+        /* already closed */
+      }
+      await start({ probeId: prev.probeId, ...(fresh ?? { signedUrl: prev.signedUrl, dynamicVariables: prev.dynamicVariables }) });
+    },
+    [conversation, start],
+  );
 
   // Hang up without reporting a finish (the caller switches to typing).
   const abandon = useCallback((): VoiceResult => {
@@ -176,5 +231,5 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
   const orb: VoiceOrbState =
     stage === "connecting" || stage === "followup_loading" ? "thinking" : conversation.isSpeaking ? "speaking" : stage === "ended" || stage === "idle" ? "idle" : "listening";
 
-  return { stage, lines, error, orb, start, stop, abandon, active: stage !== "idle" && stage !== "ended" };
+  return { stage, lines, error, issue, orb, start, stop, abandon, retry, active: stage !== "idle" && stage !== "ended" };
 }

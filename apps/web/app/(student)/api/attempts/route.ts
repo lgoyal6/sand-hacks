@@ -1,5 +1,5 @@
 import { after, NextResponse } from "next/server";
-import { fingerprint } from "@/lib/notary";
+import { anchorRecord } from "@/lib/notary";
 import { quizVersionRecord } from "@unprompted/shared";
 import { neon } from "@/lib/db/neon";
 import { createAttempt, listAttempts, type AttemptMode } from "../../quiz/_lib/attempts";
@@ -33,22 +33,15 @@ export async function POST(req: Request) {
     consentAudio: body.consentAudio,
     userAgent: req.headers.get("user-agent") ?? undefined,
   });
-  // Notary (D; Dat approved anchoring attempts). quiz_version_sha256 = fingerprint(quizVersionRecord(...)) over exactly
-  // the served items (B's appeal re-hashes the same way); it stays in Neon. The record includes answer keys, and with
-  // public stems/choices a plain on-chain hash could be brute-forced into the key, so only a SALTED fingerprint
-  // (server-only NOTARY_SALT) is anchored, and nothing is anchored until that salt exists. Runs after the response.
   if (attempt.store === "neon") {
-    const sha = fingerprint(quizVersionRecord(quiz.id, quiz.items));
     after(async () => {
-      // Held until D's keyed anchorRecord (HMAC) is on dev, so appeals compare keyed to keyed (agreed with B and D).
-      const r: { status: string; error?: string } | null = null;
+      // Keyed (HMAC with the server-only NOTARY_SALT) because the record contains answer keys; anchorRecord
+      // refuses without the salt. The keyed sha256 is what appeals recompute (B) and what goes on-chain.
+      const r = await anchorRecord("quiz_version", quizVersionRecord(quiz.id, quiz.items));
       await neon()
-        ?.query("update attempt set quiz_version_sha256 = $2, quiz_version_anchor = $3::jsonb where id = $1", [
-          attempt.id,
-          sha,
-          JSON.stringify(r ?? { status: "not_anchored", error: "anchoring held until the keyed fingerprint ships" }),
-        ])
+        ?.query("update attempt set quiz_version_sha256 = $2, quiz_version_anchor = $3::jsonb where id = $1", [attempt.id, r.sha256 ?? null, JSON.stringify(r)])
         .catch((err) => console.warn("[notary] attempt fingerprint not stored:", (err as Error).message));
+      if (r.status !== "anchored") console.warn(`[notary] attempt ${attempt.id} not anchored: ${r.error ?? "unknown"}`);
     });
   }
   return NextResponse.json({ attemptId: attempt.id, mode: attempt.mode, studentPseudonym: attempt.studentPseudonym });
