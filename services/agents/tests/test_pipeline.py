@@ -84,3 +84,12 @@ def test_stats():
     rates = solve_rates([{"itemId": "a", "correct": True}, {"itemId": "a", "correct": False}], ["a", "b"])
     assert rates[0]["solveRate"] == 0.5 and not rates[0]["agentSolvable"]
     assert rates[1]["runs"] == 0
+
+
+def test_provider_errors_are_excluded(sandbox):
+    def quota(sb, run_id, title, model):
+        return RunOutcome(run_id, "browser-use", model, "error", 1, 1.0, error="ModelRateLimitError: status_code: 429")
+
+    res = attack(QUIZ, sandbox=sandbox, repeats=1, models=["test:quota"], runners={"browser-use": quota}, log=lambda m: None)
+    assert res["agentRuns"] == [] and res["summary"]["infraErrors"] == 1
+    assert res["solveRates"][0]["runs"] == 0

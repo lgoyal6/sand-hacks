@@ -1,0 +1,100 @@
+{
+  "quizId": "sample-stats",
+  "itemRuns": 10,
+  "itemCorrect": 10,
+  "accuracy": 1.0,
+  "accuracyCI95": [
+    0.7225,
+    1.0
+  ],
+  "attempts": 2,
+  "attemptsCompleted": 2,
+  "meanAttemptScore": 1.0,
+  "byAgentModel": {
+    "browser-use|gemini:gemini-3.5-flash-lite": {
+      "itemRuns": 10,
+      "accuracy": 1.0
+    }
+  },
+  "infraErrors": 2,
+  "runs": [
+    {
+      "runId": "run-71f25ee51d",
+      "agent": "browser-use",
+      "model": "gemini:gemini-3.5-flash-lite",
+      "status": "completed",
+      "error": null,
+      "steps": 23,
+      "seconds": 66.99,
+      "costUsd": 0.04204324,
+      "submitted": true,
+      "attemptsStarted": 1,
+      "score": 1.0,
+      "answerChanges": {
+        "sample-stats-q1": 0,
+        "sample-stats-q2": 0,
+        "sample-stats-q3": 0,
+        "sample-stats-q4": 0,
+        "sample-stats-q5": 0
+      },
+      "infraError": false
+    },
+    {
+      "runId": "run-be71bf9bdb",
+      "agent": "browser-use",
+      "model": "gemini:gemini-3.5-flash-lite",
+      "status": "completed",
+      "error": null,
+      "steps": 12,
+      "seconds": 33.56,
+      "costUsd": 0.020961809999999997,
+      "submitted": true,
+      "attemptsStarted": 1,
+      "score": 1.0,
+      "answerChanges": {
+        "sample-stats-q1": 1,
+        "sample-stats-q2": 1,
+        "sample-stats-q3": 1,
+        "sample-stats-q4": 1,
+        "sample-stats-q5": 1
+      },
+      "infraError": false
+    },
+    {
+      "runId": "run-903094b2a9",
+      "agent": "browser-use",
+      "model": "gemini:gemini-3.5-flash-lite",
+      "status": "error",
+      "error": "ModelRateLimitError: status_code: 429, model_name: gemini-3.5-flash-lite, body: {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistudio.google.com/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite, description: Generate content requests per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.\\nPlease retry in 21.432716986s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://aistudio.google.com/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'description': 'Generate content requests per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.', 'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '21s'}]}}",
+      "steps": 18,
+      "seconds": 54.5,
+      "costUsd": 0.029813269999999996,
+      "submitted": false,
+      "attemptsStarted": 0,
+      "score": 0.0,
+      "answerChanges": {},
+      "infraError": true
+    },
+    {
+      "runId": "run-e99eb1c52d",
+      "agent": "browser-use",
+      "model": "gemini:gemini-3.5-flash-lite",
+      "status": "error",
+      "error": "ModelRateLimitError: status_code: 429, model_name: gemini-3.5-flash-lite, body: {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistudio.google.com/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite, description: Generate content requests per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.\\nPlease retry in 21.789275159s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://aistudio.google.com/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'description': 'Generate content requests per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.', 'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '21s'}]}}",
+      "steps": 18,
+      "seconds": 56.71,
+      "costUsd": 0.03186529,
+      "submitted": false,
+      "attemptsStarted": 1,
+      "score": 0.0,
+      "answerChanges": {
+        "sample-stats-q1": 1,
+        "sample-stats-q2": 1,
+        "sample-stats-q3": 1,
+        "sample-stats-q4": 1,
+        "sample-stats-q5": 1
+      },
+      "infraError": true
+    }
+  ]
+}

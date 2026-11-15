@@ -12,6 +12,15 @@ from .sandbox import Sandbox
 from .stats import solve_rates, summary
 
 
+# Provider-side failures (quota, overload, unknown model) say nothing about the agent; those runs are excluded from
+# solve rates and reported in summary.infraErrors instead.
+INFRA_MARKERS = ("ModelRateLimitError", "ModelUnavailableError", "ModelNotFoundError", "status_code: 429", "status_code: 503")
+
+
+def is_infra_error(error: str | None) -> bool:
+    return bool(error) and any(m in error for m in INFRA_MARKERS)
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -60,7 +69,7 @@ def to_agent_runs(quiz: dict, outcome: RunOutcome, attempts: list[dict], item_id
     return runs, meta
 
 
-def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",), models=("gemini:gemini-2.5-flash",),
+def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",), models=("gemini:gemini-3.5-flash",),
            repeats: int = 3, sandbox: Sandbox | None = None, traces_dir: Path | None = None, runners=None,
            log=print) -> dict:
     """Run every agent x model x repeat on `quiz` (optionally only `items`) in fresh browsers.
@@ -92,12 +101,20 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
         runs, meta = to_agent_runs(quiz, outcome, sandbox.run_results(run_id), item_ids)
         log(f"[attack]   status={meta['status']} submitted={meta['submitted']} score={meta['score']} "
             f"steps={meta['steps']} {meta['seconds']}s" + (f" error={meta['error']}" if meta["error"] else ""))
-        all_runs += runs
+        meta["infraError"] = is_infra_error(meta["error"]) and not meta["submitted"]
+        if meta["infraError"]:
+            log("[attack]   provider error, run excluded from solve rates")
+        else:
+            all_runs += runs
         metas.append(meta)
 
     return {
         "agentRuns": all_runs,
         "solveRates": solve_rates(all_runs, item_ids),
-        "summary": {"quizId": quiz["id"], **summary(all_runs, metas)},
+        "summary": {
+            "quizId": quiz["id"],
+            **summary(all_runs, [m for m in metas if not m["infraError"]]),
+            "infraErrors": sum(m["infraError"] for m in metas),
+        },
         "runs": metas,
     }

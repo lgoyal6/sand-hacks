@@ -9,7 +9,7 @@ open the quiz, answer, submit. Correctness comes from the sandbox's server-side 
 pnpm --filter @unprompted/sandbox start          # terminal 1: sandbox on :3101
 cd services/agents && uv sync
 uv run attack --quiz ../../apps/sandbox/quizzes/sample-stats.json \
-  --models gemini:gemini-2.5-flash --repeats 3   # needs GEMINI_API_KEY in repo-root .env.local
+  --models gemini:gemini-3.5-flash --repeats 3   # needs GEMINI_API_KEY in repo-root .env.local
 ```
 
 Writes `data/fixtures/agent_runs.json` (AgentRun[]), `solve_rates.json` (SolveRate[], `agentSolvable` at >= 0.6) and
@@ -23,7 +23,7 @@ Python:
 
 ```python
 from unprompted_agents.attack import attack
-res = attack(quiz, ["sample-stats-q1"], models=["gemini:gemini-2.5-flash"], repeats=3)
+res = attack(quiz, ["sample-stats-q1"], models=["gemini:gemini-3.5-flash"], repeats=3)
 res["agentRuns"]; res["solveRates"]; res["summary"]
 ```
 

@@ -1,6 +1,6 @@
 """attack CLI.
 
-  uv run attack --quiz ../../apps/sandbox/quizzes/sample-stats.json --models gemini:gemini-2.5-flash --repeats 3
+  uv run attack --quiz ../../apps/sandbox/quizzes/sample-stats.json --models gemini:gemini-3.5-flash --repeats 3
 
 Writes data/fixtures/agent_runs.json, solve_rates.json and attack_summary.json (repo root), full traces to traces/.
 With --json, prints the result to stdout instead of writing fixtures (what B's workflow uses).
@@ -28,7 +28,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--items", default="", help="comma-separated item ids to attack (default: all)")
     ap.add_argument("--sandbox-url", default=os.environ.get("SANDBOX_URL", "http://localhost:3101"))
     ap.add_argument("--agents", default="browser-use")
-    ap.add_argument("--models", default="gemini:gemini-2.5-flash",
+    ap.add_argument("--models", default="gemini:gemini-3.5-flash",
                     help="comma-separated; gemini:<id>, gmi:<id> (GMI Cloud, OpenAI-compatible)")
     ap.add_argument("--repeats", type=int, default=3)
     ap.add_argument("--out-dir", default=str(REPO / "data" / "fixtures"))
@@ -61,9 +61,12 @@ def main(argv: list[str] | None = None) -> int:
     (out / "solve_rates.json").write_text(json.dumps(result["solveRates"], indent=2) + "\n")
     (out / "attack_summary.json").write_text(json.dumps({**result["summary"], "runs": result["runs"]}, indent=2) + "\n")
     s = result["summary"]
+    if s["accuracy"] is None:
+        print(f"\nNo usable runs ({s['infraErrors']} provider errors). Nothing measured.")
+        return 1
     print(f"\nAgents answered {s['itemCorrect']}/{s['itemRuns']} item-runs correctly "
           f"({s['accuracy']:.0%}, 95% CI {s['accuracyCI95'][0]:.0%} to {s['accuracyCI95'][1]:.0%}); "
-          f"{s['attemptsCompleted']}/{s['attempts']} attempts submitted.")
+          f"{s['attemptsCompleted']}/{s['attempts']} attempts submitted; {s['infraErrors']} provider errors excluded.")
     for r in result["solveRates"]:
         print(f"  {r['itemId']:<16} {r['correct']}/{r['runs']}  solvable={r['agentSolvable']}")
     print(f"wrote {out}/agent_runs.json, solve_rates.json, attack_summary.json")

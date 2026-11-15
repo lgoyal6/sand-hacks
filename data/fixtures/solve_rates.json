@@ -1,0 +1,37 @@
+[
+  {
+    "itemId": "sample-stats-q1",
+    "runs": 2,
+    "correct": 2,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "sample-stats-q2",
+    "runs": 2,
+    "correct": 2,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "sample-stats-q3",
+    "runs": 2,
+    "correct": 2,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "sample-stats-q4",
+    "runs": 2,
+    "correct": 2,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "sample-stats-q5",
+    "runs": 2,
+    "correct": 2,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  }
+]
