@@ -22,6 +22,8 @@ export function ItemView({
   hideStem,
   locked,
   result,
+  onAccessible,
+  figureText,
 }: {
   item: PublicItem;
   value: Answer;
@@ -30,6 +32,10 @@ export function ItemView({
   hideStem?: boolean; // the stem is shown by the surrounding card; keep it for screen readers
   locked?: boolean;
   result?: ItemResult;
+  /** Figure items: request the accessible text version (an accommodation). */
+  onAccessible?: () => void;
+  /** The accessible text, once requested. */
+  figureText?: string | null;
 }) {
   const ids = !locked;
   const stemId = ids ? `stem-${item.id}` : undefined;
@@ -54,6 +60,25 @@ export function ItemView({
       <legend id={stemId} className={hideStem ? "sr-only" : "text-lg font-medium leading-snug"}>
         {item.stem}
       </legend>
+
+      {item.figure && (
+        <figure className="space-y-2">
+          {/* eslint-disable-next-line @next/next/no-img-element -- data: URLs and local /figures/ files only (validated server-side) */}
+          <img id={ids ? "item-figure" : undefined} src={item.figure.src} alt={item.figure.alt} className="max-h-80 w-auto rounded-lg border" />
+          {figureText ? (
+            <figcaption id={ids ? "item-figure-text" : undefined} className="whitespace-pre-wrap rounded-lg bg-muted px-3 py-2 text-sm">
+              {figureText}
+            </figcaption>
+          ) : (
+            !locked &&
+            onAccessible && (
+              <button id={ids ? "figure-accessible" : undefined} type="button" onClick={onAccessible} className="text-sm text-brand underline-offset-2 hover:underline">
+                Accessible version (show the data as text)
+              </button>
+            )
+          )}
+        </figure>
+      )}
 
       {(item.type === "mcq" || item.type === "multi") && (
         <ChoiceList>

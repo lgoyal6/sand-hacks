@@ -225,3 +225,34 @@ export async function updateAttempt(attemptId: string, patch: Partial<Pick<Attem
   await updateJson<AttemptRecord[]>(FILE, [], (all) => all.map((a) => (a.id === attemptId ? (out = { ...a, ...patch }) : a)));
   return out as AttemptRecord | null;
 }
+
+// Accommodation (CONTRACTS: figure items): recorded on the attempt so the probe policy can honor it.
+// The marker "acc:<itemId>" in probe_plan is authoritative (no schema change needed); the
+// attempt.accommodations column, when present, gets a descriptive copy for D's exclusion and audits.
+export async function addAccommodation(attemptId: string, itemId: string, kind: "figure_text") {
+  const marker = `acc:${itemId}`;
+  const entry = { itemId, kind, at: new Date().toISOString() };
+  const db = neon();
+  if (db && (await neonGet(attemptId))) {
+    try {
+      await db.query(
+        `update attempt set probe_plan = case when probe_plan ? $2 then probe_plan else coalesce(probe_plan, '[]'::jsonb) || to_jsonb($2::text) end where id = $1`,
+        [attemptId, marker],
+      );
+    } catch (err) {
+      console.error("[attempts] accommodation marker failed:", (err as Error).message);
+      return false;
+    }
+    await db.query(`update attempt set accommodations = coalesce(accommodations, '[]'::jsonb) || $2::jsonb where id = $1`, [attemptId, JSON.stringify([entry])]).catch(() => {});
+    return true;
+  }
+  let found = false;
+  await updateJson<AttemptRecord[]>(FILE, [], (all) =>
+    all.map((a) => {
+      if (a.id !== attemptId) return a;
+      found = true;
+      return { ...a, probePlan: [...new Set([...(a.probePlan ?? []), marker])] };
+    }),
+  );
+  return found;
+}
