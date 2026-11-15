@@ -19,11 +19,13 @@ import matplotlib.pyplot as plt
 t = json.load(sys.stdin)
 cols, rows = t["columns"], [[str(c) for c in r] for r in t["rows"]]
 h = 0.42 * (len(rows) + 1) + 0.5
-fig, ax = plt.subplots(figsize=(max(3.2, 1.25 * len(cols)), h), dpi=110)
+widest = max(len(str(x)) for row in [cols] + rows for x in row)
+fig, ax = plt.subplots(figsize=(max(3.2, 0.11 * widest * len(cols) + 1.0), h), dpi=110)
 ax.axis("off")
 ax.set_title(t.get("title", ""), fontsize=11, loc="left")
 tbl = ax.table(cellText=rows, colLabels=cols, loc="center", cellLoc="center")
 tbl.auto_set_font_size(False); tbl.set_fontsize(10); tbl.scale(1, 1.35)
+tbl.auto_set_column_width(col=list(range(len(cols))))
 for (r, c), cell in tbl.get_celld().items():
     cell.set_edgecolor("#c8ccd2")
     if r == 0: cell.set_facecolor("#f1f3f5"); cell.set_text_props(weight="bold")
@@ -55,4 +57,10 @@ export function leakedNumbers(stem: string, t: FigureTable): string[] {
   const inStem = new Set(stem.match(/-?\d+(?:\.\d+)?/g) ?? []);
   const cells = t.rows.flat().flatMap((c) => String(c).match(/-?\d+(?:\.\d+)?/g) ?? []);
   return [...new Set(cells.filter((n) => inStem.has(n) && !/^[0-9]$/.test(n)))];
+}
+
+/** Parse tableText() output back into a table (re-rendering stored figures). */
+export function parseTableText(text: string): FigureTable {
+  const [title = "", head = "", ...rows] = text.split("\n");
+  return { title, columns: head.split(" | "), rows: rows.map((r) => r.split(" | ")) };
 }
