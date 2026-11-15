@@ -227,6 +227,29 @@ describe("transform runner (fake models, PGlite branches)", () => {
     await store.close();
   }, 60_000);
 
+  it("fresh-data practice variants: ready after key + skill, no agent retake, and never delivered as a graded replacement", async () => {
+    const store = await PGliteBranchStore.create(await loadSchema());
+    const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
+    const main = (await store.main()).db;
+    await saveQuiz(main, quiz);
+    let attacked = false;
+    const spyAttacker: Attacker = { attack: async () => { attacked = true; return { solveRates: [] }; } };
+    const practiceGen: Generator = {
+      async generate(src: Item, strategy, k) {
+        const g = await generator.generate(src, strategy, k);
+        return { ...g, candidate: { ...g.candidate, source: { name: "BLS", url: "https://data.bls.gov/timeseries/LNS14000000", apiUrl: "https://api.bls.gov/x", fetchedAt: "2026-11-15T00:00:00Z" }, practice: true } as never };
+      },
+    };
+    const res = await runTransform(store, quiz, [{ item: quiz.items[0]!, solveRate: 1 }], { generator: practiceGen, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker: spyAttacker }, { candidatesPerItem: 1, strategies: ["fresh_data"] });
+    expect(res.experiments[0]!.status).toBe("verified");
+    expect(res.experiments[0]!.reasons.at(-1)).toMatch(/^practice variant on real data \(BLS, fetched 2026-11-15\)/);
+    expect(attacked).toBe(false);
+    expect(await applyApprovals(main, [{ id: "sample-stats-q1-v1", approve: true }])).toEqual(["sample-stats-q1-v1"]);
+    const slot1 = (await main.query<{ item_id: string }>("select item_id from delivered_item where quiz_id = 'sample-stats' and slot = 1")).rows[0];
+    expect(slot1).toEqual({ item_id: "sample-stats-q1" });
+    await store.close();
+  }, 60_000);
+
   it("decide() applies both halves of the survival rule", () => {
     const r = (correct: number, runs = 10): SolveRate => ({ itemId: "x", runs, correct, solveRate: correct / runs, agentSolvable: false });
     expect(decide(1, r(3)).survives).toBe(true);

@@ -61,6 +61,7 @@ from item o
 left join lateral (
   select i.* from variant_experiment e join item i on i.id = e.candidate_item_id
   where e.item_id = o.id and e.status = 'approved' and e.candidate_item_id is not null
+    and coalesce(e.strategy, '') <> 'fresh_data'  -- practice variants are never graded replacements
   order by e.created_at desc, e.id desc limit 1
 ) v on true
 where o.original_item_id is null;

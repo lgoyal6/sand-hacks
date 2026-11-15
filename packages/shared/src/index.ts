@@ -60,7 +60,8 @@ export interface LeakFinding {
 
 // Workstream B
 export type VariantStatus = "proposed" | "verified" | "rejected" | "approved";
-export type VariantStrategy = "isomorphic" | "application" | "find_error" | "figure_dependency" | "counterfactual";
+/** fresh_data = a PRACTICE variant built on current official data (learning material, never delivered as a graded replacement). */
+export type VariantStrategy = "isomorphic" | "application" | "find_error" | "figure_dependency" | "counterfactual" | "fresh_data";
 export interface VariantExperiment {
   id: string;
   itemId: string;

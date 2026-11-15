@@ -3,6 +3,7 @@
 // short-circuit. Then ONE batched re-attack for everything still alive, decide,
 // and merge rows into main (survivors bring their item).
 import type { Quiz, VariantExperiment, VariantStrategy } from "@unprompted/shared";
+import type { Candidate } from "./steps/types.js";
 import type { BranchStore } from "./db/types.js";
 import { wilson } from "./steps/answers.js";
 import {
@@ -72,6 +73,15 @@ export async function runTransform(
     emit({ type: "error", experimentId: row.experiment.id, message: `not verified: ${reason}` });
   };
 
+  const resistance = opts.requireAgentResistance ?? false;
+  const verify = async (row: ExperimentRow, reason: string) => {
+    row.experiment.status = "verified";
+    row.experiment.reasons.push(reason);
+    await saveExperiment((await store.branch(row.experiment.neonBranch)).db, row);
+    await mergeSurvivor(store, row.experiment.neonBranch, row.experiment.id, true);
+    emit({ type: "verified", experiment: structuredClone(row.experiment) });
+  };
+
   // Reserve variant numbers up front (sequentially) so parallel work never collides.
   // Also skip numbers that already have a branch: a re-executed step (e.g. Mastra restarting an
   // interrupted run) must not collide with branches its first execution created.
@@ -127,6 +137,12 @@ export async function runTransform(
       if (!panel.objectivePreserved) return reject(row, `changed the learning objective: ${panel.detail}`);
       if (!panel.unambiguous) return reject(row, `ambiguous or wrong key: ${panel.detail}`);
 
+      // Practice variants on fresh data: learning material, so no leak or agent claim. Ready after key + skill.
+      if (strategy === "fresh_data") {
+        const src = (row.experiment.candidate as Candidate).source;
+        return verify(row, `practice variant on real data (${src?.name ?? "official source"}, fetched ${src?.fetchedAt.slice(0, 10) ?? "today"}); learning material, not an agent-resistance claim`);
+      }
+
       // Leak check: is the REWRITTEN question already online? (What a rewrite demonstrably fixes.)
       if (deps.leakChecker) {
         stage("leak-checking");
@@ -163,15 +179,6 @@ export async function runTransform(
       }
     }
   });
-
-  const resistance = opts.requireAgentResistance ?? false;
-  const verify = async (row: ExperimentRow, reason: string) => {
-    row.experiment.status = "verified";
-    row.experiment.reasons.push(reason);
-    await saveExperiment((await store.branch(row.experiment.neonBranch)).db, row);
-    await mergeSurvivor(store, row.experiment.neonBranch, row.experiment.id, true);
-    emit({ type: "verified", experiment: structuredClone(row.experiment) });
-  };
 
   if (alive.length) {
     const batchId = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);

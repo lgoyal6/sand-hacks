@@ -5,6 +5,9 @@ export type Candidate = Omit<Item, "id" | "quizId"> & {
   figure?: { src: string; alt: string };
   /** The figure's data as text, for the answer checker and judges only. Stripped before any agent sees the item. */
   figureText?: string;
+  /** Practice variants on fresh official data: where the numbers came from (shown to students). */
+  source?: { name: string; url: string; apiUrl: string; fetchedAt: string };
+  practice?: true;
 };
 
 /** What the generator returns: a candidate plus its own explanation (kept for the professor). */
