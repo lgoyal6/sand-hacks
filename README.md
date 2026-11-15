@@ -2,9 +2,9 @@
 
 # Unprompted
 
-**Make agents fail. Make understanding visible.**
+**You can't write a question an agent can't answer. So check understanding where an agent can't stand in.**
 
-A learning app for the age of AI agents. Unprompted attacks a quiz with the same browser agents students use, rewrites the questions those agents solve into versions they fail (while still testing the same skill), and asks students to talk through their reasoning at the moments an agent would have answered for them.
+A learning app for the age of AI agents. Unprompted attacks a quiz with the same browser agents students use, finds which questions are already on homework sites, rewrites those so a copied answer key stops working (same answer, same skill), and asks students to talk through their reasoning by voice at the moments an agent would have answered for them.
 
 `Next.js 16` · `Mastra` · `Gemini` · `ElevenLabs` · `Neon` · `Tiger Data` · `Bright Data` · `browser-use` · `Stagehand`
 
@@ -14,12 +14,12 @@ A learning app for the age of AI agents. Unprompted attacks a quiz with the same
 
 ## Why
 
-Agents can now log into a student's LMS and finish quizzes on their own, and there is no technical fix on the LMS side. Detectors that judge how text *looks* misfire on non-native writers. Unprompted takes a different approach:
+Agents can now log into a student's LMS and finish quizzes on their own, and there is no technical fix on the LMS side. Detectors that judge how text *looks* misfire on non-native writers. And rewriting questions does not stop agents either: we tried 12 rewrites of one question across five strategies (new numbers, real-world setting, figure-only, find-the-error) and Gemini browser agents still solved every one we could measure (6/6 and 8/8 valid runs). Every attempt is kept as a Neon branch you can inspect. So Unprompted stops trying to out-write the agent:
 
 | Instead of | Unprompted |
 |---|---|
 | Guessing whether text is AI-written | **Proves** which questions agents can solve, by running real agents against them |
-| Banning tools | **Rewrites** agent-solvable questions until agents fail, keeping only versions that still test the same skill |
+| Banning tools, or rewriting until agents fail | **Rewrites** the questions that are already online so a copied answer key stops working, keeping only versions with the same answer and skill; the agent solve rate is measured and shown, never claimed away |
 | Accusing students | **Asks** for a 30 to 60 second think-aloud with a "what if" follow-up, and shows the gap between *answered* and *understood* |
 
 Every flag is evidence for a conversation, never a verdict.
@@ -88,7 +88,7 @@ flowchart TB
     class WF,ATK,LS engine
 ```
 
-### How a question becomes agent-resistant
+### How a leaked question gets rewritten
 
 ```mermaid
 sequenceDiagram
@@ -106,9 +106,10 @@ sequenceDiagram
         WF->>Neon: create branch exp/item/n
         WF->>WF: generate variant · solve 3× with code interpreter
         WF->>WF: 3 Gemini judges: same skill? unambiguous?
+        WF->>WF: Bright Data exact-phrase search: is the rewrite already online?
         WF->>Ag: re-attack the variant
         Ag-->>WF: new solve rate
-        WF->>Neon: keep if ≤ 0.3 and ≥ 0.4 below original, else record reason
+        WF->>Neon: keep if same answer, same skill, not online; record the agent solve rate either way
     end
     WF-->>Prof: suspended for approval
     Prof->>WF: approve → resume → merge survivors into main
