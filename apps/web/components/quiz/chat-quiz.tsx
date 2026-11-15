@@ -12,15 +12,14 @@
 // Only the ACTIVE step renders these ids; finished steps become plain text, so ids stay unique.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ConversationProvider } from "@elevenlabs/react";
-import { Button } from "@/components/ui/button";
-import { ChatLayout, Chip, Composer, Message, QuestionCard, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
+import { ChatLayout, Chip, Composer, Message, PillButton, QuestionCard, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
 import { useTelemetry } from "@/lib/telemetry/use-telemetry";
 import { emitAgentStatus } from "@/lib/telemetry/agent-status";
 import { ConfidenceScale } from "@/components/probe/confidence-scale";
 import { useVoiceProbe, type ProbePhase, type VoiceResult } from "@/components/probe/use-voice-probe";
-import { ItemView } from "./item-view";
+import { ItemView, type ItemResult } from "./item-view";
 import type { Answer, Mode, PublicItem, PublicQuiz } from "./types";
-import { rememberSession, useSessions } from "./sessions";
+import { markAnswered, rememberSession, useSessionGroups } from "./sessions";
 
 type Phase =
   | "home"
@@ -40,7 +39,10 @@ type Phase =
   | "probe_done"
   | "done";
 
-type Entry = { id: number; who: "tutor" | "student"; text: string; agent?: string; tone?: "good" | "review" };
+type Entry =
+  | { id: number; who: "tutor" | "student"; text: string; agent?: string }
+  // An answered question, kept in the thread (locked, no ids) so the student sees what they chose.
+  | { id: number; who: "card"; itemId: string; index: number; answer: Answer; mode: Mode; result?: ItemResult };
 
 // Clock for event handlers (wrapped so the React compiler doesn't mistake handler code for render code).
 const now = () => performance.now();
@@ -48,11 +50,25 @@ const now = () => performance.now();
 function isEmpty(a: Answer) {
   return Array.isArray(a) ? a.length === 0 : a.trim() === "";
 }
-function answerText(item: PublicItem, a: Answer) {
-  const ids = Array.isArray(a) ? a : [a];
-  if (!item.choices) return String(a);
-  return ids.map((id) => `${id}) ${item.choices!.find((c) => c.id === id)?.text ?? ""}`).join(", ");
+// Calm practice feedback: what the answer is and what the question was about. Not color-only.
+function feedbackText(item: PublicItem, correct: boolean, key: string[] | null) {
+  const why = item.objective ? ` The skill here: ${item.objective.replace(/\.$/, "")}.` : "";
+  if (correct) return `That's right.${why}`;
+  const ans = key?.length ? ` The answer is ${item.choices ? key.map((k) => `${k.toUpperCase()}) ${item.choices!.find((c) => c.id === k)?.text ?? ""}`).join(", ") : key.join(", ")}.` : "";
+  return `Not quite.${ans}${why} Worth a second look before the graded quiz.`;
 }
+
+// An answered question kept in the thread: locked, no ids, result shown once known.
+function AnsweredCard({ entry, quiz }: { entry: Extract<Entry, { who: "card" }>; quiz: PublicQuiz }) {
+  const it = quiz.items.find((i) => i.id === entry.itemId);
+  if (!it) return null;
+  return (
+    <QuestionCard label={`Question ${entry.index + 1} of ${quiz.items.length} · ${entry.mode === "practice" ? "Practice" : "Graded"}`} stem={it.stem} footer={<span />}>
+      <ItemView item={it} value={entry.answer} locked hideStem result={entry.result} />
+    </QuestionCard>
+  );
+}
+
 async function post<T>(url: string, body?: unknown, method = "POST"): Promise<T> {
   const res = await fetch(url, { method, headers: { "content-type": "application/json" }, body: body === undefined ? undefined : JSON.stringify(body) });
   if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error ?? `Request failed (${res.status})`);
@@ -99,13 +115,15 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const [phase, setPhase] = useState<Phase>(startEmpty ? "home" : "intro");
   const [quizId, setQuizId] = useState(initialQuizId ?? quizzes[0]?.id);
   const quiz = quizzes.find((q) => q.id === quizId) ?? quizzes[0];
-  const sessions = useSessions();
+  const sessionGroups = useSessionGroups();
   const [mode, setMode] = useState<Mode>(suggestedMode);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [answer, setAnswer] = useState<Answer>("");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [lastCorrect, setLastCorrect] = useState<boolean | null>(null);
+  const [lastKey, setLastKey] = useState<string[] | null>(null);
+  const [lastCardId, setLastCardId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [summary, setSummary] = useState<{ score: number; total: number; results: { itemId: string; answered: boolean; correct: boolean }[] } | null>(null);
@@ -134,7 +152,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const isLast = index === quiz.items.length - 1;
   const telemetry = useTelemetry(attemptId, item?.id, phase !== "home" && phase !== "intro" && phase !== "done");
 
-  const say = useCallback((who: Entry["who"], text: string, extra: Partial<Entry> = {}) => {
+  const say = useCallback((who: "tutor" | "student", text: string, extra: { agent?: string } = {}) => {
     setEntries((e) => [...e, { id: nextId.current++, who, text, ...extra }]);
   }, []);
 
@@ -180,6 +198,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
       setAnswer("");
       shownAt.current = now();
       setPhase("question");
+      emitAgentStatus("Tutor", `presenting question 1 of ${target.items.length}`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -197,7 +216,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   };
 
   const nextQuestion = async () => {
-    if (phase === "feedback" && lastCorrect !== null) say("tutor", lastCorrect ? "Correct." : "Not quite. Worth a second look.", { agent: "Tutor", tone: lastCorrect ? "good" : "review" });
+    if (phase === "feedback" && lastCorrect !== null && item) say("tutor", feedbackText(item, lastCorrect, lastKey));
     if (isLast) return finishQuiz();
     setIndex((i) => i + 1);
     setAnswer("");
@@ -205,6 +224,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     shownAt.current = now();
     setPhase("question");
     telemetry.emit("answer", { type: "item_shown", index: index + 2 }, quiz.items[index + 1]?.id);
+    emitAgentStatus("Tutor", `presenting question ${index + 2} of ${quiz.items.length}`);
   };
 
   const changeAnswer = (v: Answer) => {
@@ -220,15 +240,24 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     emitAgentStatus("Tutor", "checking your answer");
     try {
       const seconds = Math.round(((now() - shownAt.current) / 1000) * 10) / 10;
-      const d = await post<{ correct?: boolean; probe?: boolean }>(`/api/attempts/${attemptId}/responses`, { itemId: item.id, answer, seconds });
+      const d = await post<{ correct?: boolean; probe?: boolean; correctAnswer?: string[] }>(`/api/attempts/${attemptId}/responses`, { itemId: item.id, answer, seconds });
       telemetry.emit("answer", { type: "submit", value: answer, seconds });
       telemetry.flush();
-      say("student", `Q${index + 1}: ${answerText(item, answer)}`);
-      emitAgentStatus("Tutor", "answer saved", "idle");
-      if (mode === "practice") setLastCorrect(Boolean(d.correct));
+      markAnswered(attemptId);
+      emitAgentStatus("Tutor", `answer ${index + 1} saved`, "done");
+      // Keep the card in the thread, locked. In practice the result shows after any think-aloud.
+      const cardId = nextId.current++;
+      setEntries((e) => [...e, { id: cardId, who: "card", itemId: item.id, index, answer, mode }]);
+      setLastCardId(cardId);
+      if (mode === "practice") {
+        setLastCorrect(Boolean(d.correct));
+        setLastKey(d.correctAnswer ?? null);
+        if (!d.probe) revealResult(cardId, Boolean(d.correct), d.correctAnswer);
+      }
       if (d.probe) {
         // The think-aloud comes before any feedback, so knowing the result doesn't color the explanation.
         say("tutor", "Before I tell you how that went: quick think-aloud. Explaining your reasoning is one of the best ways to lock it in, and only your reasoning counts, never wording or accent.", { agent: "Explain coach" });
+        emitAgentStatus("Explain coach", "starting a think-aloud");
         setBefore(null);
         setAfter(null);
         setConsent(false);
@@ -369,7 +398,8 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
         "PATCH",
       );
       say("student", `Confidence: ${after} of 7`);
-      emitAgentStatus("Grader", "will review your explanation", "idle");
+      emitAgentStatus("Explain coach", "think-aloud saved", "done");
+      emitAgentStatus("Grader", "explanation queued for review", "idle");
       setPhase("probe_done");
     } catch (e) {
       setError((e as Error).message);
@@ -385,8 +415,10 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
       dropped ? "Your confidence moved after explaining. That's normal and useful: it points at exactly what to review." : "Thanks. Explaining it is what makes it stick.",
       { agent: "Explain coach" },
     );
-    if (mode === "practice") setPhase("feedback");
-    else nextQuestion();
+    if (mode === "practice") {
+      if (lastCardId !== null && lastCorrect !== null) revealResult(lastCardId, lastCorrect, lastKey ?? undefined);
+      setPhase("feedback");
+    } else nextQuestion();
   };
 
   // ---- composer (UI: swap for D's Composer; keep the ids) ----
@@ -411,6 +443,10 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
 
   const probeStep = phase.startsWith("probe_") ? phase.slice(6) : null;
 
+  function revealResult(cardId: number, correct: boolean, key?: string[] | null) {
+    setEntries((list) => list.map((x) => (x.id === cardId && x.who === "card" ? { ...x, result: { correct, correctIds: key ?? undefined } } : x)));
+  }
+
   // Free text outside a probe step: the tutor's open chat arrives with B's agent API. Until then, steer to the quiz.
   const freeText = (text: string) => {
     say("student", text);
@@ -425,20 +461,15 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     }
   };
 
-  const today = new Date().toDateString();
   const sidebarGroups = [
-    { label: "Today", items: sessions.filter((x) => new Date(x.startedAt).toDateString() === today) },
-    { label: "Earlier", items: sessions.filter((x) => new Date(x.startedAt).toDateString() !== today) },
-  ]
-    .filter((g) => g.items.length)
-    .map((g) => ({ label: g.label, items: g.items.map((x) => ({ id: x.id, title: x.title, href: `/quiz/${x.quizId}?mode=${x.mode}`, subtitle: `${x.mode === "practice" ? "Practice" : "Quiz"} · ${new Date(x.startedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` })) }));
-
-  sidebarGroups.unshift({ label: "Topics", items: quizzes.map((q) => ({ id: `topic-${q.id}`, title: q.title, href: `/quiz/${q.id}`, subtitle: `${q.items.length} questions` })) });
+    ...sessionGroups,
+    { label: "Topics", items: quizzes.map((q) => ({ id: `topic-${q.id}`, title: q.title, href: `/quiz/${q.id}`, subtitle: `${q.items.length} questions` })) },
+  ];
 
   const composerProps = composer
     ? { textareaId: composer.textareaId, submitId: composer.submitId, placeholder: composer.placeholder, disabled: false }
     : phase === "home" || phase === "intro" || phase === "pick"
-      ? { textareaId: "composer-input", submitId: "composer-send", placeholder: "Ask about statistics, or say \"quiz me\"...", disabled: false }
+      ? { textareaId: "composer-input", submitId: "composer-send", placeholder: "Tell me what you're studying, or say \"quiz me\"...", disabled: false }
       : { textareaId: "composer-input", submitId: "composer-send", placeholder: phase === "done" ? "Nice work. Start a new session from the sidebar." : "Answer the question above", disabled: true };
 
   const composerEl = (
@@ -472,7 +503,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
 
   return (
     <ChatLayout
-      sidebar={{ groups: sidebarGroups, newHref: "/", newLabel: "New session", user: { name: student ?? "Student", detail: "Intro Statistics" } }}
+      sidebar={{ groups: sidebarGroups, newHref: "/", newLabel: "New session", user: { name: student ?? "Student", detail: "Student" } }}
       agents={AGENTS}
       empty={phase === "home"}
       home={{
@@ -495,7 +526,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
       <Thread>
         <div id="chat-thread" className="space-y-6">
           {!startEmpty && (
-          <Message role="tutor" agentName="Tutor">
+          <Message role="tutor">
             <p>
               Ready for <strong>{quiz.title}</strong>? {quiz.items.length} questions. Practice tells you how you did after each one; the graded quiz shows results at the end.
             </p>
@@ -504,9 +535,11 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
 
           {entries.map((e) =>
             e.who === "tutor" ? (
-              <Message key={e.id} role="tutor" agentName={e.agent}>
-                <p className={e.tone === "good" ? "text-verified" : e.tone === "review" ? "text-gap" : undefined}>{e.text}</p>
+              <Message key={e.id} role="tutor" agentName={e.agent && e.agent !== "Tutor" ? e.agent : undefined}>
+                <p>{e.text}</p>
               </Message>
+            ) : e.who === "card" ? (
+              <AnsweredCard key={e.id} entry={e} quiz={quiz} />
             ) : (
               <Message key={e.id} role="student">
                 {e.text}
@@ -534,12 +567,12 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
 
           {phase === "intro" && (
             <div id="quiz-start" className="flex flex-wrap gap-2">
-              <Button id="start-practice" variant={suggestedMode === "practice" ? "default" : "outline"} onClick={() => start("practice")} disabled={busy}>
+              <PillButton id="start-practice" variant={suggestedMode === "practice" ? "primary" : "secondary"} onClick={() => start("practice")} disabled={busy}>
                 Start practice
-              </Button>
-              <Button id="start-graded" variant={suggestedMode === "graded" ? "default" : "outline"} onClick={() => start("graded")} disabled={busy}>
+              </PillButton>
+              <PillButton id="start-graded" variant={suggestedMode === "graded" ? "primary" : "secondary"} onClick={() => start("graded")} disabled={busy}>
                 Start graded quiz
-              </Button>
+              </PillButton>
             </div>
           )}
 
@@ -557,9 +590,9 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                 label={`Question ${index + 1} of ${quiz.items.length} · ${mode === "practice" ? "Practice" : "Graded"}`}
                 stem={item.stem}
                 footer={
-                  <Button id="submit-answer" type="submit" disabled={busy || isEmpty(answer)}>
+                  <PillButton id="submit-answer" type="submit" disabled={busy || isEmpty(answer)}>
                     {phase === "checking" ? "Checking..." : mode === "graded" && isLast ? "Submit quiz" : "Submit answer"}
-                  </Button>
+                  </PillButton>
                 }
               >
                 <p id="item-progress" className="sr-only">
@@ -572,14 +605,14 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           {phase === "checking" && <Thinking label="Tutor is checking your answer" />}
 
           {phase === "feedback" && lastCorrect !== null && (
-            <Message role="tutor" agentName="Tutor">
-              <p id="item-feedback" role="status" data-correct={lastCorrect} className={lastCorrect ? "text-verified" : "text-gap"}>
-                {lastCorrect ? "Correct." : "Not quite. Worth a second look before the graded quiz."}
+            <Message role="tutor">
+              <p id="item-feedback" role="status" data-correct={lastCorrect}>
+                {item ? feedbackText(item, lastCorrect, lastKey) : null}
               </p>
               <div className="mt-3">
-                <Button id={isLast ? "finish-quiz" : "next-item"} onClick={nextQuestion}>
+                <PillButton id={isLast ? "finish-quiz" : "next-item"} onClick={nextQuestion}>
                   {isLast ? "See results" : "Next question"}
-                </Button>
+                </PillButton>
               </div>
             </Message>
           )}
@@ -590,16 +623,16 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                 <Message role="tutor" agentName="Explain coach">
                   <p>Rate how sure you are, explain your thinking, then answer one short &quot;what if&quot;. About a minute. Talk or type, whichever you like.</p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Button id="probe-type" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>
+                    <PillButton id="probe-type" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>
                       Type it
-                    </Button>
-                    <Button id="probe-voice" variant="outline" disabled={!voiceAvailable} title={voiceAvailable ? undefined : "Voice isn't set up yet"} onClick={() => { setChannel("voice"); setPhase("probe_consent"); }}>
+                    </PillButton>
+                    <PillButton id="probe-voice" variant="secondary" disabled={!voiceAvailable} title={voiceAvailable ? undefined : "Voice isn't set up yet"} onClick={() => { setChannel("voice"); setPhase("probe_consent"); }}>
                       Talk it through
-                    </Button>
+                    </PillButton>
                     {mode === "practice" && (
-                      <Button id="probe-skip" variant="ghost" onClick={() => setPhase("feedback")}>
+                      <PillButton id="probe-skip" variant="ghost" onClick={() => { if (lastCardId !== null && lastCorrect !== null) revealResult(lastCardId, lastCorrect, lastKey ?? undefined); setPhase("feedback"); }}>
                         Skip this time
-                      </Button>
+                      </PillButton>
                     )}
                   </div>
                 </Message>
@@ -614,12 +647,12 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                       I agree to have this short conversation recorded.
                     </label>
                     <div className="flex gap-2">
-                      <Button id="probe-consent-continue" onClick={() => setPhase("probe_before")} disabled={!consent}>
+                      <PillButton id="probe-consent-continue" onClick={() => setPhase("probe_before")} disabled={!consent}>
                         Continue
-                      </Button>
-                      <Button id="probe-consent-type" variant="ghost" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>
+                      </PillButton>
+                      <PillButton id="probe-consent-type" variant="ghost" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>
                         Type instead
-                      </Button>
+                      </PillButton>
                     </div>
                   </div>
                 </Message>
@@ -629,9 +662,9 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                 <Message role="tutor" agentName="Explain coach">
                   <ConfidenceScale name="confidence-before" legend="How sure are you that you understand why your answer is right?" value={before} onChange={setBefore} />
                   <div className="mt-3">
-                    <Button id="probe-begin" onClick={beginProbe} disabled={before === null || busy}>
+                    <PillButton id="probe-begin" onClick={beginProbe} disabled={before === null || busy}>
                       Continue
-                    </Button>
+                    </PillButton>
                   </div>
                 </Message>
               )}
@@ -641,9 +674,9 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                   <p id="probe-opening">{opening}</p>
                   <p className="mt-1 text-sm text-muted-foreground">Type below. Just your own words, no need to be polished.</p>
                   {!retried && (
-                    <Button id="probe-start-over" variant="ghost" size="sm" className="mt-2" onClick={startOver}>
+                    <PillButton id="probe-start-over" variant="ghost" className="mt-2" onClick={startOver}>
                       Start over
-                    </Button>
+                    </PillButton>
                   )}
                 </Message>
               )}
@@ -673,9 +706,9 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                 <Message role="tutor" agentName="Explain coach">
                   <ConfidenceScale name="confidence-after" legend="How sure are you now?" value={after} onChange={setAfter} />
                   <div className="mt-3">
-                    <Button id="probe-finish" onClick={finishProbe} disabled={after === null || busy}>
+                    <PillButton id="probe-finish" onClick={finishProbe} disabled={after === null || busy}>
                       Finish
-                    </Button>
+                    </PillButton>
                   </div>
                 </Message>
               )}
@@ -684,9 +717,9 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                 <Message role="tutor" agentName="Explain coach">
                   <p id="probe-done">Got it, thank you.</p>
                   <div className="mt-3">
-                    <Button id="probe-continue" onClick={probeContinue}>
+                    <PillButton id="probe-continue" onClick={probeContinue}>
                       {mode === "practice" ? "See how I did" : "Back to the quiz"}
-                    </Button>
+                    </PillButton>
                   </div>
                 </Message>
               )}
@@ -694,7 +727,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           )}
 
           {phase === "done" && summary && (
-            <Message role="tutor" agentName="Tutor">
+            <Message role="tutor">
               <div id="quiz-done" className="space-y-2">
                 <p id="quiz-score" className="font-medium">
                   You got {summary.score} of {summary.total}.

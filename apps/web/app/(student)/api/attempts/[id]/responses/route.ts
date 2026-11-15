@@ -39,5 +39,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/attempts/[id]/r
   if (decision.probe) await updateAttempt(id, { probesTriggered: [...triggered, item.id] });
   // Practice mode gives feedback right away (shown after any probe); graded mode waits for the end.
   // The reason and anomaly score stay server-side.
-  return NextResponse.json({ saved: true, probe: decision.probe, ...(attempt.mode === "practice" ? { correct } : {}) });
+  // In practice the student also learns the right answer (after any probe, client-side), so feedback can teach.
+  const key = Array.isArray(item.answerKey) ? item.answerKey : [item.answerKey];
+  return NextResponse.json({ saved: true, probe: decision.probe, ...(attempt.mode === "practice" ? { correct, correctAnswer: key } : {}) });
 }
