@@ -80,6 +80,7 @@ const STRATEGY: Record<string, string> = {
   find_error: "find the error",
   figure_dependency: "figure only",
   counterfactual: "what-if",
+  fresh_data: "practice with real data",
 };
 
 function outcomeOf(e: VariantExperiment): TreeLane["outcome"] {

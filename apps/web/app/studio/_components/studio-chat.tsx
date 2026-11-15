@@ -2,7 +2,9 @@
 // Studio as a conversation (owner: B), on D's chat shell. No LLM behind the composer: it maps
 // plain requests to actions (attack results, rewrite, replay, import), so it spends no quota.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileUp, GitBranch, Globe, History, PlayCircle, Target, Wand2 } from "lucide-react";
+import { Download, FileUp, GitBranch, Globe, History, Link2, Target } from "lucide-react";
+import { CanvasCard } from "./canvas-card";
+import { AppealPicker } from "./appeal-picker";
 import { TreeCard } from "./tree-card";
 import type { TreeData } from "../_lib/tree";
 import type { LeakFinding } from "@unprompted/shared";
@@ -36,7 +38,9 @@ type Msg =
   | { id: string; role: "assistant"; agent?: string; kind: "run"; runId: string }
   | { id: string; role: "assistant"; agent?: string; kind: "import" }
   | { id: string; role: "assistant"; agent?: string; kind: "leaks"; text: string; radar: LeakRadarData | null; done: boolean; error?: string }
-  | { id: string; role: "assistant"; agent?: string; kind: "tree" };
+  | { id: string; role: "assistant"; agent?: string; kind: "tree" }
+  | { id: string; role: "assistant"; agent?: string; kind: "canvas" }
+  | { id: string; role: "assistant"; agent?: string; kind: "appeal" };
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 let seq = 0;
@@ -131,9 +135,12 @@ export function StudioChat({ data }: { data: StudioData }) {
     push({ id: nid(), role: "user", text: "Attack my quiz" });
     push({ id: nid(), role: "assistant", agent: "Quiz checker", kind: "attack" });
     if (solvable.length) {
-      say(`Agents can answer ${solvable.length} of ${quiz?.items.length ?? 0} questions. Want me to rewrite them so agents fail but the skill being tested stays the same?`, {
-        actions: [{ label: "Rewrite agent-solvable questions", primary: true, run: () => offerRewrite(solvable.map((s) => s.itemId)) }],
-      });
+      say(
+        `Agents can answer ${solvable.length} of ${quiz?.items.length ?? 0} questions. I can write new versions that keep the same answer and skill and aren't already online, so copied answer keys stop working. In our tests agents still solve reasonable rewrites, so for these questions the think-aloud check is what shows real understanding.`,
+        {
+          actions: [{ label: "Write new versions", primary: true, run: () => offerRewrite(solvable.map((s) => s.itemId)) }],
+        },
+      );
     }
   }, [offerRewrite, push, quiz?.items.length, say, solvable]);
 
@@ -195,6 +202,42 @@ export function StudioChat({ data }: { data: StudioData }) {
     }
   }, [push, quiz]);
 
+  // Canvas QTI round trip: import an export zip, export the delivered quiz (approved variants in place).
+  const fileRef = useRef<HTMLInputElement>(null);
+  const importCanvas = useCallback(
+    async (file: File) => {
+      push({ id: nid(), role: "user", text: `Imported ${file.name} from Canvas` });
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/studio/api/qti/import", { method: "POST", body });
+      const r = (await res.json().catch(() => ({}))) as { quizId?: string; title?: string; items?: number; skipped?: { title: string; type: string }[]; error?: string };
+      if (!res.ok) return say(r.error ?? "Import failed.");
+      const skipped = r.skipped?.length ? ` Skipped ${r.skipped.length} question${r.skipped.length === 1 ? "" : "s"} of a type we don't support yet (${[...new Set(r.skipped.map((x) => x.type.replace(/_question$/, "").replace(/_/g, " ")))].join(", ")}).` : "";
+      say(`Imported "${r.title}" from Canvas: ${r.items} question${r.items === 1 ? "" : "s"}, saved as ${r.quizId}.${skipped}`);
+    },
+    [push, say],
+  );
+  const exportCanvas = useCallback(async () => {
+    if (!quiz) return;
+    push({ id: nid(), role: "user", text: "Export this quiz for Canvas" });
+    const res = await fetch(`/studio/api/qti/export?quiz=${encodeURIComponent(quiz.id)}`);
+    if (!res.ok) {
+      const r = (await res.json().catch(() => ({}))) as { error?: string };
+      return say(r.error ?? "Export failed.");
+    }
+    const summary = JSON.parse(res.headers.get("X-Export-Summary") ?? "{}") as { exported?: number; variants?: string[] };
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${quiz.id}-canvas-qti.zip`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    const n = summary.variants?.length ?? 0;
+    say(
+      `Downloaded ${quiz.id}-canvas-qti.zip with ${summary.exported ?? "the"} questions${n ? `, including ${n} approved rewrite${n === 1 ? "" : "s"}` : " (no approved rewrites yet, so these are the originals)"}. In Canvas: Settings, Import Course Content, "QTI .zip file".`,
+    );
+  }, [push, quiz, say]);
+
   const handle = useCallback(
     (text: string) => {
       const t = text.trim();
@@ -204,6 +247,9 @@ export function StudioChat({ data }: { data: StudioData }) {
       push({ id: nid(), role: "user", text: t });
       if (/replay|recorded/i.test(t)) return replay();
       if (/leak|online|published|posted|quizlet|chegg|reddit/i.test(t)) return void checkLeaks();
+      if (/what .*saw|appeal|time.?travel/i.test(t)) return push({ id: nid(), role: "assistant", kind: "appeal" });
+      if (/connect\s+canvas|import.*canvas|canvas.*course/i.test(t)) return push({ id: nid(), role: "assistant", kind: "canvas" });
+      if (/export|canvas/i.test(t)) return void exportCanvas();
       if (/tree|branch|neon/i.test(t)) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "tree" });
       if (/saved|past|previous/i.test(t) && data.experiments.length) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "saved" });
       const qs = [...t.matchAll(/\bq(\d+)\b/gi)].map((m) => `${quiz?.id}-q${m[1]}`).filter((id) => quiz?.items.some((i) => i.id === id));
@@ -212,7 +258,7 @@ export function StudioChat({ data }: { data: StudioData }) {
         actions: [{ label: "Attack my quiz", primary: true, run: showAttack }],
       });
     },
-    [checkLeaks, data.experiments.length, importQuiz, offerRewrite, push, quiz, replay, say, showAttack, solvable],
+    [checkLeaks, data.experiments.length, exportCanvas, importQuiz, offerRewrite, push, quiz, replay, say, showAttack, solvable],
   );
 
   const decide = useCallback(
@@ -260,7 +306,23 @@ export function StudioChat({ data }: { data: StudioData }) {
     links: APP_LINKS,
     user: { name: "Professor", detail: title },
   };
-  const composer = <Composer textareaId="studio-composer" submitId="studio-send" placeholder="Ask the agents, or paste a quiz in Markdown" onSubmit={handle} />;
+  const composer = (
+    <>
+      <Composer textareaId="studio-composer" submitId="studio-send" placeholder="Ask the agents, paste a quiz in Markdown, or attach a Canvas export" onSubmit={handle} onAttach={() => fileRef.current?.click()} />
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".zip,application/zip"
+        className="hidden"
+        aria-label="Canvas quiz export (.zip)"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void importCanvas(f);
+        }}
+      />
+    </>
+  );
   const sourceNote =
     data.quizSource === "neon" && data.solveRatesMeasured
       ? `Agent results: ${data.attack?.itemRuns ?? 0} real answers.`
@@ -335,6 +397,29 @@ export function StudioChat({ data }: { data: StudioData }) {
         </Message>
       );
     }
+    if (m.kind === "appeal") {
+      return (
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
+          <p>Pick an attempt. I&apos;ll branch the database at the moment it started and show the quiz exactly as that student saw it.</p>
+          <div className="mt-3">
+            <AppealPicker quizId={quiz!.id} />
+          </div>
+        </Message>
+      );
+    }
+    if (m.kind === "canvas") {
+      return (
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
+          <CanvasCard
+            onImported={(r) =>
+              say(`Imported "${r.title}" from Canvas: ${r.items} question${r.items === 1 ? "" : "s"}${r.skipped?.length ? `, ${r.skipped.length} skipped (unsupported types)` : ""}.`, {
+                actions: [{ label: "Open it here and attack it", primary: true, run: () => (window.location.href = `/studio?quiz=${encodeURIComponent(r.quizId)}`) }],
+              })
+            }
+          />
+        </Message>
+      );
+    }
     if (m.kind === "tree") {
       return (
         <Message key={m.id} role="assistant" agentName={nameFor(m)}>
@@ -386,16 +471,6 @@ export function StudioChat({ data }: { data: StudioData }) {
             <Chip icon={<Target />} onClick={showAttack}>
               Attack my quiz
             </Chip>
-            {solvable.length ? (
-              <Chip icon={<Wand2 />} onClick={() => handle("rewrite agent-solvable questions")}>
-                Rewrite what agents solve
-              </Chip>
-            ) : null}
-            {data.recordings.length ? (
-              <Chip icon={<PlayCircle />} onClick={() => handle("replay the recorded run")}>
-                Replay a recorded run
-              </Chip>
-            ) : null}
             <Chip icon={<Globe />} onClick={() => void checkLeaks()}>
               Is any of this online?
             </Chip>
@@ -404,11 +479,15 @@ export function StudioChat({ data }: { data: StudioData }) {
                 Experiment tree
               </Chip>
             ) : null}
-            {data.experiments.length ? (
-              <Chip icon={<History />} onClick={() => handle("show saved variants")}>
-                Saved variants
-              </Chip>
-            ) : null}
+            <Chip icon={<History />} onClick={() => handle("show what a student saw")}>
+              Show what a student saw
+            </Chip>
+            <Chip icon={<Download />} onClick={() => void exportCanvas()}>
+              Export to Canvas
+            </Chip>
+            <Chip icon={<Link2 />} onClick={() => handle("connect canvas")}>
+              Connect Canvas
+            </Chip>
           </>
         ),
       }}

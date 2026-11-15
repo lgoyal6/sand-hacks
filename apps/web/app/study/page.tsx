@@ -58,6 +58,50 @@ interface Market {
   };
 }
 
+interface LeakIndex {
+  collected: string;
+  exercises: number;
+  found_on_study_sites: number;
+  pct_found: number;
+  ci95: [number, number];
+  unknown_due_to_errors: number;
+  queries: number;
+  query_errors: number;
+  by_book: Record<string, { subject: string; exercises: number; found: number; pct: number; ci95: [number, number] }>;
+  by_chapter: { book: string; chapter: string; exercises: number; found: number; pct: number }[];
+  by_site: Record<string, { exercises: number; results: number }>;
+}
+
+async function loadIndex(): Promise<LeakIndex | null> {
+  "use cache";
+  try {
+    return JSON.parse(await fs.readFile(path.join(DATA_DIR, "open", "leak-index-2026-11.json"), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+/** A book's rate as a bar, with its 95% confidence interval drawn as a thin whisker over the bar. */
+function RateRow({ label, sub, pct, ci, n, k }: { label: string; sub?: string; pct: number; ci: [number, number]; n: number; k: number }) {
+  return (
+    <li className="group grid grid-cols-[150px_minmax(0,1fr)_112px] items-center gap-3 rounded-lg px-1 py-1 sm:grid-cols-[210px_minmax(0,1fr)_120px]" title={`${label}: ${k} of ${n} found, 95% CI ${ci[0]}-${ci[1]}%`} tabIndex={0}>
+      <span className="min-w-0">
+        <span className="block truncate text-sm">{label}</span>
+        {sub && <span className="block truncate text-xs text-muted-foreground">{sub}</span>}
+      </span>
+      <span className="relative h-3 w-full rounded-r-[4px] bg-muted/60">
+        <span className="block h-full rounded-r-[4px] bg-brand transition-opacity group-hover:opacity-80" style={{ width: `${Math.max(1.5, pct)}%` }} />
+        <span aria-hidden className="absolute top-1/2 h-px -translate-y-1/2 bg-foreground/60" style={{ left: `${ci[0]}%`, width: `${Math.max(0.5, ci[1] - ci[0])}%` }} />
+        <span aria-hidden className="absolute top-1/2 h-2.5 w-px -translate-y-1/2 bg-foreground/60" style={{ left: `${ci[0]}%` }} />
+        <span aria-hidden className="absolute top-1/2 h-2.5 w-px -translate-y-1/2 bg-foreground/60" style={{ left: `${ci[1]}%` }} />
+      </span>
+      <span className="num text-right text-sm">
+        {Math.round(pct)}% <span className="text-xs text-muted-foreground">{Math.round(ci[0])}-{Math.round(ci[1])}</span>
+      </span>
+    </li>
+  );
+}
+
 async function loadMarket(): Promise<Market | null> {
   "use cache";
   try {
@@ -118,6 +162,7 @@ function BarRow({ label, sub, value, max, display, title }: { label: string; sub
 export default async function Page() {
   const s = await load();
   const market = await loadMarket();
+  const index = await loadIndex();
   const subjects = Object.entries(s.by_subject).sort((a, b) => b[1].pct - a[1].pct);
   const sites = Object.entries(s.by_site).sort((a, b) => b[1].exercises - a[1].exercises);
   const maxSite = Math.max(...sites.map(([, v]) => v.exercises));
@@ -136,9 +181,11 @@ export default async function Page() {
           </span>
           <h1 className="text-[34px] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[40px]">The State of Leaked Homework</h1>
           <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
-            <span className="num text-[72px] font-semibold leading-none tracking-[-0.04em] sm:text-[88px]">{Math.round(s.pct_found)}%</span>
+            <span className="num text-[72px] font-semibold leading-none tracking-[-0.04em] sm:text-[88px]">{Math.round(index ? index.pct_found : s.pct_found)}%</span>
             <p className="max-w-[460px] pb-2 text-[17px] leading-relaxed text-muted-foreground">
-              of real textbook exercises we searched were already on homework-help sites: {s.found_on_study_sites} of {s.exercises}, across 5 subjects.
+              {index
+                ? `of ${index.exercises} real end-of-chapter exercises from ${Object.keys(index.by_book).length} open textbooks were already on homework-help sites (${index.found_on_study_sites} found; 95% CI ${Math.round(index.ci95[0])}-${Math.round(index.ci95[1])}%).`
+                : `of real textbook exercises we searched were already on homework-help sites: ${s.found_on_study_sites} of ${s.exercises}, across 5 subjects.`}
             </p>
           </div>
           <p className="max-w-[680px] text-[16px] leading-relaxed">
@@ -150,10 +197,65 @@ export default async function Page() {
           </p>
         </section>
 
+        {index && (
+          <section aria-labelledby="index" className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <h2 id="index" className="text-lg font-semibold">
+                Textbook Leak Index
+              </h2>
+              <p className="max-w-[680px] text-sm leading-relaxed text-muted-foreground">
+                About 50 exercises per book, sampled across chapters. Bars show the share found on homework sites; the thin line is the 95% confidence interval.
+              </p>
+            </div>
+            <ul className="flex flex-col gap-1.5">
+              {Object.entries(index.by_book)
+                .sort((a, b) => b[1].pct - a[1].pct)
+                .map(([book, v]) => (
+                  <RateRow key={book} label={book} sub={v.subject} pct={v.pct} ci={v.ci95} n={v.exercises} k={v.found} />
+                ))}
+            </ul>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs text-muted-foreground">Most-leaked chapters (3 or more exercises sampled)</span>
+              <table className="w-full text-sm">
+                <caption className="sr-only">Most-leaked chapters</caption>
+                <thead>
+                  <tr className="text-left text-xs text-muted-foreground">
+                    <th className="py-1.5 font-medium">#</th>
+                    <th className="py-1.5 font-medium">Book</th>
+                    <th className="py-1.5 font-medium">Chapter</th>
+                    <th className="py-1.5 text-right font-medium">Found</th>
+                    <th className="py-1.5 text-right font-medium">Share</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {index.by_chapter.slice(0, 10).map((c, i) => (
+                    <tr key={`${c.book}-${c.chapter}`}>
+                      <td className="num py-1.5 text-muted-foreground">{i + 1}</td>
+                      <td className="py-1.5">{c.book}</td>
+                      <td className="num py-1.5">{c.chapter}</td>
+                      <td className="num py-1.5 text-right">
+                        {c.found}/{c.exercises}
+                      </td>
+                      <td className="num py-1.5 text-right">{Math.round(c.pct)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {index.queries} searches; {index.query_errors} failed{index.unknown_due_to_errors ? `, leaving ${index.unknown_due_to_errors} exercises unknown` : ""}. Exercise text was collected by a plain script that respects openstax.org&apos;s robots.txt, used only as search queries, and never stored here or in git.{" "}
+              <a href="/study/data/leak-index-2026-11.csv" className="underline hover:text-foreground">
+                Download the index (CSV)
+              </a>
+              .
+            </p>
+          </section>
+        )}
+
         <section aria-labelledby="by-subject" className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <h2 id="by-subject" className="text-lg font-semibold">
-              By subject
+              {index ? "Pilot study: by subject" : "By subject"}
             </h2>
             <p className="text-sm text-muted-foreground">Share of exercises found on at least one homework site.</p>
           </div>

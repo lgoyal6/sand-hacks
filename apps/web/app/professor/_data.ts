@@ -7,6 +7,7 @@ import { statSync } from "node:fs";
 import type { AgentRun, LeakFinding, Probe, Quiz, SolveRate, VariantExperiment } from "@unprompted/shared";
 import { fixturePath, readJson } from "@/lib/db/fixtures";
 import { tiger } from "@/lib/db/tiger";
+import { neon } from "@/lib/db/neon";
 
 export interface AttackSummary {
   quizId: string;
@@ -105,4 +106,23 @@ export function itemLabels(quiz: Quiz | null): Map<string, { label: string; stem
   const m = new Map<string, { label: string; stem: string; objective: string }>();
   quiz?.items.forEach((it, i) => m.set(it.id, { label: `Q${i + 1}`, stem: it.stem, objective: it.objective }));
   return m;
+}
+
+/** studentPseudonym per attempt id: Neon (C's attempt table) when configured, else the attempts fixture. */
+export async function loadPseudonyms(ids: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  const pool = neon();
+  if (pool && ids.length) {
+    try {
+      const { rows } = await pool.query<{ id: string; student_pseudonym: string }>("select id, student_pseudonym from attempt where id = any($1)", [ids]);
+      for (const r of rows) out.set(r.id, r.student_pseudonym);
+    } catch (e) {
+      console.error("[professor] Neon attempt lookup failed:", (e as Error).message);
+    }
+  }
+  if (out.size < ids.length) {
+    const fx = await loadAttempts();
+    for (const a of fx.data) if (!out.has(a.id)) out.set(a.id, a.studentPseudonym);
+  }
+  return out;
 }

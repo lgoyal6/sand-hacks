@@ -28,11 +28,12 @@ sys.path.insert(0, str(HERE.parent / "src"))
 from dotenv import load_dotenv  # noqa: E402
 
 from unprompted_agents.attack import to_agent_runs  # noqa: E402
-from unprompted_agents.runners import RunOutcome, make_llm  # noqa: E402
+from unprompted_agents.runners import RunOutcome, isolated, make_llm, require_isolation  # noqa: E402
 from unprompted_agents.sandbox import Sandbox  # noqa: E402
 
 REPO = HERE.parents[2]
-CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+# Inside isolation Chrome must start through isolation/chrome.sh (--no-sandbox within the outer profile).
+CHROME = os.environ.get("BH_CHROME_PATH") or "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 
 def free_port() -> int:
@@ -70,20 +71,26 @@ def encode(frames: Path, out: Path, speed: float) -> None:
 
 
 def main() -> int:
-    load_dotenv(REPO / ".env.local")
+    try:
+        load_dotenv(REPO / ".env.local")
+    except PermissionError:
+        pass  # isolated (isolation/record.sh): keys come in via the environment
     os.environ.setdefault("ANONYMIZED_TELEMETRY", "false")
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="gmi:google/gemini-3.8-flash")
-    ap.add_argument("--quiz", default=str(REPO / "apps/sandbox/quizzes/sample-stats.json"))
+    ap.add_argument("--quiz", default="-", help="quiz JSON path, or - for stdin (isolation/record.sh pipes it)")
     ap.add_argument("--speed", type=float, default=3.0, help="speed-up for the -fast video")
     ap.add_argument("--out-dir", default=str(REPO / "data/demo"))
     a = ap.parse_args()
 
     from browser_use import Agent, Browser
 
+    require_isolation()  # same rule as the attack CLI: a browser agent never runs unsandboxed
+
     sandbox = Sandbox()
-    quiz = json.loads(Path(a.quiz).read_text())
+    quiz = json.load(sys.stdin) if a.quiz == "-" else json.loads(Path(a.quiz).read_text())
     sandbox.register(quiz)
+    sandbox.quiz_id = quiz["id"]
     run_id = f"demo-{int(time.time())}"
     port = free_port()
     cdp = f"http://127.0.0.1:{port}"
@@ -114,7 +121,7 @@ def main() -> int:
         shutil.rmtree(profile, ignore_errors=True)
 
     runs, meta = to_agent_runs(quiz, outcome, sandbox.run_results(run_id), [i["id"] for i in quiz["items"]])
-    facts = {**meta, "quizId": quiz["id"], "recorder": json.loads(rec_info[0]) if rec_info else None,
+    facts = {**meta, "quizId": quiz["id"], "isolated": isolated(), "recorder": json.loads(rec_info[0]) if rec_info else None,
              "note": "Real browser-use run, graded server-side by the sandbox. No answers were given to the agent."}
     print(json.dumps({k: facts[k] for k in ("runId", "model", "status", "submitted", "score", "steps", "seconds")}))
     out = Path(a.out_dir)

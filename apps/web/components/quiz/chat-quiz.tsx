@@ -81,6 +81,15 @@ function choiceText(item: PublicItem, a: Answer) {
 
 const qs = (n: number) => `${n} question${n === 1 ? "" : "s"}`;
 
+// Friendly in-thread names for agent tool steps (the raw labels still go to the Agents panel).
+const TOOL_LABEL: Record<string, string> = {
+  todaysPractice: "Tutor is building a practice question from today's official data",
+  checkPracticeAnswer: "Tutor is checking your answer",
+  checkAnswer: "Tutor is checking your answer",
+  explainResult: "Tutor is writing an explanation",
+  startQuiz: "Tutor is looking at the quiz",
+};
+
 // Calm practice feedback: what the answer is and what the question was about. Not color-only.
 function feedbackText(item: PublicItem, correct: boolean, key: string[] | null) {
   const why = item.objective ? ` The skill here: ${item.objective.replace(/\.$/, "")}.` : "";
@@ -503,7 +512,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     setLiveStep(null);
     setTutorLive("");
     const r = await agentTurn(agent, { attemptId, input: text, history }, (soFar) => setTutorLive(soFar), (ev) => {
-      if (ev.toolCall && !ev.toolCall.result) setLiveStep(ev.label);
+      if (ev.toolCall && !ev.toolCall.result) setLiveStep(TOOL_LABEL[ev.toolCall.name] ?? ev.label);
     });
     setTutorLive(null);
     setLiveStep(null);
@@ -884,7 +893,13 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                 </p>
               </Message>
             ) : (
-              <Thinking label={liveAgent === "researcher" ? (liveStep ?? "Researcher is looking for sources") + " (can take about 30 seconds)" : "Tutor is thinking"} />
+              <Thinking
+                label={
+                  liveAgent === "researcher"
+                    ? (liveStep ?? "Researcher is looking for sources") + " (can take about 30 seconds)"
+                    : liveStep ?? "Tutor is thinking"
+                }
+              />
             ))}
 
           {error && (
