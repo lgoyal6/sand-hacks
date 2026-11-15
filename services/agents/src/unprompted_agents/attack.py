@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import itertools
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,7 +13,7 @@ from .stats import solve_rates, summary
 
 # Provider-side failures (quota, overload, unknown model) say nothing about the agent; those runs are excluded from
 # solve rates and reported in summary.infraErrors instead.
-INFRA_MARKERS = ("ModelRateLimitError", "ModelUnavailableError", "ModelNotFoundError", "status_code: 429", "status_code: 503")
+INFRA_MARKERS = ("ContentFilterError", "ModelRateLimitError", "ModelUnavailableError", "ModelNotFoundError", "status_code: 429", "status_code: 503")
 
 
 def is_infra_error(error: str | None) -> bool:
@@ -96,11 +95,17 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
 
     all_runs: list[dict] = []
     metas: list[dict] = []
-    for agent, model, rep in itertools.product(agents, models, range(repeats)):
+    # "model@N" overrides the repeat count for that model (e.g. one run on the direct Gemini key).
+    plan = []
+    for agent in agents:
+        for spec in models:
+            model, _, n = spec.partition("@")
+            plan += [(agent, model, rep, int(n) if n else repeats) for rep in range(int(n) if n else repeats)]
+    for agent, model, rep, reps in plan:
         if agent not in runners:
             raise ValueError(f"unknown agent {agent!r}; have {sorted(runners)}")
         run_id = f"run-{uuid.uuid4().hex[:10]}"
-        log(f"[attack] {agent} / {model} / repeat {rep + 1}/{repeats}  run={run_id}")
+        log(f"[attack] {agent} / {model} / repeat {rep + 1}/{reps}  run={run_id}")
         outcome = runners[agent](sandbox, run_id, quiz["title"], model)
         if traces_dir:
             save_trace(outcome, traces_dir)

@@ -19,6 +19,41 @@ from dotenv import load_dotenv
 REPO = Path(__file__).resolve().parents[4]
 
 
+def _load(p: Path, default):
+    try:
+        return json.loads(p.read_text())
+    except (FileNotFoundError, json.JSONDecodeError):
+        return default
+
+
+def _dump(p: Path, obj) -> None:
+    p.write_text(json.dumps(obj, indent=2) + "\n")
+
+
+def write_fixtures(out: Path, quiz_id: str, result: dict, runtime: bool = False) -> None:
+    """Merge this quiz's results into the shared fixtures, replacing earlier results for the same quiz only.
+
+    Sandbox: agent_runs.json, solve_rates.json (all quizzes), attack_summaries.json ({quizId: summary}), and
+    attack_summary.json (the sample-stats headline, the shape the dashboards read).
+    Runtime: runtime_agent_runs.json and runtime_attack_summaries.json; solve rates stay sandbox-only so every
+    quiz is measured the same way.
+    """
+    summary = {**result["summary"], "quizId": quiz_id, "runs": result["runs"]}
+    prefix = "runtime_" if runtime else ""
+    runs = [r for r in _load(out / f"{prefix}agent_runs.json", []) if r["quizId"] != quiz_id]
+    _dump(out / f"{prefix}agent_runs.json", runs + [{**r, "quizId": quiz_id} for r in result["agentRuns"]])
+    summaries = _load(out / f"{prefix}attack_summaries.json", {})
+    summaries[quiz_id] = summary
+    _dump(out / f"{prefix}attack_summaries.json", summaries)
+    if runtime:
+        return
+    item_ids = {s["itemId"] for s in result["solveRates"]}
+    rates = [r for r in _load(out / "solve_rates.json", []) if r["itemId"] not in item_ids]
+    _dump(out / "solve_rates.json", rates + result["solveRates"])
+    if quiz_id == "sample-stats":
+        _dump(out / "attack_summary.json", summary)
+
+
 def main(argv: list[str] | None = None) -> int:
     load_dotenv(REPO / ".env.local")
     os.environ.setdefault("ANONYMIZED_TELEMETRY", "false")
@@ -42,7 +77,12 @@ def main(argv: list[str] | None = None) -> int:
     from .attack import attack
     from .sandbox import Runtime, Sandbox
 
-    quiz = json.load(sys.stdin if a.quiz == "-" else open(a.quiz))
+    if a.quiz.endswith(".md"):
+        from .quiz_md import parse_quiz_md
+
+        quiz = parse_quiz_md(a.quiz)
+    else:
+        quiz = json.load(sys.stdin if a.quiz == "-" else open(a.quiz))
     log = (lambda m: print(m, file=sys.stderr)) if a.json else print
     result = attack(
         quiz,
@@ -60,19 +100,17 @@ def main(argv: list[str] | None = None) -> int:
 
     out = Path(a.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    (out / "agent_runs.json").write_text(json.dumps(result["agentRuns"], indent=2) + "\n")
-    (out / "solve_rates.json").write_text(json.dumps(result["solveRates"], indent=2) + "\n")
-    (out / "attack_summary.json").write_text(json.dumps({**result["summary"], "runs": result["runs"]}, indent=2) + "\n")
     s = result["summary"]
     if s["accuracy"] is None:
-        print(f"\nNo usable runs ({s['infraErrors']} provider errors). Nothing measured.")
+        print(f"\nNo usable runs ({s['infraErrors']} provider errors). Nothing measured; fixtures left unchanged.")
         return 1
+    write_fixtures(out, quiz["id"], result, runtime=a.target == "runtime")
     print(f"\nAgents answered {s['itemCorrect']}/{s['itemRuns']} item-runs correctly "
           f"({s['accuracy']:.0%}, 95% CI {s['accuracyCI95'][0]:.0%} to {s['accuracyCI95'][1]:.0%}); "
           f"{s['attemptsCompleted']}/{s['attempts']} attempts submitted; {s['infraErrors']} provider errors excluded.")
     for r in result["solveRates"]:
         print(f"  {r['itemId']:<16} {r['correct']}/{r['runs']}  solvable={r['agentSolvable']}")
-    print(f"wrote {out}/agent_runs.json, solve_rates.json, attack_summary.json")
+    print(f"updated fixtures in {out} for quiz {quiz['id']} ({a.target})")
     return 0
 
 

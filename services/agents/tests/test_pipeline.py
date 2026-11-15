@@ -133,3 +133,28 @@ def test_runtime_results_mapping_and_stuck_at_probe():
     assert [r["correct"] for r in runs] == [True, True, False, False, False]
     assert runs[0]["seconds"] == 4.2
     assert meta["target"] == "runtime" and meta["stuckAtProbe"] is True
+
+
+def test_parse_all_quiz_markdown():
+    from unprompted_agents.quiz_md import parse_quiz_md
+
+    for md in sorted((REPO / "data/quizzes").glob("*.md")):
+        q = parse_quiz_md(md)
+        assert q["id"] == md.stem and q["items"], md.name
+        for i, it in enumerate(q["items"], 1):
+            assert it["id"] == f"{md.stem}-q{i}" and it["objective"], it["id"]
+    s = parse_quiz_md(REPO / "data/quizzes/sample-stats.md")
+    assert [i["answerKey"] for i in s["items"]] == [i["answerKey"] for i in QUIZ["items"]]
+    e = parse_quiz_md(REPO / "data/quizzes/econ-micro.md")
+    assert next(i for i in e["items"] if i["type"] == "multi")["answerKey"] == ["a", "c", "d"]
+
+
+def test_per_model_repeat_override(sandbox):
+    seen = []
+
+    def rec(sb, run_id, title, model):
+        seen.append(model)
+        return RunOutcome(run_id, "browser-use", model, "error", 0, 0.1, error="boom")
+
+    attack(QUIZ, sandbox=sandbox, repeats=2, models=["a:x", "b:y@1"], runners={"browser-use": rec}, log=lambda m: None)
+    assert seen == ["a:x", "a:x", "b:y"]
