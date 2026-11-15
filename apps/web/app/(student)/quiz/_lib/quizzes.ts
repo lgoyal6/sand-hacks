@@ -1,11 +1,13 @@
 // Quiz loading and grading. Server only: answer keys never leave this module.
-// Sources, in order: B's canonical ingest output data/fixtures/quiz-<id>.json (ids like stats-q1-i1),
-// then a raw data/quizzes/<id>.md. Later: Neon `item` rows (owner B).
+// The DELIVERED quiz comes from Neon main: for each original item (ordered by q<n>), the latest
+// professor-approved variant replaces it in that slot, else the original is served. Fixture JSON, then
+// Markdown, are the fallback only when Neon is unreachable or doesn't have the quiz.
 import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { Item, ItemType, Quiz } from "@unprompted/shared";
 import { DATA_DIR, fixturePath, readJson } from "@/lib/db/fixtures";
+import { neon } from "@/lib/db/neon";
 
 export type PublicItem = Omit<Item, "answerKey">;
 export type PublicQuiz = Omit<Quiz, "items"> & { items: PublicItem[] };
@@ -51,8 +53,72 @@ export function displayTitle(title: string) {
   return title.replace(/^Sample quiz:\s*/i, "").replace(/\s*\([^)]*\)\s*$/, "").trim();
 }
 
+// ---------- Neon (delivered quiz) ----------
+type ItemRow = {
+  id: string;
+  quiz_id: string;
+  stem: string;
+  type: ItemType;
+  choices_json: { id: string; text: string }[] | null;
+  answer_key: string | string[] | null;
+  objective: string | null;
+  original_item_id: string | null;
+  figure_json: { src: string; alt: string } | null;
+  figure_text: string | null;
+};
+const slotNo = (id: string) => Number(id.match(/-q(\d+)$/)?.[1] ?? 1e9);
+const CACHE_MS = 15_000; // grading reads the quiz on every answer; approvals show up within seconds
+const cache = new Map<string, { at: number; quiz: Quiz | null }>();
+
+export async function getQuizFromNeon(id: string): Promise<Quiz | null | undefined> {
+  const db = neon();
+  if (!db) return undefined;
+  const hit = cache.get(id);
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.quiz;
+  try {
+    const [qr, orig, vars] = await Promise.all([
+      db.query<{ id: string; course_id: string | null; title: string | null; source_format: Quiz["sourceFormat"] | null }>("select id, course_id, title, source_format from quiz where id = $1", [id]),
+      db.query<ItemRow>("select * from item where quiz_id = $1 and original_item_id is null", [id]),
+      db.query<ItemRow & { replaces: string }>(
+        `select distinct on (v.item_id) v.item_id as replaces, i.*
+           from variant_experiment v join item i on i.id = v.candidate_item_id
+          where v.status = 'approved' and v.item_id in (select id from item where quiz_id = $1 and original_item_id is null)
+          order by v.item_id, v.created_at desc`,
+        [id],
+      ),
+    ]);
+    if (!qr.rows[0] || !orig.rows.length) {
+      cache.set(id, { at: Date.now(), quiz: null });
+      return null;
+    }
+    const replacement = new Map(vars.rows.map((r) => [r.replaces, r]));
+    const toItem = (r: ItemRow): Item => ({
+      id: r.id,
+      quizId: id,
+      stem: r.stem,
+      type: r.type,
+      ...(r.choices_json ? { choices: r.choices_json } : {}),
+      answerKey: r.answer_key ?? "",
+      objective: r.objective ?? "",
+      originalItemId: r.original_item_id,
+      ...(r.figure_json ? { figure: r.figure_json } : {}),
+      ...(r.figure_text ? ({ figureText: r.figure_text } as object) : {}),
+    });
+    const items = orig.rows.sort((a, b) => slotNo(a.id) - slotNo(b.id)).map((o) => toItem(replacement.get(o.id) ?? o));
+    const q = qr.rows[0];
+    const quiz: Quiz = { id, courseId: q.course_id ?? "", title: displayTitle(q.title ?? id), sourceFormat: q.source_format ?? "markdown", items };
+    cache.set(id, { at: Date.now(), quiz });
+    return quiz;
+  } catch (err) {
+    console.error("[quizzes] Neon read failed, using the fixture fallback:", (err as Error).message);
+    return undefined; // unreachable: fall back
+  }
+}
+
 export async function getQuiz(id: string): Promise<Quiz | null> {
   if (!/^[a-z0-9-]+$/i.test(id)) return null;
+  const fromNeon = await getQuizFromNeon(id);
+  if (fromNeon) return fromNeon;
   const canonical = await readJson<Quiz | null>(fixturePath(`quiz-${id}.json`), null);
   if (canonical?.items?.length) return { ...canonical, title: displayTitle(canonical.title) };
   try {
@@ -73,6 +139,14 @@ export async function listQuizzes(): Promise<Quiz[]> {
     ...fixtures.filter((f) => /^quiz-.+\.json$/.test(f)).map((f) => f.slice(5, -5)),
     ...mds.filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3)),
   ]);
+  const db = neon();
+  if (db) {
+    try {
+      for (const r of (await db.query<{ id: string }>("select id from quiz")).rows) ids.add(r.id);
+    } catch {
+      /* Neon unreachable: files only */
+    }
+  }
   const quizzes = await Promise.all([...ids].sort().map((id) => getQuiz(id).catch(() => null)));
   return quizzes.filter((q): q is Quiz => q !== null && q.items.length > 0);
 }

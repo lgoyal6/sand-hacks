@@ -131,6 +131,10 @@ export async function createAttempt(input: {
          values ($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb,$10, pg_current_wal_lsn(), now())`,
         [attempt.id, attempt.studentPseudonym, attempt.quizId, attempt.mode, attempt.startedAt, attempt.consentAudio, attempt.userAgent ?? null, JSON.stringify(attempt.probePlan), "[]", attempt.quizVersion],
       );
+      // Exactly what was served (variants included), next to quiz_version, for appeals and time travel.
+      await db
+        .query("update attempt set delivered_item_ids = $2::jsonb where id = $1", [attempt.id, JSON.stringify(input.quiz.items.map((i) => i.id))])
+        .catch((err) => console.warn("[attempts] delivered_item_ids not stored yet:", (err as Error).message));
       return { ...attempt, store: "neon" as const };
     } catch (err) {
       // Missing columns (schema not migrated yet) or a quiz not ingested into Neon: use the file.
