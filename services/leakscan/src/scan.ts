@@ -69,7 +69,8 @@ export async function scanItem(item: ScanItem, client: SearchClient, opts: ScanO
       if (isOrigin(r.url) || isEngine(r.url)) continue;
       const base = matchScore(item.stem, `${r.title} ${r.snippet}`);
       const score = Math.min(1, Math.round((base + (isStudySite(r.url) ? 0.1 : 0)) * 100) / 100);
-      if (score < threshold) continue;
+      // Off study sites (blogs, Khan Academy, lecture notes) only a near-verbatim match counts as a leak.
+      if (score < (isStudySite(r.url) ? threshold : Math.max(threshold, 0.75))) continue;
       const prev = byUrl.get(r.url);
       if (!prev || prev.matchScore < score) byUrl.set(r.url, toFinding(item, query, r, score, now()));
     }

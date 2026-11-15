@@ -50,7 +50,9 @@ export class BrightDataSerp implements SearchClient {
       } catch (e) {
         last = e;
         if (!(e as { transient?: boolean }).transient) throw e;
-        await new Promise((r) => setTimeout(r, 1000 * 2 ** i));
+        // Bright Data refuses a retry of the same failed query for 15 s.
+        const cooldown = /minimum of 15 seconds/i.test(String((e as Error).message)) ? 16_000 : 0;
+        await new Promise((r) => setTimeout(r, Math.max(cooldown, 1000 * 2 ** i)));
       }
     }
     throw last;
