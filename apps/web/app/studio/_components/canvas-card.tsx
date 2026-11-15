@@ -43,18 +43,22 @@ export function CanvasCard({ onImported }: { onImported: (r: Imported) => void }
     }
   };
 
+  const loadCourses = () => void run("Loading your courses", () => call<Course[]>({ action: "courses" })).then((c) => c && setCourses(c));
   useEffect(() => {
-    fetch("/studio/api/canvas").then((r) => r.json()).then(setStatus).catch(() => setStatus({ connected: false }));
-  }, []);
-  useEffect(() => {
-    if (status?.connected && !courses) void run("Loading your courses", () => call<Course[]>({ action: "courses" })).then((c) => c && setCourses(c));
-  }, [status?.connected]); // eslint-disable-line react-hooks/exhaustive-deps
+    fetch("/studio/api/canvas")
+      .then((r) => r.json())
+      .then((s: { connected: boolean; source?: string; baseUrl?: string }) => {
+        setStatus(s);
+        if (s.connected) loadCourses();
+      })
+      .catch(() => setStatus({ connected: false }));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="overflow-hidden rounded-[20px] border border-border bg-background">
       <div className="px-4 pb-2 pt-3.5">
         <p className="text-[15px] font-medium">Canvas Classic Quizzes (QTI 1.2)</p>
-        <p className="text-xs text-muted-foreground">Import a quiz from a Canvas course, rewrite it here, and export it back. New Quizzes aren't supported yet.</p>
+        <p className="text-xs text-muted-foreground">Import a quiz from a Canvas course, rewrite it here, and export it back. New Quizzes aren&apos;t supported yet.</p>
       </div>
       <div className="space-y-3 border-t border-border px-4 py-3 text-sm">
         {!status ? (
@@ -68,6 +72,7 @@ export function CanvasCard({ onImported }: { onImported: (r: Imported) => void }
               if (r) {
                 setToken("");
                 setStatus({ connected: true, source: "pasted", baseUrl });
+                loadCourses();
               }
             }}
           >

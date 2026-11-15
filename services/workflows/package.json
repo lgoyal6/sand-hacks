@@ -10,7 +10,8 @@
     "transform": "tsx --env-file-if-exists=../../.env.local src/cli/transform.ts",
     "mastra:dev": "mastra dev --env ../../.env.local",
     "test:boot": "zsh scripts/boot-test.sh",
-    "qti": "tsx --env-file-if-exists=../../.env.local src/cli/qti.ts"
+    "qti": "tsx --env-file-if-exists=../../.env.local src/cli/qti.ts",
+    "council": "tsx --env-file-if-exists=../../.env.local src/cli/council.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",
