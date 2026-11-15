@@ -36,7 +36,6 @@ const VAD_SPEECH = 0.6; // same threshold as the browser hook
 if (!XI) throw new Error("ELEVENLABS_API_KEY missing (repo-root .env.local)");
 const t0 = Date.now();
 const log = (...a) => console.log(`[${((Date.now() - t0) / 1000).toFixed(1).padStart(5)}s]`, ...a);
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const failures = [];
 const check = (ok, what) => {
   console.log(`  ${ok ? "PASS" : "FAIL"}  ${what}`);
