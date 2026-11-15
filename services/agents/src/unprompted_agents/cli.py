@@ -78,12 +78,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out-dir", default=str(REPO / "data" / "fixtures"))
     ap.add_argument("--traces-dir", default=str(REPO / "traces"))
     ap.add_argument("--json", action="store_true", help="print result JSON to stdout, don't write fixtures")
+    ap.add_argument("--unsafe-no-isolation", action="store_true",
+                    help="allow browser agents outside isolation/attack.sb (recorded as isolated=false on every run)")
     ap.add_argument("--events", action="store_true",
                     help="stream NDJSON agent events to stdout (shared agent-event shape, agentId quiz-checker); "
                          "the last line is status 'done' with the full result. Implies --json; logs go to stderr")
     a = ap.parse_args(argv)
 
     os.environ["ATTACK_MAX_STEPS"] = str(a.max_steps)
+    if a.unsafe_no_isolation:
+        os.environ["UNPROMPTED_UNSAFE_NO_ISOLATION"] = "1"
     if a.quiz.endswith(".md"):
         from .quiz_md import parse_quiz_md
 

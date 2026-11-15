@@ -201,5 +201,47 @@
     "correct": 5,
     "solveRate": 1.0,
     "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q1",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q2",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q3",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q4",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q5",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q6",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
   }
 ]

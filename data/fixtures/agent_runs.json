@@ -1736,5 +1736,71 @@
     "seconds": 0.01,
     "steps": 25,
     "runAt": "2026-11-15T01:21:18.501667Z"
+  },
+  {
+    "id": "run-f90a1442c3:econ-micro-q1",
+    "quizId": "econ-micro",
+    "itemId": "econ-micro-q1",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.8-flash",
+    "correct": true,
+    "seconds": 37.84,
+    "steps": 21,
+    "runAt": "2026-11-15T01:39:13.591688Z"
+  },
+  {
+    "id": "run-f90a1442c3:econ-micro-q2",
+    "quizId": "econ-micro",
+    "itemId": "econ-micro-q2",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.8-flash",
+    "correct": true,
+    "seconds": 0.01,
+    "steps": 21,
+    "runAt": "2026-11-15T01:39:13.591700Z"
+  },
+  {
+    "id": "run-f90a1442c3:econ-micro-q3",
+    "quizId": "econ-micro",
+    "itemId": "econ-micro-q3",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.8-flash",
+    "correct": true,
+    "seconds": 0.0,
+    "steps": 21,
+    "runAt": "2026-11-15T01:39:13.591703Z"
+  },
+  {
+    "id": "run-f90a1442c3:econ-micro-q4",
+    "quizId": "econ-micro",
+    "itemId": "econ-micro-q4",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.8-flash",
+    "correct": true,
+    "seconds": 0,
+    "steps": 21,
+    "runAt": "2026-11-15T01:39:13.591706Z"
+  },
+  {
+    "id": "run-f90a1442c3:econ-micro-q5",
+    "quizId": "econ-micro",
+    "itemId": "econ-micro-q5",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.8-flash",
+    "correct": true,
+    "seconds": 0,
+    "steps": 21,
+    "runAt": "2026-11-15T01:39:13.591708Z"
+  },
+  {
+    "id": "run-f90a1442c3:econ-micro-q6",
+    "quizId": "econ-micro",
+    "itemId": "econ-micro-q6",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.8-flash",
+    "correct": true,
+    "seconds": 0.0,
+    "steps": 21,
+    "runAt": "2026-11-15T01:39:13.591709Z"
   }
 ]

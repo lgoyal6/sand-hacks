@@ -197,3 +197,14 @@ def test_cli_events_stream(sandbox, capsys, monkeypatch, tmp_path):
     assert rc == 0 and all(e["agentId"] == "quiz-checker" and e["ts"] and e["label"] for e in lines)
     assert [e["status"] for e in lines][-1] == "done" and lines[-1]["result"]["summary"]["accuracy"] == 1.0
     assert any(e.get("toolCall", {}).get("name") == "attack.run" for e in lines)
+
+
+def test_browser_agents_refuse_to_run_unisolated(sandbox, monkeypatch):
+    from unprompted_agents import runners
+
+    monkeypatch.delenv("UNPROMPTED_UNSAFE_NO_ISOLATION", raising=False)
+    assert runners.isolated() is False  # tests run unsandboxed: the canary quiz file is readable
+    with pytest.raises(RuntimeError, match="refusing to start"):
+        runners.run_browser_use(sandbox, "run-x", "t", "gemini:x")
+    with pytest.raises(RuntimeError, match="refusing to start"):
+        runners.run_stagehand(sandbox, "run-x", "t", "gemini:x")

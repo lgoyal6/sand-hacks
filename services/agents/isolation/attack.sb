@@ -32,5 +32,7 @@
   (literal (param "REPO")) (literal (param "PROJECTS")))
 ;; stat() on ancestors (node's realpath) reveals no file contents and no directory listings.
 (allow file-read-metadata (subpath (param "PROJECTS")))
-;; Rule order: later rules win in SBPL, so re-deny secrets inside the allowed agent dir too.
+;; Rule order: later rules win in SBPL, so re-deny secrets inside the allowed agent dir too, and run.sh's work dir
+;; (it holds the quiz JSON with answer keys; the attack receives that over stdin, opened before the sandbox starts).
 (deny file-read* (regex #"/\.env(\.[^/]*)?$"))
+(deny file-read* (subpath (param "WORK")))

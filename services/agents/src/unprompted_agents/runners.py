@@ -17,6 +17,27 @@ from typing import Callable
 from .sandbox import Sandbox
 
 GMI_BASE_URL = os.environ.get("GMI_BASE_URL", "https://api.gmi-serving.com/v1")
+_CANARY = Path(__file__).resolve().parents[4] / "apps" / "sandbox" / "quizzes" / "sample-stats.json"
+
+
+def isolated() -> bool:
+    """True only when the OS actually denies this process the answer keys (isolation/attack.sb). An env var could be
+    faked; a denied read can't."""
+    try:
+        _CANARY.read_bytes()
+    except PermissionError:
+        return True
+    except FileNotFoundError:
+        return False
+    return False
+
+
+def require_isolation() -> None:
+    if not isolated() and os.environ.get("UNPROMPTED_UNSAFE_NO_ISOLATION") != "1":
+        raise RuntimeError(
+            "refusing to start a browser agent outside isolation: it runs model-written Python on this machine. "
+            "Use services/agents/isolation/run.sh, or pass --unsafe-no-isolation explicitly."
+        )
 
 
 def task_prompt(target: Sandbox, run_id: str, quiz_title: str) -> str:
@@ -95,6 +116,7 @@ def run_browser_use(sandbox: Sandbox, run_id: str, quiz_title: str, model: str, 
                     max_steps: int | None = None, timeout: float = 900) -> RunOutcome:
     from browser_use import Agent, Browser
 
+    require_isolation()
     # Local Chromium only (1.0 defaults to a cloud browser), locked to the sandbox host.
     browser = Browser("chromium", headless=headless, allowed_domains=[sandbox.netloc])
     workspace = tempfile.mkdtemp(prefix="unprompted-bu-")
@@ -132,6 +154,8 @@ def run_stagehand(sandbox: Sandbox, run_id: str, quiz_title: str, model: str, *,
     """Runs stagehand/run.mjs (Node) and reads its JSON result from the last stdout line."""
     import subprocess
 
+    if not dry_run:
+        require_isolation()
     if sandbox.kind != "sandbox":
         raise NotImplementedError("the stagehand script only knows the sandbox flow; use browser-use for the runtime")
     payload = {"loginUrl": sandbox.login_url(run_id), "quizTitle": quiz_title, "headless": headless,

@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .runners import RUNNERS, RunOutcome, save_trace
+from .runners import RUNNERS, RunOutcome, isolated, save_trace
 from .sandbox import Sandbox
 from .stats import solve_rates, summary
 
@@ -149,6 +149,7 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
             f"steps={meta['steps']} {meta['seconds']}s" + (f" error={meta['error']}" if meta["error"] else ""))
         meta["infraReason"] = infra_reason(meta["status"], meta["error"], meta["submitted"])
         meta["infraError"] = meta["infraReason"] is not None
+        meta["isolated"] = isolated()
         meta["outcome"] = "submitted" if meta["submitted"] else ("infra" if meta["infraError"] else "did_not_submit")
         n_ok = sum(r["correct"] for r in runs)
         emit("running", f"Run {i}/{len(plan)}: excluded ({meta['infraReason']})" if meta["infraError"]

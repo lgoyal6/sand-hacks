@@ -1303,5 +1303,58 @@
       }
     ],
     "didNotSubmit": 0
+  },
+  "econ-micro": {
+    "quizId": "econ-micro",
+    "itemRuns": 6,
+    "itemCorrect": 6,
+    "accuracy": 1.0,
+    "accuracyCI95": [
+      0.6097,
+      1.0
+    ],
+    "attempts": 1,
+    "attemptsCompleted": 1,
+    "meanAttemptScore": 1.0,
+    "byAgentModel": {
+      "browser-use|gmi:google/gemini-3.8-flash": {
+        "itemRuns": 6,
+        "accuracy": 1.0
+      }
+    },
+    "didNotSubmit": 0,
+    "infraErrors": 0,
+    "infraReasons": {},
+    "runs": [
+      {
+        "runId": "run-f90a1442c3",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 21,
+        "seconds": 86.7,
+        "costUsd": null,
+        "submitted": true,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "econ-micro-q1": 1,
+          "econ-micro-q2": 1,
+          "econ-micro-q3": 1,
+          "econ-micro-q4": 1,
+          "econ-micro-q5": 1,
+          "econ-micro-q6": 3
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      }
+    ]
   }
 }
