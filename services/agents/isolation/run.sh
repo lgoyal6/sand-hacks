@@ -19,6 +19,9 @@ cd $AGENTS
 import sys
 from dotenv import dotenv_values
 v = dotenv_values(sys.argv[1])
+import os
+for k in ("GMI_REASONING_EFFORT", "ATTACK_MAX_STEPS"):
+    if os.environ.get(k): print(f"{k}={os.environ[k]}")
 for k in ("GEMINI_API_KEY", "GMI_API_KEY", "GMI_BASE_URL", "SANDBOX_RUNNER_TOKEN"):
     if v.get(k): print(f"{k}={v[k]}")
 PY

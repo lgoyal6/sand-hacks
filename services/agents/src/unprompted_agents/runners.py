@@ -73,7 +73,10 @@ def make_llm(model: str):
         key = os.environ.get("GMI_API_KEY")
         if not key:
             raise RuntimeError("GMI_API_KEY is not set (.env.local)")
-        return ChatOpenAI(name, api_key=key, base_url=GMI_BASE_URL)
+        # GMI_REASONING_EFFORT=none turns Gemini's thinking off: GMI rejects long runs with
+        # "invalid_thinking_signature" when thinking blocks are replayed.
+        effort = os.environ.get("GMI_REASONING_EFFORT") or None
+        return ChatOpenAI(name, api_key=key, base_url=GMI_BASE_URL, reasoning_effort=effort)
     return model
 
 
