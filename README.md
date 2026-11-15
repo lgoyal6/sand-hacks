@@ -70,7 +70,7 @@ All data from Nov 15, 2026.
 | Student app | Demo sign-in | Take a quiz in a chat, with voice think-aloud |
 | Professor studio | Demo sign-in | Import, attack, rewrite, approve and export quizzes |
 
-Everything except the public pages is behind a team password.
+Everything except the public pages is behind sign-in (Neon Auth, with demo accounts).
 
 ## How it works
 
@@ -93,6 +93,14 @@ The quiz runs as a chat. On one or two questions, picked partly at random and we
 4. rates their confidence again.
 
 Instructors see the explanation and a score of its content. Fluency and accent are never graded.
+
+### Safeguards a professor can see
+
+| Safeguard | What happens | Where |
+|---|---|---|
+| Confirm learning objective | A Canvas import can only guess what a question tests (its title or a stem excerpt), so those objectives are marked inferred. Before a rewrite, the professor confirms or edits the objective. The rewriter and the judges keep the confirmed text fixed, and the workflow refuses to rewrite a question whose objective is still a guess. | Studio, "Write a new version of Q…" on the leak scan card |
+| Recording retention | Once the transcript and word timestamps are saved, the ElevenLabs call (audio and their copy of the transcript) is deleted and the time is recorded. Calls that were not final yet are retried when a professor opens the student page. Transcripts stay until the professor deletes them, which is also recorded. | Student consent step; `/professor/students/<pseudonym>` ("Audio deleted …", "Delete transcript", Data retention note) |
+| Follow-up by &lt;model&gt; | Each think-aloud follow-up shows which path wrote it: the Gemini model that read this student's explanation, or the generic template when Gemini was unavailable. | `/professor/students/<pseudonym>` |
 
 ## Architecture
 
@@ -143,16 +151,113 @@ flowchart LR
     class GEM,BD,NEON,TIG,SOL svc
 ```
 
-| Service | Role |
+### Sponsors: exactly how each one is used
+
+Every claim below points at the code that does it. Open a sponsor for the details.
+
+<details>
+<summary><b>Gemini</b>: every model call in the product</summary>
+
+| | |
 |---|---|
-| **Gemini** | Every model call: attacker agents, rewrites, the judge panel, follow-up questions |
-| **Mastra** | The helper agents and the rewrite workflow, which pauses for instructor approval |
-| **Bright Data** | Homework-site search, rewrite checks, evidence screenshots, daily leak watch |
-| **ElevenLabs** | The voice think-aloud, with word timestamps |
-| **Neon** | App data, one database branch per rewrite experiment, time travel for appeals, sign-in |
-| **Tiger Data** | Interaction telemetry that separates agents from humans by behavior |
-| **Solana** | Public tamper-evidence on devnet: hashes of each delivered quiz, agent results and the dataset |
-| **Vultr** | Hosting |
+| What it does | Writes the rewrites, checks their answers, judges them, scores think-alouds, writes the "what if" follow-up, powers the helper agents and drives the attacking browser agents. |
+| Models and features | Rewriter: `gemini-3.6-flash` (`GEN_MODEL`). Answer checker: `gemini-3.6-flash` with the **code execution** tool, solving each rewrite 3 times. Judge panel: `gemini-3.8-flash`, `gemini-3.6-flash` and `gemini-3.1-pro-preview` (`PANEL_MODELS`), with structured JSON output. Think-aloud grading council: the same three models. Mastra agents: `gemini-3.6-flash`, falling back to `gemini-3.5-flash-lite`. Follow-up question: `gemini-3.5-flash-lite`, then `gemini-3.1-flash-lite`, then `gemini-flash-latest`. Attack agents: `gemini-3.8-flash` (CLI default `gemini-3.5-flash`). Course-site scan: `gemini-3.6-flash`. |
+| See it | Studio: rewrite cards with "n/3 agree" judge votes. Student chat: tutor replies and the follow-up question. `/professor/students/<pseudonym>`: the score and "Follow-up by &lt;model&gt;". |
+| Key files | [`services/workflows/src/context.ts`](services/workflows/src/context.ts), [`steps/adapters.ts`](services/workflows/src/steps/adapters.ts), [`steps/llm.ts`](services/workflows/src/steps/llm.ts), [`council/index.ts`](services/workflows/src/council/index.ts), [`agents/model.ts`](services/workflows/src/agents/model.ts), [`packages/probe-core/src/gemini.ts`](packages/probe-core/src/gemini.ts) |
+| Limits | GMI (`GMI_BASE_URL`) is only an OpenAI-compatible route to the same `google/gemini-*` models, used when the free-tier key is out of quota. It is not a sponsor and no other model family is called. The judge panel is three models from one family, and it is labelled that way. |
+
+</details>
+
+<details>
+<summary><b>Mastra</b>: the helper agents and the rewrite workflow</summary>
+
+| | |
+|---|---|
+| What it does | Runs three tool-using agents and the rewrite workflow, which pauses until the professor approves each version. |
+| Features | Agents (`Agent`, `createTool`): **Tutor** (`startQuiz`, `checkAnswer`, `explainResult`, `todaysPractice`, `checkPracticeAnswer`), **Researcher** (Bright Data tools over `@mastra/mcp` `MCPClient`) and **Leak scout** (`scanQuizForLeaks`, `leakReport`). Input processors (`FlattenToolHistory`, `AnswerBeforeLimit`). Workflow `createWorkflow` with steps `select-targets` → `transform` → `professor-approval`, which calls **`suspend()`** and continues on **`resume`** with the professor's decisions. Run state in `@mastra/pg` `PostgresStore` (Neon, schema `mastra`), so a paused run survives a restart. Streaming run events to the studio. |
+| See it | Student chat: free text goes to the Tutor, or to the Researcher when you ask for sources. Studio: "Is anything from my quiz online?" goes to the Leak scout. A rewrite run streams into the studio and waits on Approve or Reject in each variant card. |
+| Key files | [`services/workflows/src/mastra/index.ts`](services/workflows/src/mastra/index.ts), [`agents/`](services/workflows/src/agents), [`apps/web/app/studio/_lib/mastra.ts`](apps/web/app/studio/_lib/mastra.ts), [`apps/web/app/api/agents/[agent]/turn/route.ts`](apps/web/app/api/agents/[agent]/turn/route.ts), [`studio/api/variants/[id]/route.ts`](apps/web/app/studio/api/variants/[id]/route.ts) |
+| Limits | The server runs `mastra dev` on the VM. "Answer checker", "Judge panel", "Rewriter" and "Quiz checker" are workflow steps shown as agents in the studio, not separate Mastra agents. |
+
+</details>
+
+<details>
+<summary><b>Neon</b>: app data, a branch per rewrite, time travel, sign-in</summary>
+
+| | |
+|---|---|
+| What it does | Holds all app data, gives every rewrite candidate its own database branch, rebuilds exactly what a student saw for an appeal, and handles sign-in. |
+| Features | **Branching API** (`console.neon.tech/api/v2`, create, list and delete branches): one branch per candidate; survivors are merged back to `main`. **Time travel**: each attempt records `pg_current_wal_lsn()` when it starts, and an appeal creates a short-lived branch at that `parent_lsn`, reads the quiz and answer key there, compares them with today's, then deletes the branch. **Neon Auth** (`@neon/auth`, Managed Better Auth) for sign-in and roles. Postgres also stores Mastra's workflow state. |
+| See it | Studio: the branch tree card, the branch race card (`/studio/api/race`) and the "Show what a student saw" chip (`/studio/api/appeal`). `/signin`. |
+| Key files | [`services/workflows/src/db/neon-store.ts`](services/workflows/src/db/neon-store.ts), [`db/merge.ts`](services/workflows/src/db/merge.ts), [`apps/web/app/studio/_lib/timetravel.ts`](apps/web/app/studio/_lib/timetravel.ts), [`apps/web/lib/auth/server.ts`](apps/web/lib/auth/server.ts), [`db/neon/schema.sql`](db/neon/schema.sql) |
+| Limits | Without `NEON_API_KEY` and `NEON_PROJECT_ID`, the workflows fall back to in-memory PGlite branches and appeals are unavailable. Sign-in is enforced only when Neon Auth is configured. |
+
+</details>
+
+<details>
+<summary><b>Bright Data</b>: finding questions that are already online</summary>
+
+| | |
+|---|---|
+| What it does | Searches the open web for each quiz question, checks that a rewrite is not already posted, captures evidence, and watches homework sites for new copies. |
+| Products | **SERP API** (`api.brightdata.com/request` with a SERP zone): exact-phrase searches for `/check`, the leak scan, the rewrite leak check and the daily leak watch. **Browser API** (Playwright `connectOverCDP`): evidence screenshots of public pages, with CAPTCHA solving off and challenge pages skipped. **Web Archive API** (`/webarchive/search`): a last-24-hour watch of homework-site URLs. **MCP server** (`mcp.brightdata.com`): the Researcher agent's search and page-reading tools. |
+| See it | [`/check`](https://unprompted.courses/check) and [`/study`](https://unprompted.courses/study). Studio: the leak radar after an import ("web search" or "web archive" per hit). `/professor`: the leak radar. |
+| Key files | [`services/leakscan/src/brightdata.ts`](services/leakscan/src/brightdata.ts), [`archive.ts`](services/leakscan/src/archive.ts), [`scan.ts`](services/leakscan/src/scan.ts), [`apps/web/app/check/_lib/check.ts`](apps/web/app/check/_lib/check.ts), [`services/workflows/src/steps/leakcheck.ts`](services/workflows/src/steps/leakcheck.ts), [`leakwatch.ts`](services/workflows/src/leakwatch.ts), [`agents/researcher.ts`](services/workflows/src/agents/researcher.ts) |
+| Limits | Web Unlocker is deliberately not used, and no CAPTCHA is solved or bypassed. The Archive API returns counts, not pages, so an archive hit is labelled a candidate until confirmed. Searches are capped: at most 2 per question (4 per `/check`), cached 24 hours (1 hour for `/check`). |
+
+</details>
+
+<details>
+<summary><b>ElevenLabs</b>: the voice think-aloud</summary>
+
+| | |
+|---|---|
+| What it does | Lets a student explain an answer out loud to a voice agent that asks one "what if" follow-up. |
+| Features | **Conversational AI** agent with platform auth: the server issues a short-lived signed URL, and the browser connects with `@elevenlabs/react` `useConversation`. **Client tools** `get_followup` (we write the follow-up from the live transcript) and `end_probe`. Dynamic variables `item_stem` and `student_answer`. **Conversations API** to fetch the final transcript, then `DELETE` it once saved. **Scribe** speech-to-text (`scribe_v2`, then `scribe_v1`) on the call audio, with word timestamps and diarization, to time how long the student takes to start answering the follow-up. |
+| See it | Student chat: "Talk it through" on a think-aloud. `/professor/students/<pseudonym>`: the transcript, "started answering after n s" and "Audio deleted …". |
+| Key files | [`apps/web/components/probe/use-voice-probe.ts`](apps/web/components/probe/use-voice-probe.ts), [`apps/web/app/(student)/_lib/elevenlabs.ts`](apps/web/app/(student)/_lib/elevenlabs.ts), [`api/probes/[id]/voice/route.ts`](apps/web/app/(student)/api/probes/[id]/voice/route.ts), [`api/probes/[id]/voice/finish/route.ts`](apps/web/app/(student)/api/probes/[id]/voice/finish/route.ts), [`apps/web/lib/retention.ts`](apps/web/lib/retention.ts) |
+| Limits | When Scribe is unavailable, the timing falls back to the browser's voice activity detection. Typing is always available instead of voice. |
+
+</details>
+
+<details>
+<summary><b>Tiger Data</b>: behavior telemetry</summary>
+
+| | |
+|---|---|
+| What it does | Stores every interaction event and turns it into per-session behavior signals that separate scripted agents from people, as evidence and never as a verdict. |
+| Features | **Hypertables** `interaction_events`, `agent_run_events` and `probe_timing`. A **continuous aggregate** `ie_item_1m` (1-minute `time_bucket`, with a refresh policy) holding Toolkit aggregates: `stats_agg` (key timing), **`state_agg`** (focus state) and **`heartbeat_agg`** (human input liveness), rolled up per attempt with `rollup()`. Views on top: `click_without_move`, `answer_input_gap`, `session_flags`, `attempt_features`, `attempt_dead_ranges` and `probe_latency`. |
+| See it | `/professor`: the "Session patterns" panel. `/professor/students/<pseudonym>`: typing notes on typed think-alouds. |
+| Key files | [`db/tiger/schema.sql`](db/tiger/schema.sql), [`db/tiger/aggregates.sql`](db/tiger/aggregates.sql), [`apps/web/lib/telemetry/server.ts`](apps/web/lib/telemetry/server.ts), [`apps/web/app/professor/_data.ts`](apps/web/app/professor/_data.ts) |
+| Limits | The only human baseline is the instructor's own practice sessions, so there are no accuracy claims. Without `TIGER_DATABASE_URL`, events go to local JSON files. |
+
+</details>
+
+<details>
+<summary><b>Solana</b>: a public notary on devnet</summary>
+
+| | |
+|---|---|
+| What it does | Puts a fingerprint of each delivered quiz version, the agent results and the open dataset on a public chain, so anyone can check they weren't changed later. |
+| Features | **SPL Memo program** on **devnet** via `@solana/web3.js`: memo `unprompted:v1:<kind>:<hash>`. SHA-256 for public files, HMAC-SHA256 with a server-only salt for records that contain answer keys. A notary CLI (`keygen`, `airdrop`, `anchor`, `verify`, `publish`) and re-verification by re-hashing. |
+| See it | [`/study`](https://unprompted.courses/study) (anchor status) and `GET /study/verify?file=<published file>`. `/professor` (attack summary anchor). |
+| Key files | [`apps/web/lib/notary/index.ts`](apps/web/lib/notary/index.ts), [`registry.ts`](apps/web/lib/notary/registry.ts), [`cli.ts`](apps/web/lib/notary/cli.ts), [`data/open/anchors.json`](data/open/anchors.json), [`apps/web/app/(student)/api/attempts/route.ts`](apps/web/app/(student)/api/attempts/route.ts) |
+| Limits | Devnet only: the notary refuses any other cluster by URL and by genesis hash. No student data goes on-chain. The three published files are currently `not_anchored` because the devnet wallet has no SOL to pay fees, so `/study/verify` reports them as not anchored until it is funded. |
+
+</details>
+
+<details>
+<summary><b>Vultr + domain</b>: hosting at unprompted.courses</summary>
+
+| | |
+|---|---|
+| What it does | Serves the live app at [unprompted.courses](https://unprompted.courses). |
+| Setup | Domain `unprompted.courses` registered at **Porkbun**. DNS `A @` and `A www` point to one **Vultr** Ubuntu VM (firewall: 22, 80, 443 only). **Caddy** reverse proxy with automatic HTTPS; `www` redirects to the apex. **systemd** services for the Next.js production server and the Mastra server (port 4111). Secrets live in an env file on the VM only. |
+| See it | [unprompted.courses](https://unprompted.courses) (also `144-202-119-181.sslip.io`). |
+| Key files | [`infra/README.md`](infra/README.md) |
+| Limits | One VM, no autoscaling. The attack sandbox is not deployed there; agent runs happen locally in isolation. |
+
+</details>
 
 <details>
 <summary><b>Rewrite workflow in detail</b></summary>
@@ -202,8 +307,10 @@ sequenceDiagram
     App->>Gem: write a "what if" question
     Gem-->>EL: "what changes if n doubled?"
     St->>EL: answers the follow-up
-    EL->>App: end_probe(transcript, word timestamps)
+    EL->>App: end_probe
     App->>St: confidence 1–7 again
+    App->>EL: fetch the transcript, Scribe word timestamps
+    App->>EL: delete the call audio
 ```
 
 </details>
