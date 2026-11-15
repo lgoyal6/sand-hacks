@@ -56,7 +56,10 @@ def write_fixtures(out: Path, quiz_id: str, result: dict, runtime: bool = False)
 
 
 def main(argv: list[str] | None = None) -> int:
-    load_dotenv(REPO / ".env.local")
+    try:
+        load_dotenv(REPO / ".env.local")
+    except PermissionError:
+        pass  # isolated run (isolation/run.sh): keys arrive via the environment instead
     os.environ.setdefault("ANONYMIZED_TELEMETRY", "false")
 
     ap = argparse.ArgumentParser(prog="attack", description="Run real browser agents on a sandbox quiz.")
@@ -147,6 +150,25 @@ def _report(a, quiz, result) -> int:
     for r in result["solveRates"]:
         print(f"  {r['itemId']:<16} {r['correct']}/{r['runs']}  solvable={r['agentSolvable']}")
     print(f"updated fixtures in {out} for quiz {quiz['id']} ({a.target})")
+    return 0
+
+
+def merge_main(argv: list[str] | None = None) -> int:
+    """Outside the sandbox: merge a sandboxed `attack --json` result into the fixtures."""
+    ap = argparse.ArgumentParser(prog="attack-merge")
+    ap.add_argument("result")
+    ap.add_argument("--quiz-id", required=True)
+    ap.add_argument("--target", choices=["sandbox", "runtime"], default="sandbox")
+    ap.add_argument("--out-dir", default=str(REPO / "data" / "fixtures"))
+    a = ap.parse_args(argv)
+    result = json.loads(Path(a.result).read_text())
+    s = result["summary"]
+    if s["accuracy"] is None:
+        print(f"No usable runs ({s['infraErrors']} infra, {s.get('didNotSubmit', 0)} did not submit); fixtures unchanged.")
+        return 1
+    write_fixtures(Path(a.out_dir), a.quiz_id, result, runtime=a.target == "runtime")
+    print(f"{a.quiz_id}: {s['itemCorrect']}/{s['itemRuns']} ({s['accuracy']:.0%}, 95% CI {s['accuracyCI95'][0]:.0%}-"
+          f"{s['accuracyCI95'][1]:.0%}); {s['infraErrors']} infra, {s.get('didNotSubmit', 0)} did not submit; fixtures updated")
     return 0
 
 
