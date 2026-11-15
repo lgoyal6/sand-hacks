@@ -2,11 +2,12 @@
 //   GET /studio/api/run?mode=replay&recording=variants_events.q1-real-partial.jsonl
 //   GET /studio/api/run?mode=live&items=sample-stats-q1&n=2&attack=0
 // Live mode spawns the workflows CLI (one run at a time: the Gemini key is free tier).
-import { spawn, type ChildProcess } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { FIXTURES_DIR, REPO_ROOT } from "@/lib/db/fixtures";
+import { FIXTURES_DIR } from "@/lib/db/fixtures";
+import { spawnWorkflow } from "@/lib/workflows";
 import { mastraAvailable, streamTransform } from "../../_lib/mastra";
 
 const g = globalThis as unknown as { __studioLiveRun?: ChildProcess | null };
@@ -80,9 +81,10 @@ async function live(url: URL, send: (d: unknown) => void, closed: () => boolean,
 
   const eventsFile = path.join(os.tmpdir(), `unprompted-run-${Date.now()}.jsonl`);
   await fs.writeFile(eventsFile, "");
-  const args = ["--filter", "@unprompted/workflows", "transform", "--quiz", `data/quizzes/${quiz}.md`, "--items", items.join(","), "--n", String(n), "--events", eventsFile];
+  const args = ["--quiz", `data/quizzes/${quiz}.md`, "--items", items.join(","), "--n", String(n), "--events", eventsFile];
   if (!attack) args.push("--no-attack");
-  const child = spawn("pnpm", ["-s", ...args], { cwd: REPO_ROOT, env: process.env, stdio: ["ignore", "pipe", "pipe"] });
+  const child = spawnWorkflow("transform", args);
+  child.stdin.end(); // nothing to send (was stdio "ignore")
   g.__studioLiveRun = child;
   let tail = "";
   const keep = (d: Buffer) => (tail = (tail + d.toString()).slice(-2000));

@@ -2,10 +2,10 @@
 //   POST /studio/api/import  { "markdown": "# Title\n1. [mcq] ..." }
 // Saves data/quizzes/<slug>.md (never overwrites), then runs the workflows ingest CLI,
 // which validates it and writes it to Neon main (or fixtures). A parse error removes the file.
-import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { DATA_DIR, REPO_ROOT } from "@/lib/db/fixtures";
+import { DATA_DIR } from "@/lib/db/fixtures";
+import { spawnWorkflow } from "@/lib/workflows";
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "quiz";
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   await fs.writeFile(file, markdown.endsWith("\n") ? markdown : markdown + "\n", { flag: "wx" });
 
   const { code, out } = await new Promise<{ code: number | null; out: string }>((resolve) => {
-    const child = spawn("pnpm", ["-s", "--filter", "@unprompted/workflows", "ingest", `data/quizzes/${slug}.md`], { cwd: REPO_ROOT, env: process.env });
+    const child = spawnWorkflow("ingest", [`data/quizzes/${slug}.md`]);
     let out = "";
     child.stdout.on("data", (d) => (out += d));
     child.stderr.on("data", (d) => (out += d));
