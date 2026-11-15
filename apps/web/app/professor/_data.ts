@@ -126,3 +126,72 @@ export async function loadPseudonyms(ids: string[]): Promise<Map<string, string>
   }
   return out;
 }
+
+export interface ProbeEvidence {
+  probeId: string;
+  attemptId: string;
+  student: string;
+  itemId: string;
+  mode: "voice" | "typed" | "accommodation";
+  score: number | null;
+  chars: number;
+  keys: number;
+  pastes: number;
+  /** Neutral description of how the typed text arrived. Accommodations are excluded from this check. */
+  evidence: "voice" | "typed by hand" | "pasted" | "appeared without typing" | "no text" | "excluded (accommodation)";
+}
+
+/**
+ * Think-aloud explanations with their mode and typing evidence: Neon probes (C) joined with the key and paste
+ * events Tiger recorded in the explanation fields (#probe-explanation, #probe-cf-answer) for that attempt.
+ * A typed answer can be AI-written; this is evidence for a follow-up, never a verdict.
+ */
+export async function loadProbeEvidence(limit = 30): Promise<Source<ProbeEvidence[]>> {
+  const n = neon();
+  if (!n) return { data: [], origin: "none" };
+  try {
+    const { rows } = await n.query<{
+      id: string; attempt_id: string; item_id: string; mode: string | null; final_score: number | null;
+      chars: number; student_pseudonym: string; accommodations: { itemId?: string }[] | null;
+    }>(
+      `select p.id, p.attempt_id, p.item_id, p.mode, p.final_score,
+              length(coalesce(p.explanation, '')) + length(coalesce(p.counterfactual_answer, '')) as chars,
+              a.student_pseudonym, a.accommodations
+       from probe p join attempt a on a.id = p.attempt_id
+       where coalesce(p.explanation, '') <> '' or p.mode = 'voice'
+       order by p.created_at desc limit $1`,
+      [limit],
+    );
+    const t = tiger();
+    const counts = new Map<string, { keys: number; pastes: number }>();
+    if (t && rows.length) {
+      const ids = [...new Set(rows.map((r) => r.attempt_id))];
+      const ev = await t.query<{ attempt_id: string; keys: number; pastes: number }>(
+        `select attempt_id, count(*) filter (where kind = 'key')::int keys, count(*) filter (where kind = 'paste')::int pastes
+         from interaction_events
+         where attempt_id = any($1) and payload->>'target' in ('probe-explanation', 'probe-cf-answer')
+         group by attempt_id`,
+        [ids],
+      );
+      for (const e of ev.rows) counts.set(e.attempt_id, { keys: e.keys, pastes: e.pastes });
+    }
+    const data = rows.map((r): ProbeEvidence => {
+      const accommodated = (r.accommodations ?? []).some((a) => a?.itemId === r.item_id);
+      const c = counts.get(r.attempt_id) ?? { keys: 0, pastes: 0 };
+      const mode = accommodated ? "accommodation" : r.mode === "voice" ? "voice" : "typed";
+      const chars = Number(r.chars);
+      const evidence: ProbeEvidence["evidence"] =
+        mode === "accommodation" ? "excluded (accommodation)"
+        : mode === "voice" ? "voice"
+        : chars === 0 ? "no text"
+        : c.pastes > 0 ? "pasted"
+        : c.keys >= chars * 0.5 ? "typed by hand"
+        : "appeared without typing";
+      return { probeId: r.id, attemptId: r.attempt_id, student: r.student_pseudonym, itemId: r.item_id, mode, score: r.final_score, chars, keys: c.keys, pastes: c.pastes, evidence };
+    });
+    return { data, origin: "tiger", updatedAt: new Date().toISOString() };
+  } catch (e) {
+    console.error("[professor] probe evidence failed:", (e as Error).message);
+    return { data: [], origin: "none" };
+  }
+}
