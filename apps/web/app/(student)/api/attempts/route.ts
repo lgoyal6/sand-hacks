@@ -1,5 +1,5 @@
 import { after, NextResponse } from "next/server";
-import { anchor, fingerprint } from "@/lib/notary";
+import { fingerprint } from "@/lib/notary";
 import { quizVersionRecord } from "@unprompted/shared";
 import { neon } from "@/lib/db/neon";
 import { createAttempt, listAttempts, type AttemptMode } from "../../quiz/_lib/attempts";
@@ -39,10 +39,9 @@ export async function POST(req: Request) {
   // (server-only NOTARY_SALT) is anchored, and nothing is anchored until that salt exists. Runs after the response.
   if (attempt.store === "neon") {
     const sha = fingerprint(quizVersionRecord(quiz.id, quiz.items));
-    // Held until D's keyed anchorRecord (HMAC) is on dev, so appeals compare keyed to keyed (agreed with B and D).
-    const salt: string | undefined = undefined;
     after(async () => {
-      const r = salt && salt.length >= 32 ? await anchor("quiz_version", fingerprint({ salt, record: quizVersionRecord(quiz.id, quiz.items) })) : null;
+      // Held until D's keyed anchorRecord (HMAC) is on dev, so appeals compare keyed to keyed (agreed with B and D).
+      const r: { status: string; error?: string } | null = null;
       await neon()
         ?.query("update attempt set quiz_version_sha256 = $2, quiz_version_anchor = $3::jsonb where id = $1", [
           attempt.id,
@@ -50,7 +49,6 @@ export async function POST(req: Request) {
           JSON.stringify(r ?? { status: "not_anchored", error: "anchoring held until the keyed fingerprint ships" }),
         ])
         .catch((err) => console.warn("[notary] attempt fingerprint not stored:", (err as Error).message));
-      if (r && r.status !== "anchored") console.warn(`[notary] attempt ${attempt.id} not anchored: ${r.error ?? "unknown"}`);
     });
   }
   return NextResponse.json({ attemptId: attempt.id, mode: attempt.mode, studentPseudonym: attempt.studentPseudonym });
