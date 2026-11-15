@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ChatQuiz } from "@/components/quiz/chat-quiz";
 import { getViewer } from "@/lib/auth/server";
 import { listQuizzes, toPublic } from "./(student)/quiz/_lib/quizzes";
-import { LoadingShell } from "@/components/ui/page-loader";
+import { LoadingShell, PageLoader } from "@/components/ui/page-loader";
 
 async function Home() {
   const [all, viewer] = await Promise.all([listQuizzes(), getViewer()]);
@@ -14,7 +14,7 @@ async function Home() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<LoadingShell title="Loading your classes" subtitle="Getting your quizzes ready" />}>
+    <Suspense fallback={<Suspense fallback={<PageLoader title="Loading your classes" subtitle="Getting your quizzes ready" />}><LoadingShell title="Loading your classes" subtitle="Getting your quizzes ready" /></Suspense>}>
       <Home />
     </Suspense>
   );

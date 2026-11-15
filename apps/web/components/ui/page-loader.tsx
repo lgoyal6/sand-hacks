@@ -3,18 +3,23 @@
 //                 area (right of the sidebar on desktop, the full screen on mobile).
 //   PageLoader:   inside a page that is already showing its title (client-side fetches): centered in the rest.
 //   PanelLoader:  inside a card, centered in the card.
+import { Suspense } from "react";
 import Loader from "@/components/ui/loader";
 import { AppShell } from "@/components/ui/app-shell";
 
 type Props = { title: string; subtitle: string };
 
 export function LoadingShell({ title, subtitle }: Props) {
+  // The shell's sidebar reads the URL (usePathname). A loading fallback renders outside any Suspense, so the
+  // shell gets its own boundary with the plain centered loader; otherwise `next build` fails to prerender.
   return (
-    <AppShell wide className="flex items-center justify-center">
-      <div role="status" aria-live="polite">
-        <Loader title={title} subtitle={subtitle} size="md" />
-      </div>
-    </AppShell>
+    <Suspense fallback={<PageLoader title={title} subtitle={subtitle} />}>
+      <AppShell wide className="flex items-center justify-center">
+        <div role="status" aria-live="polite">
+          <Loader title={title} subtitle={subtitle} size="md" />
+        </div>
+      </AppShell>
+    </Suspense>
   );
 }
 

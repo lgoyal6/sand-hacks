@@ -4,7 +4,8 @@
 import "server-only";
 import type { Quiz } from "@unprompted/shared";
 import { listAttempts, type AttemptRecord } from "../quiz/_lib/attempts";
-import { getQuiz, displayTitle } from "../quiz/_lib/quizzes";
+import { getQuiz, displayTitle, listQuizzes } from "../quiz/_lib/quizzes";
+import type { RoadmapItem } from "@/components/ui/roadmap";
 import { listProbes, type ProbeRecord } from "./probes";
 
 export interface TopicCalibration {
@@ -35,6 +36,8 @@ export interface Progress {
   explainedThisWeek: number;
   streakDays: number;
   takeaway: string;
+  roadmap?: RoadmapItem[];
+  roadmapSummary?: { done: number; total: number; toReview: number };
 }
 
 const scaleConf = (c: number) => (c - 1) / 6;
@@ -138,7 +141,10 @@ export async function progressFor(opts: { student?: string; attemptIds?: string[
   const probes = (await Promise.all(attempts.map((a) => listProbes({ attemptId: a.id })))).flat();
   const quizIds = [...new Set(attempts.map((a) => a.quizId))];
   const quizzes = new Map((await Promise.all(quizIds.map((id) => getQuiz(id)))).filter((q): q is Quiz => !!q).map((q) => [q.id, q]));
-  return buildProgress(opts.student ?? null, attempts, probes, quizzes);
+  const progress = buildProgress(opts.student ?? null, attempts, probes, quizzes);
+  const published = await listQuizzes();
+  const rm = buildRoadmap(attempts, probes, published, progress.review);
+  return { ...progress, roadmap: rm.items, roadmapSummary: rm.summary };
 }
 
 // Clearly labelled sample for an empty profile, so the page explains itself.
@@ -159,5 +165,66 @@ export function sampleProgress(): Progress {
     explainedThisWeek: 5,
     streakDays: 2,
     takeaway: takeawayFor(topics),
+    roadmapSummary: { done: 2, total: 4, toReview: 2 },
+    roadmap: [
+      { id: "s1", title: "Intro Statistics", description: "Score 4/5, explained 3 of 4.", category: "Intro Statistics", status: "Done", count: 1, action: { label: "Review", href: "/quiz/sample-stats?mode=practice" }, progress: 80, progressLabel: "4/5", agents: ["tutor", "explain-coach"] },
+      { id: "s2", title: "Calculus I: Derivatives", description: "Score 5/6, needs a think-aloud.", category: "Calculus I", status: "Done", count: 0, action: { label: "Review", href: "/quiz/calc-derivatives?mode=practice" }, progress: 83, progressLabel: "5/6", agents: ["tutor"] },
+      { id: "s3", title: "Relationship between n and CI width", description: "You got it right; explaining it was harder. A short practice with a think-aloud.", category: "Intro Statistics", status: "In progress", count: 1, action: { label: "Practice", href: "/quiz/sample-stats?mode=practice&focus=sample-stats-q2" }, agents: ["tutor", "explain-coach"] },
+      { id: "s4", title: "Biology: Cells and Energy", description: "6 questions, with a short think-aloud.", category: "Biology", status: "Up next", count: 0, action: { label: "Continue", href: "/quiz/bio-cells?mode=graded" } },
+    ],
   };
+}
+
+const classOf = (title: string) => (title.includes(":") ? title.split(":")[0].trim() : title);
+
+/** Roadmap rows: one per published quiz (in order), then one per skill to review. */
+export function buildRoadmap(attempts: AttemptRecord[], probes: ProbeRecord[], quizzes: Quiz[], review: ReviewSkill[]) {
+  const items: RoadmapItem[] = [];
+  let done = 0;
+  for (const q of quizzes) {
+    const title = displayTitle(q.title);
+    // Attempts that were opened but never answered don't count as started.
+    const mine = attempts.filter((a) => a.quizId === q.id && a.responses.length > 0);
+    const finished = mine.filter((a) => a.finishedAt);
+    const best = finished.reduce<{ score: number; total: number } | null>((b, a) => {
+      const score = a.responses.filter((r) => r.correct).length;
+      return !b || score > b.score ? { score, total: q.items.length } : b;
+    }, null);
+    const qp = probes.filter((p) => p.quizId === q.id && p.completedAt);
+    const graded = qp.filter((p) => typeof p.finalScore === "number");
+    const explained = graded.filter((p) => (p.finalScore ?? 0) >= 2).length;
+    const open = review.filter((r) => r.quizId === q.id).length;
+    const status: RoadmapItem["status"] = best ? "Done" : mine.length ? "In progress" : "Up next";
+    if (best) done++;
+    const parts: string[] = [];
+    if (best) parts.push(`Score ${best.score}/${best.total}`);
+    if (qp.length) parts.push(graded.length ? `explained ${explained} of ${graded.length}` : `${qp.length} think-aloud${qp.length === 1 ? "" : "s"} waiting for feedback`);
+    else if (best) parts.push("needs a think-aloud");
+    const latest = [...mine].sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
+    if (!best && latest) parts.unshift(`${Math.min(latest.responses.length, q.items.length)} of ${q.items.length} answered in your latest try`);
+    if (!best && !mine.length) parts.push(`${q.items.length} questions, with a short think-aloud`);
+    items.push({
+      id: `quiz-${q.id}`,
+      title,
+      description: parts.join(", ").replace(/^./, (c) => c.toUpperCase()) + ".",
+      category: classOf(title),
+      status,
+      count: open,
+      action: { label: best ? "Review" : "Continue", href: `/quiz/${q.id}?mode=${best ? "practice" : "graded"}` },
+      ...(best ? { progress: (best.score / Math.max(1, best.total)) * 100, progressLabel: `${best.score}/${best.total}`, agents: qp.length ? ["tutor", "explain-coach"] : ["tutor"] } : {}),
+    });
+  }
+  for (const r of review) {
+    items.push({
+      id: `skill-${r.quizId}-${r.itemIds.join("-")}`,
+      title: r.skill.charAt(0).toUpperCase() + r.skill.slice(1),
+      description: r.reason === "unexplained" ? "You got it right; explaining it was harder. A short practice with a think-aloud." : "Worth another try in practice.",
+      category: classOf(r.topic),
+      status: "In progress",
+      count: r.itemIds.length,
+      action: { label: "Practice", href: `/quiz/${r.quizId}?mode=practice&focus=${r.itemIds.join(",")}` },
+      agents: ["tutor", "explain-coach"],
+    });
+  }
+  return { items, summary: { done, total: quizzes.length, toReview: review.length } };
 }
