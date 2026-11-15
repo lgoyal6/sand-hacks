@@ -8,6 +8,9 @@ async function Body({ searchParams }: { searchParams: Promise<Record<string, str
   const next = typeof sp.next === "string" ? sp.next : "";
   const error = typeof sp.error === "string" ? sp.error : null;
   const signup = sp.mode === "signup";
+  // The email form is not rendered at all by default: any password field makes the browser's password manager
+  // (and on macOS, the Keychain) look up saved logins. Demo sign-in has no password field.
+  const showEmail = sp.email === "1" || signup || Boolean(error && error !== "demo");
   return (
     <div className="w-full max-w-sm space-y-8">
       <div className="flex flex-col items-center gap-3 text-center">
@@ -32,39 +35,43 @@ async function Body({ searchParams }: { searchParams: Promise<Record<string, str
         </form>
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span className="h-px flex-1 bg-border" /> or with email <span className="h-px flex-1 bg-border" />
-      </div>
-
-      <form action={emailSignIn} className="space-y-3">
-        <input type="hidden" name="next" value={next} />
-        <input type="hidden" name="mode" value={signup ? "signup" : "signin"} />
-        {signup && (
-          <label className="block space-y-1 text-sm">
-            <span className="text-muted-foreground">Name</span>
-            <input id="signin-name" name="name" autoComplete="name" className="h-10 w-full rounded-lg border bg-transparent px-3" />
-          </label>
-        )}
-        <label className="block space-y-1 text-sm">
-          <span className="text-muted-foreground">Email</span>
-          <input id="signin-email" name="email" type="email" required autoComplete="email" className="h-10 w-full rounded-lg border bg-transparent px-3" />
-        </label>
-        <label className="block space-y-1 text-sm">
-          <span className="text-muted-foreground">Password</span>
-          <input id="signin-password" name="password" type="password" required minLength={8} autoComplete={signup ? "new-password" : "current-password"} className="h-10 w-full rounded-lg border bg-transparent px-3" />
-        </label>
-        {error && <p role="alert" className="text-sm text-destructive">{error === "demo" ? "Demo sign-in isn't set up on this server." : error}</p>}
-        <button id="signin-submit" type="submit" className="h-10 w-full rounded-full border text-sm font-medium hover:bg-muted">
-          {signup ? "Create account" : "Sign in"}
-        </button>
-        <p className="text-center text-sm text-muted-foreground">
-          {signup ? (
-            <a className="underline" href={`/signin${next ? `?next=${encodeURIComponent(next)}` : ""}`}>I already have an account</a>
-          ) : (
-            <a className="underline" href={`/signin?mode=signup${next ? `&next=${encodeURIComponent(next)}` : ""}`}>Create an account</a>
+      {showEmail ? (
+        <form action={emailSignIn} className="space-y-3">
+          <input type="hidden" name="next" value={next} />
+          <input type="hidden" name="mode" value={signup ? "signup" : "signin"} />
+          {signup && (
+            <label className="block space-y-1 text-sm">
+              <span className="text-muted-foreground">Name</span>
+              <input id="signin-name" name="name" autoComplete="name" className="h-10 w-full rounded-lg border bg-transparent px-3" />
+            </label>
           )}
+          <label className="block space-y-1 text-sm">
+            <span className="text-muted-foreground">Email</span>
+            <input id="signin-email" name="email" type="email" required autoComplete="email" className="h-10 w-full rounded-lg border bg-transparent px-3" />
+          </label>
+          <label className="block space-y-1 text-sm">
+            <span className="text-muted-foreground">Password</span>
+            <input id="signin-password" name="password" type="password" required minLength={8} autoComplete={signup ? "new-password" : "current-password"} className="h-10 w-full rounded-lg border bg-transparent px-3" />
+          </label>
+          <button id="signin-submit" type="submit" className="h-10 w-full rounded-full border text-sm font-medium hover:bg-muted">
+            {signup ? "Create account" : "Sign in"}
+          </button>
+          <p className="text-center text-sm text-muted-foreground">
+            {signup ? (
+              <a className="underline" href={`/signin?email=1${next ? `&next=${encodeURIComponent(next)}` : ""}`}>I already have an account</a>
+            ) : (
+              <a className="underline" href={`/signin?mode=signup${next ? `&next=${encodeURIComponent(next)}` : ""}`}>Create an account</a>
+            )}
+          </p>
+        </form>
+      ) : (
+        <p className="text-center text-sm">
+          <a id="signin-email-link" className="text-muted-foreground underline-offset-2 hover:underline" href={`/signin?email=1${next ? `&next=${encodeURIComponent(next)}` : ""}`}>
+            Sign in with email instead
+          </a>
         </p>
-      </form>
+      )}
+      {error && <p role="alert" className="text-center text-sm text-destructive">{error === "demo" ? "Demo sign-in isn't set up on this server." : error}</p>}
     </div>
   );
 }
