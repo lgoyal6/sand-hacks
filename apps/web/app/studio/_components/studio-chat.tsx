@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Download, FileUp, GitBranch, Globe, History, Link2, Target } from "lucide-react";
 import { CanvasCard } from "./canvas-card";
+import { replayCookieOn, studioFetch, syncReplayCookie } from "../_lib/replay-client";
 import { AppealPicker } from "./appeal-picker";
 import { TreeCard } from "./tree-card";
 import type { TreeData } from "../_lib/tree";
@@ -71,6 +72,17 @@ export function StudioChat({ data }: { data: StudioData }) {
     [push],
   );
   useEffect(() => () => sourceRef.current?.close(), []);
+
+  // Demo resilience: ?replay=1 turns replay mode on (cookie); replayed responses raise a badge.
+  const [replayAt, setReplayAt] = useState<string | null>(null);
+  const [replayMode, setReplayMode] = useState(false);
+  useEffect(() => {
+    syncReplayCookie();
+    setReplayMode(replayCookieOn());
+    const on = (e: Event) => setReplayAt((e as CustomEvent<{ recordedAt: string }>).detail.recordedAt);
+    window.addEventListener("studio:replay", on);
+    return () => window.removeEventListener("studio:replay", on);
+  }, []);
 
   // ---- actions ----
   const startRun = useCallback(
@@ -162,7 +174,7 @@ export function StudioChat({ data }: { data: StudioData }) {
     push({ id, role: "assistant", agent: "Leak scout", kind: "leaks", text: "", radar: null, done: false });
     const patch = (p: Partial<Extract<Msg, { kind: "leaks" }>>) => setMsgs((ms) => ms.map((m) => (m.id === id ? ({ ...m, ...p } as Msg) : m)));
     try {
-      const res = await fetch("/api/agents/leak-scout/turn", {
+      const res = await studioFetch("/api/agents/leak-scout/turn", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ input: `Is anything from my quiz "${quiz.id}" (quizId ${quiz.id}) already online?` }),
@@ -182,6 +194,10 @@ export function StudioChat({ data }: { data: StudioData }) {
           buf = buf.slice(i + 1);
           if (!line) continue;
           const o = JSON.parse(line) as { type?: string; text?: string; message?: string; agentId?: string; toolCall?: { name: string; result?: { findings?: LeakFinding[] } } };
+          if (o.type === "replay") {
+            window.dispatchEvent(new CustomEvent("studio:replay", { detail: { recordedAt: (o as { recordedAt?: string }).recordedAt } }));
+            continue;
+          }
           if (o.agentId) {
             window.dispatchEvent(new CustomEvent("unprompted:agent-status", { detail: o }));
             const findings = o.toolCall?.result?.findings;
@@ -220,7 +236,7 @@ export function StudioChat({ data }: { data: StudioData }) {
   const exportCanvas = useCallback(async () => {
     if (!quiz) return;
     push({ id: nid(), role: "user", text: "Export this quiz for Canvas" });
-    const res = await fetch(`/studio/api/qti/export?quiz=${encodeURIComponent(quiz.id)}`);
+    const res = await studioFetch(`/studio/api/qti/export?quiz=${encodeURIComponent(quiz.id)}`);
     if (!res.ok) {
       const r = (await res.json().catch(() => ({}))) as { error?: string };
       return say(r.error ?? "Export failed.");
@@ -323,6 +339,11 @@ export function StudioChat({ data }: { data: StudioData }) {
       />
     </>
   );
+  const replayNote = replayAt
+    ? `Replaying a recorded run from ${new Date(replayAt).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}${replayMode ? " (replay mode)" : " (a service was slow or unreachable)"}.`
+    : replayMode
+      ? "Replay mode is on: results come from recorded runs."
+      : null;
   const sourceNote =
     data.quizSource === "neon" && data.solveRatesMeasured
       ? `Agent results: ${data.attack?.itemRuns ?? 0} real answers.`
@@ -465,7 +486,7 @@ export function StudioChat({ data }: { data: StudioData }) {
       title={title}
       home={{
         greeting: "Which quiz should we test?",
-        sub: `${title} · ${quiz.items.length} questions`,
+        sub: `${title} · ${quiz.items.length} questions${replayMode ? " · replay mode: results come from recorded runs" : ""}`,
         chips: (
           <>
             <Chip icon={<Target />} onClick={showAttack}>
@@ -492,7 +513,7 @@ export function StudioChat({ data }: { data: StudioData }) {
         ),
       }}
       composer={composer}
-      composerNote={sourceNote}
+      composerNote={replayNote ? <span className="font-medium text-agent">{replayNote}</span> : sourceNote}
     >
       <Thread>
         {msgs.map(renderMsg)}
@@ -619,7 +640,7 @@ function SavedRaces({ itemIds, onMerge }: { itemIds: string[]; onMerge: (id: str
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
-    Promise.all(itemIds.map((id) => fetch(`/studio/api/race?item=${encodeURIComponent(id)}`).then((r) => (r.ok ? (r.json() as Promise<RaceData>) : Promise.reject(new Error(String(r.status)))))))
+    Promise.all(itemIds.map((id) => studioFetch(`/studio/api/race?item=${encodeURIComponent(id)}`).then((r) => (r.ok ? (r.json() as Promise<RaceData>) : Promise.reject(new Error(String(r.status)))))))
       .then((rs) => live && setRaces(rs))
       .catch(() => live && setError("Couldn't load the races."));
     return () => {
@@ -642,7 +663,7 @@ function TreeLoader({ quizId }: { quizId: string }) {
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
-    fetch(`/studio/api/tree?quiz=${encodeURIComponent(quizId)}`)
+    studioFetch(`/studio/api/tree?quiz=${encodeURIComponent(quizId)}`)
       .then((r) => (r.ok ? (r.json() as Promise<TreeData>) : Promise.reject(new Error(String(r.status)))))
       .then((t) => live && setTree(t))
       .catch(() => live && setError("Couldn't load the experiment tree."));

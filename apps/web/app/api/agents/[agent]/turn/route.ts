@@ -7,7 +7,9 @@
 // Mode and quiz come from the attempt on the server (lib/agents/session), never from the request.
 import type { AgentEvent } from "@unprompted/shared";
 import { sessionFor } from "@/lib/agents/session";
+import { createHash } from "node:crypto";
 import { getViewer } from "@/lib/auth/server";
+import { loadSnapshot, REPLAY_TIMEOUT_MS, replayForced, saveSnapshot } from "@/app/studio/_lib/replay";
 
 const MASTRA_URL = (process.env.MASTRA_URL?.trim() || "http://localhost:3102").replace(/\/$/, "");
 
@@ -65,7 +67,25 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
     .slice(-20)
     .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }));
 
+  // Demo resilience: each successful turn is recorded; replay mode, an unreachable/slow agents server,
+  // or a failure before any reply text serves the last recording, marked as a replay.
+  const replayKey = createHash("sha1")
+    .update(`${spec.id}|${session.mode}|${session.quizId ?? ""}|${input.toLowerCase().replace(/\s+/g, " ").trim()}`)
+    .digest("hex")
+    .slice(0, 20);
+  const replayResponse = async (reason: string) => {
+    const snap = await loadSnapshot<unknown[]>("agent", replayKey);
+    if (!snap) return null;
+    const lines = [{ type: "replay", recordedAt: snap.recordedAt, reason }, ...snap.data].map((o) => JSON.stringify(o)).join("\n") + "\n";
+    return new Response(lines, { headers: { "Content-Type": "application/x-ndjson", "X-Studio-Replay": snap.recordedAt } });
+  };
+  if (replayForced(req)) {
+    return (await replayResponse("replay mode")) ?? Response.json({ error: "Replay mode is on, but this turn hasn't been recorded yet." }, { status: 503 });
+  }
+
   let upstream: Response;
+  const headerTimeout = new AbortController();
+  const headerTimer = setTimeout(() => headerTimeout.abort(), REPLAY_TIMEOUT_MS);
   try {
     upstream = await fetch(`${MASTRA_URL}/api/agents/${spec.id}/stream`, {
       method: "POST",
@@ -75,12 +95,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
         requestContext: { mode: session.mode, quizId: session.quizId, attemptId: body.attemptId },
         maxSteps: spec.maxSteps ?? 6,
       }),
-      signal: req.signal,
+      signal: AbortSignal.any([req.signal, headerTimeout.signal]),
     });
+    clearTimeout(headerTimer);
   } catch {
-    return Response.json({ error: "The agents server isn't running (Mastra on :3102)." }, { status: 503 });
+    clearTimeout(headerTimer);
+    return (await replayResponse("agents server unreachable or slow")) ?? Response.json({ error: "The agents server isn't running (Mastra on :3102)." }, { status: 503 });
   }
-  if (!upstream.ok || !upstream.body) return Response.json({ error: `agent server error ${upstream.status}` }, { status: 502 });
+  if (!upstream.ok || !upstream.body) return (await replayResponse(`agent server error ${upstream.status}`)) ?? Response.json({ error: `agent server error ${upstream.status}` }, { status: 502 });
 
   const enc = new TextEncoder();
   const ev = (status: AgentEvent["status"], label: string, toolCall?: AgentEvent["toolCall"]): AgentEvent => ({
@@ -93,7 +115,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      const send = (o: unknown) => controller.enqueue(enc.encode(JSON.stringify(o) + "\n"));
+      const recorded: unknown[] = [];
+      let replayed = false;
+      const send = (o: unknown) => {
+        recorded.push(o);
+        controller.enqueue(enc.encode(JSON.stringify(o) + "\n"));
+      };
       send(ev("thinking", session.mode === "graded" ? "Reading your message (graded quiz)" : "Reading your message"));
       let text = "";
       let servedBy: string | undefined;
@@ -102,7 +129,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
       const dec = new TextDecoder();
       let buf = "";
       try {
-        for await (const part of upstream.body as unknown as AsyncIterable<Uint8Array>) {
+        outer: for await (const part of upstream.body as unknown as AsyncIterable<Uint8Array>) {
           buf += dec.decode(part, { stream: true });
           let i;
           while ((i = buf.indexOf("\n")) >= 0) {
@@ -127,9 +154,20 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
               text += p.text;
               send({ type: "delta", agent: spec.id, text: p.text });
             } else if (c.type === "error") {
+              // Nothing said yet: serve the recording instead of a dead end (marked as a replay).
+              const snap = text ? null : await loadSnapshot<unknown[]>("agent", replayKey);
+              if (snap) {
+                replayed = true;
+                for (const o of [{ type: "replay", recordedAt: snap.recordedAt, reason: "the agent hit an error" }, ...snap.data]) controller.enqueue(enc.encode(JSON.stringify(o) + "\n"));
+                break outer;
+              }
               send({ type: "error", agent: spec.id, message: "The agent hit a problem. Try again." });
             }
           }
+        }
+        if (replayed) {
+          controller.close();
+          return;
         }
         if (servedBy) console.log(`[agents] ${spec.id} turn served by ${servedBy} (mode ${session.mode}, session from ${session.source})`);
         // Citation check: a cited URL must have appeared in this turn's tool results.
@@ -138,6 +176,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
         if (sources.some((s) => !s.verified)) console.warn(`[agents] ${spec.id} cited unverified URLs:`, sources.filter((s) => !s.verified).map((s) => s.url));
         send({ type: "message", agent: spec.id, text, servedBy, ...(sources.length ? { sources } : {}) });
         send(ev("done", text ? "Replied" : "No reply"));
+        if (text) await saveSnapshot("agent", replayKey, recorded).catch(() => {});
       } catch (e) {
         send({ type: "error", agent: spec.id, message: (e as Error).name === "AbortError" ? "Cancelled." : "Lost the connection to the agent." });
         send(ev("error", "Lost the connection"));

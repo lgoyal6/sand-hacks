@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { PillButton, Thinking } from "@/components/ui/chat";
 import { AppealCard } from "@/components/dashboard/appeal-card";
 import type { AppealData } from "../_lib/timetravel";
+import { studioFetch } from "../_lib/replay-client";
 
 type Attempt = { attemptId: string; student: string; mode: string; startedAt: string; answered: number; replayable: boolean };
 
@@ -19,7 +20,7 @@ export function AppealPicker({ quizId }: { quizId: string }) {
   const [showSynthetic, setShowSynthetic] = useState(false);
 
   useEffect(() => {
-    fetch(`/studio/api/attempts?quiz=${encodeURIComponent(quizId)}`)
+    studioFetch(`/studio/api/attempts?quiz=${encodeURIComponent(quizId)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then(setAttempts)
       .catch(() => setError("Couldn't load attempts."));
@@ -30,7 +31,7 @@ export function AppealPicker({ quizId }: { quizId: string }) {
     setError(null);
     setData(null);
     try {
-      const r = await fetch("/studio/api/appeal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ attemptId: a.attemptId }) });
+      const r = await studioFetch("/studio/api/appeal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ attemptId: a.attemptId }) });
       const j = (await r.json()) as AppealData & { error?: string };
       if (!r.ok) throw new Error(j.error ?? "Couldn't replay that attempt.");
       setData(j);

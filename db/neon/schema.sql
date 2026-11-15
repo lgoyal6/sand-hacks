@@ -70,3 +70,5 @@ alter table attempt add column if not exists delivered_item_ids jsonb default '[
 -- B: one row per time-travel appeal, so the experiment tree can show these short-lived branches after deletion.
 create table if not exists appeal_log (id bigserial primary key, attempt_id text, quiz_id text, branch text, snapshot_lsn text,
   created_at timestamptz default now(), branch_ms int, total_ms int, deleted boolean);
+-- C: typing/paste signals per probe textarea (explanation, follow-up); probe.mode is 'voice' | 'typed' | 'accommodation' (no check constraint).
+alter table probe add column if not exists explain_signals_json jsonb;
