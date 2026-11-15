@@ -277,4 +277,4 @@ Devnet only: the notary refuses any RPC that isn't devnet, by URL and by genesis
 - **Respect the web.** Public pages only; we store snippets, links and screenshots, never solutions, and we never solve or bypass CAPTCHAs.
 - **Agents attack only our own sandboxes**, never real courses or accounts.
 
-<sub>Built at SanD Hacks 2026. Handoff and demo guide: [`docs/HANDOFF.md`](docs/HANDOFF.md) · Full spec: [`docs/build-plan.md`](docs/build-plan.md) · Team rules: [`docs/CONTRACTS.md`](docs/CONTRACTS.md)</sub>
+<sub>Built at SanD Hacks 2026. Full spec: [`docs/build-plan.md`](docs/build-plan.md) · Team rules: [`docs/CONTRACTS.md`](docs/CONTRACTS.md)</sub>
