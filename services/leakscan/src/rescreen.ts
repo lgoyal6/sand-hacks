@@ -5,7 +5,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { LeakFinding } from "@unprompted/shared";
-import { brightDataFromEnv, screenshot } from "./brightdata.js";
+import { brightDataFromEnv, screenshot } from "./brightdata";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../../..");

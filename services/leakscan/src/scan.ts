@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 import type { LeakFinding } from "@unprompted/shared";
-import type { SearchClient, SerpResult } from "./brightdata.js";
-import { classify, isEngine, isOrigin, isStudySite, STUDY_SITES } from "./sources.js";
-import { exactWindows, keywordQuery, matchScore } from "./text.js";
+import type { SearchClient, SerpResult } from "./brightdata";
+import { classify, isEngine, isOrigin, isStudySite, STUDY_SITES } from "./sources";
+import { exactWindows, keywordQuery, matchScore } from "./text";
 
 export interface ScanItem {
   id: string;

@@ -8,7 +8,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Quiz } from "@unprompted/shared";
-import { ArchiveClient, SLUG_SITES, urlPatterns } from "./archive.js";
+import { ArchiveClient, SLUG_SITES, urlPatterns } from "./archive";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../../..");
