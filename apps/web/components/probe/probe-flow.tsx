@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { VoiceOrb, type VoiceOrbState } from "@/components/ui/siri-orb";
 import { ConfidenceScale } from "./confidence-scale";
+import { VoiceProbe, type VoiceResult } from "./voice-probe";
 
-type Step = "intro" | "before" | "explain" | "cf_loading" | "cf" | "after" | "done";
+type Step = "intro" | "consent" | "before" | "voice" | "explain" | "cf_loading" | "cf" | "after" | "done";
 type Phase = "prompt" | "speech_start" | "speech_end" | "cf_prompt" | "cf_speech_start" | "cf_speech_end";
 
 export interface ProbeFlowProps {
@@ -35,6 +36,10 @@ export function ProbeFlow({ attemptId, itemId, practice, onDone }: ProbeFlowProp
   const [cfPrompt, setCfPrompt] = useState("");
   const [cfAnswer, setCfAnswer] = useState("");
   const [retried, setRetried] = useState(false);
+  const [channel, setChannel] = useState<"typed" | "voice">("typed");
+  const [consent, setConsent] = useState(false);
+  const [voice, setVoice] = useState<{ signedUrl: string; dynamicVariables: Record<string, string> } | null>(null);
+  const [voiceLatency, setVoiceLatency] = useState<number | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const t0 = useRef(0);
@@ -65,6 +70,7 @@ export function ProbeFlow({ attemptId, itemId, practice, onDone }: ProbeFlowProp
       mark("prompt", 0);
     }
     if (step === "cf" && probeId) mark("cf_prompt");
+    if (step === "voice" && probeId) t0.current = performance.now();
   }, [step, probeId, mark]);
 
   const begin = async () => {
@@ -72,10 +78,19 @@ export function ProbeFlow({ attemptId, itemId, practice, onDone }: ProbeFlowProp
     setBusy(true);
     setError(null);
     try {
-      const d = await post<{ probeId: string; opening: string }>("/api/probes", { attemptId, itemId, confidenceBefore: before, mode: "typed" });
+      const d = await post<{ probeId: string; opening: string }>("/api/probes", { attemptId, itemId, confidenceBefore: before, mode: channel });
       setProbeId(d.probeId);
       setOpening(d.opening);
-      setStep("explain");
+      if (channel === "voice") {
+        try {
+          setVoice(await post<{ signedUrl: string; dynamicVariables: Record<string, string> }>(`/api/probes/${d.probeId}/voice`, { consent: true }));
+          setStep("voice");
+        } catch (e) {
+          setError(`${(e as Error).message} Switched to typing.`);
+          setChannel("typed");
+          setStep("explain");
+        }
+      } else setStep("explain");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -104,8 +119,37 @@ export function ProbeFlow({ attemptId, itemId, practice, onDone }: ProbeFlowProp
     setStep("after");
   };
 
+  const voiceFinished = async (r: VoiceResult) => {
+    setVoiceLatency(r.counterfactualLatencyMs);
+    setStep("after");
+    if (r.conversationId && probeId) {
+      // Pull the finalized transcript server-side; the live one is only a preview.
+      post(`/api/probes/${probeId}/voice/finish`, { conversationId: r.conversationId }).catch(() => {});
+    }
+  };
+
+  const switchToTyping = (r: VoiceResult) => {
+    setChannel("typed");
+    if (r.counterfactualPrompt) setCfPrompt(r.counterfactualPrompt);
+    if (r.conversationId && probeId) post(`/api/probes/${probeId}`, { conversationId: r.conversationId }, "PATCH").catch(() => {});
+    marks.current = {};
+    setStep("explain");
+  };
+
   const finish = async () => {
     if (!probeId || after === null) return;
+    if (channel === "voice") {
+      setBusy(true);
+      try {
+        await post(`/api/probes/${probeId}`, { confidenceAfter: after, counterfactualLatencyMs: voiceLatency, retried }, "PATCH");
+        setStep("done");
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     setBusy(true);
     setError(null);
     const m = marks.current;
@@ -156,10 +200,10 @@ export function ProbeFlow({ attemptId, itemId, practice, onDone }: ProbeFlowProp
               <li>Voice is recorded only if you choose it, and audio is deleted after grading. Typing works just as well.</li>
             </ul>
             <div className="flex flex-wrap gap-3">
-              <Button id="probe-type" onClick={() => setStep("before")}>
+              <Button id="probe-type" onClick={() => { setChannel("typed"); setStep("before"); }}>
                 Type my answer
               </Button>
-              <Button id="probe-voice" variant="outline" disabled={!voiceAvailable} title={voiceAvailable ? undefined : "Voice isn't set up yet"}>
+              <Button id="probe-voice" variant="outline" disabled={!voiceAvailable} title={voiceAvailable ? undefined : "Voice isn't set up yet"} onClick={() => { setChannel("voice"); setStep("consent"); }}>
                 Talk it through (records audio)
               </Button>
               {practice && (
@@ -169,6 +213,31 @@ export function ProbeFlow({ attemptId, itemId, practice, onDone }: ProbeFlowProp
               )}
             </div>
           </div>
+        )}
+
+        {step === "consent" && (
+          <div id="probe-consent" className="space-y-4">
+            <p className="text-sm">
+              Talking it through records your voice so it can be transcribed and graded on your reasoning. The audio is deleted after grading,
+              and the transcript is kept only for the review window. You can switch to typing at any time with no penalty.
+            </p>
+            <label htmlFor="probe-consent-check" className="flex items-start gap-2 text-sm">
+              <input id="probe-consent-check" type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+              I agree to have this short conversation recorded.
+            </label>
+            <div className="flex gap-3">
+              <Button id="probe-consent-continue" onClick={() => setStep("before")} disabled={!consent}>
+                Continue
+              </Button>
+              <Button id="probe-consent-type" variant="ghost" onClick={() => { setChannel("typed"); setStep("before"); }}>
+                Type instead
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === "voice" && voice && probeId && (
+          <VoiceProbe probeId={probeId} signedUrl={voice.signedUrl} dynamicVariables={voice.dynamicVariables} mark={(p) => mark(p)} onFinished={voiceFinished} onSwitchToTyping={switchToTyping} />
         )}
 
         {step === "before" && (

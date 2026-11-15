@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { getAttempt } from "../../quiz/_lib/attempts";
 import { getQuiz } from "../../quiz/_lib/quizzes";
 import { createProbe, openingPrompt } from "../../_lib/probes";
+import { voiceConfigured } from "../../_lib/elevenlabs";
 
 export async function GET() {
   // Capabilities only, so the client knows whether to offer voice.
-  return NextResponse.json({ voiceAvailable: Boolean(process.env.ELEVENLABS_AGENT_ID?.trim()) });
+  return NextResponse.json({ voiceAvailable: voiceConfigured() });
 }
 
 export async function POST(req: Request) {
