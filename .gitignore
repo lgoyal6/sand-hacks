@@ -12,3 +12,10 @@ data/sessions/
 traces/
 data/leak-screens/
 .neon
+.cache/
+.pytest_cache/
+playwright-report/
+test-results/
+*.rrweb.jsonl
+*.pem
+*.key
