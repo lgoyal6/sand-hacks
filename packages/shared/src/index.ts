@@ -110,3 +110,35 @@ export interface SessionFlag {
   agentLikelihood: number; // 0..1, evidence only, never a verdict
   topFeatures: { name: string; value: number }[];
 }
+
+// Agent activity, one shape for every agent (Mastra agents, A's attack runner, B's transform),
+// rendered by D's AgentPanel and the chat threads. Agreed in docs/CONTRACTS.md.
+export type AgentEventStatus = "idle" | "thinking" | "running" | "needs-input" | "done" | "error";
+export type AgentId =
+  | "supervisor"
+  | "tutor"
+  | "explain-coach"
+  | "researcher"
+  | "quiz-checker"
+  | "rewriter"
+  | "judge-panel"
+  | "leak-scout"
+  | (string & {});
+export interface AgentEvent {
+  agentId: AgentId;
+  status: AgentEventStatus;
+  /** One human line, present tense: "Run 2/9: browser-use is taking the quiz". */
+  label: string;
+  toolCall?: { name: string; args?: Record<string, unknown>; result?: unknown };
+  /** ISO timestamp. */
+  ts: string;
+}
+/** AgentEventStatus -> the AgentState / AgentPanel `state` prop. */
+export const AGENT_EVENT_STATE: Record<AgentEventStatus, "idle" | "thinking" | "working" | "needs-input" | "complete" | "error"> = {
+  idle: "idle",
+  thinking: "thinking",
+  running: "working",
+  "needs-input": "needs-input",
+  done: "complete",
+  error: "error",
+};

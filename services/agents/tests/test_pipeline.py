@@ -64,13 +64,19 @@ def test_attack_grades_server_side(sandbox):
     assert all(m["submitted"] for m in res["runs"])
 
 
-def test_crashed_run_counts_as_incorrect(sandbox):
+def test_crash_before_submit_is_excluded_but_unfinished_run_counts(sandbox):
+    """status=error before submitting = infrastructure, excluded. A run that hit max_steps without submitting is the
+    agent failing, and counts as incorrect on every item."""
     def crash(sb, run_id, title, model):
-        return RunOutcome(run_id, "browser-use", model, "error", 0, 2.0, error="boom")
+        return RunOutcome(run_id, "browser-use", model, "error", 0, 2.0, error="fatal: CDP WS handshake failed")
+
+    def gave_up(sb, run_id, title, model):
+        return RunOutcome(run_id, "browser-use", model, "max_steps", 40, 300.0)
 
     res = attack(QUIZ, sandbox=sandbox, repeats=1, models=["test:crash"], runners={"browser-use": crash}, log=lambda m: None)
-    assert res["summary"]["itemCorrect"] == 0
-    assert not res["runs"][0]["submitted"]
+    assert res["agentRuns"] == [] and res["summary"]["infraReasons"] == {"local browser failed to start": 1}
+    res = attack(QUIZ, sandbox=sandbox, repeats=1, models=["test:slow"], runners={"browser-use": gave_up}, log=lambda m: None)
+    assert res["summary"]["itemRuns"] == 5 and res["summary"]["itemCorrect"] == 0 and res["summary"]["infraErrors"] == 0
 
 
 def test_refuses_remote_hosts():
@@ -133,3 +139,42 @@ def test_runtime_results_mapping_and_stuck_at_probe():
     assert [r["correct"] for r in runs] == [True, True, False, False, False]
     assert runs[0]["seconds"] == 4.2
     assert meta["target"] == "runtime" and meta["stuckAtProbe"] is True
+
+
+def test_parse_all_quiz_markdown():
+    from unprompted_agents.quiz_md import parse_quiz_md
+
+    for md in sorted((REPO / "data/quizzes").glob("*.md")):
+        q = parse_quiz_md(md)
+        assert q["id"] == md.stem and q["items"], md.name
+        for i, it in enumerate(q["items"], 1):
+            assert it["id"] == f"{md.stem}-q{i}" and it["objective"], it["id"]
+    s = parse_quiz_md(REPO / "data/quizzes/sample-stats.md")
+    assert [i["answerKey"] for i in s["items"]] == [i["answerKey"] for i in QUIZ["items"]]
+    e = parse_quiz_md(REPO / "data/quizzes/econ-micro.md")
+    assert next(i for i in e["items"] if i["type"] == "multi")["answerKey"] == ["a", "c", "d"]
+
+
+def test_per_model_repeat_override(sandbox):
+    seen = []
+
+    def rec(sb, run_id, title, model):
+        seen.append(model)
+        return RunOutcome(run_id, "browser-use", model, "error", 0, 0.1, error="boom")
+
+    attack(QUIZ, sandbox=sandbox, repeats=2, models=["a:x", "b:y@1"], runners={"browser-use": rec}, log=lambda m: None)
+    assert seen == ["a:x", "a:x", "b:y"]
+
+
+def test_cli_events_stream(sandbox, capsys, monkeypatch, tmp_path):
+    """--events: NDJSON agent events on stdout, last line status done with the full result."""
+    from unprompted_agents import cli, runners
+
+    answers = {f"sample-stats-q{i}": a for i, a in enumerate(["b", "b", "1/6", "b", "b"], 1)}
+    monkeypatch.setitem(runners.RUNNERS, "browser-use", scripted_runner(answers))
+    rc = cli.main(["--quiz", str(REPO / "apps/sandbox/quizzes/sample-stats.json"), "--sandbox-url", sandbox.base_url,
+                   "--models", "test:scripted", "--repeats", "1", "--events", "--traces-dir", str(tmp_path)])
+    lines = [json.loads(ln) for ln in capsys.readouterr().out.splitlines() if ln.strip()]
+    assert rc == 0 and all(e["agentId"] == "quiz-checker" and e["ts"] and e["label"] for e in lines)
+    assert [e["status"] for e in lines][-1] == "done" and lines[-1]["result"]["summary"]["accuracy"] == 1.0
+    assert any(e.get("toolCall", {}).get("name") == "attack.run" for e in lines)

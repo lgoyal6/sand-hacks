@@ -2,11 +2,12 @@
 // Interactive reference for the chat primitives (owner: D). Not product data: a scripted demo of the
 // layout, so B and C can see how the pieces fit. Open /professor/design.
 import * as React from "react";
-import { BookOpen, Lightbulb, Target } from "lucide-react";
+import { BookOpen, Lightbulb, Sparkles, Target } from "lucide-react";
 import { ChatLayout, Chip, Composer, Message, QuestionCard, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
 import type { VoiceOrbState } from "@/components/ui/siri-orb";
 
 const SIDEBAR = {
+  links: [{ label: "Agent family", href: "/professor/design/agents", icon: <Sparkles /> }],
   groups: [
     { label: "Today", items: [{ id: "s1", title: "Intro Stats · Quiz 1", meta: "Practice", href: "/professor/design" }] },
     { label: "Yesterday", items: [{ id: "s2", title: "Confidence intervals", href: "#" }, { id: "s3", title: "Why n matters for SE", href: "#" }] },
@@ -16,15 +17,16 @@ const SIDEBAR = {
 
 type Turn =
   | { kind: "tutor"; text: string }
+  | { kind: "coach"; text: string }
   | { kind: "student"; text: string }
   | { kind: "question"; id: string }
   | { kind: "thinking"; label: string };
 
 const AGENTS_IDLE: AgentInfo[] = [
   { id: "tutor", name: "Tutor", status: "ready", state: "idle" },
-  { id: "checker", name: "Quiz checker", status: "tested 5 questions", state: "complete", steps: [{ text: "Ran 5 questions against practice agents", at: "9:41" }] },
-  { id: "coach", name: "Explain coach", status: "waiting for your answer", state: "idle" },
-  { id: "progress", name: "Progress", status: "updated", state: "complete" },
+  { id: "explain-coach", name: "Explain coach", status: "waiting for your answer", state: "idle" },
+  { id: "researcher", name: "Researcher", status: "found 2 worked examples", state: "complete", steps: [{ text: "Looked up standard error examples", at: "9:41" }] },
+  { id: "judge-panel", name: "Judge panel", status: "scores explanations later", state: "idle" },
 ];
 
 export function DesignGallery() {
@@ -49,14 +51,14 @@ export function DesignGallery() {
     const correct = answer === "b";
     setGraded({ correct, correctIds: ["b"] });
     setAgent("tutor", { status: "ready", state: "idle" });
-    setAgent("coach", { status: "preparing a follow-up", state: "working", steps: [{ text: "Read your answer", at: "now" }, { text: "Choosing a what-if question", at: "now", done: false }] });
+    setAgent("explain-coach", { status: "preparing a follow-up", state: "working", steps: [{ text: "Read your answer", at: "now" }, { text: "Choosing a what-if question", at: "now", done: false }] });
     setTurns((t) => [...t, { kind: "thinking", label: "Explain coach is preparing a follow-up" }]);
     setTimeout(() => {
       setTurns((t) => [
         ...t.filter((x) => x.kind !== "thinking"),
-        { kind: "tutor", text: correct ? "That's right. Walk me through it: how did you get the standard error? Tap the mic and say it out loud, or type." : "Not quite. Tell me how you approached it, and we'll find the step together." },
+        { kind: "coach", text: correct ? "That's right. Walk me through it: how did you get the standard error? Tap the mic and say it out loud, or type." : "Not quite. Tell me how you approached it, and we'll find the step together." },
       ]);
-      setAgent("coach", { status: "listening", state: "needs-input" });
+      setAgent("explain-coach", { status: "listening", state: "needs-input" });
     }, 1400);
   };
 
@@ -74,6 +76,7 @@ export function DesignGallery() {
         voice
           ? {
               state: voice,
+              agent: "explain-coach",
               transcript: voice === "listening" ? "Standard error is s over root n, so 10 over 5..." : voice === "speaking" ? "Good. Now what happens if the sample doubled?" : undefined,
               onStop: () => {
                 setVoice("thinking");
@@ -117,6 +120,10 @@ export function DesignGallery() {
             </Message>
           ) : t.kind === "tutor" ? (
             <Message key={i} role="tutor" copyText={t.text}>
+              <p>{t.text}</p>
+            </Message>
+          ) : t.kind === "coach" ? (
+            <Message key={i} role="tutor" agentName="Explain coach" copyText={t.text}>
               <p>{t.text}</p>
             </Message>
           ) : t.kind === "thinking" ? (

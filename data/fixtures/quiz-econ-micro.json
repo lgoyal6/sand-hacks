@@ -1,0 +1,156 @@
+{
+  "id": "econ-micro",
+  "courseId": "sandbox-course",
+  "title": "Microeconomics: Supply and Demand",
+  "sourceFormat": "markdown",
+  "items": [
+    {
+      "id": "econ-micro-q1",
+      "quizId": "econ-micro",
+      "stem": "The price of coffee rises. What usually happens to the quantity of coffee demanded?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It rises"
+        },
+        {
+          "id": "b",
+          "text": "It falls"
+        },
+        {
+          "id": "c",
+          "text": "It stays the same"
+        },
+        {
+          "id": "d",
+          "text": "Demand shifts right"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "apply the law of demand as a movement along the curve",
+      "originalItemId": null
+    },
+    {
+      "id": "econ-micro-q2",
+      "quizId": "econ-micro",
+      "stem": "A new technology cuts the cost of producing laptops. What happens in the laptop market?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Supply shifts left, price rises"
+        },
+        {
+          "id": "b",
+          "text": "Supply shifts right, price falls"
+        },
+        {
+          "id": "c",
+          "text": "Demand shifts right, price rises"
+        },
+        {
+          "id": "d",
+          "text": "Nothing changes"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "predict the effect of a supply shift on equilibrium price",
+      "originalItemId": null
+    },
+    {
+      "id": "econ-micro-q3",
+      "quizId": "econ-micro",
+      "stem": "A price rises by 10% and quantity demanded falls by 20%. What is the absolute value of the price elasticity of demand?",
+      "type": "numeric",
+      "answerKey": "2",
+      "objective": "compute price elasticity of demand from percentage changes",
+      "originalItemId": null
+    },
+    {
+      "id": "econ-micro-q4",
+      "quizId": "econ-micro",
+      "stem": "The government sets a binding price ceiling below equilibrium. What is the result?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A surplus"
+        },
+        {
+          "id": "b",
+          "text": "A shortage"
+        },
+        {
+          "id": "c",
+          "text": "No effect"
+        },
+        {
+          "id": "d",
+          "text": "Higher prices"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "predict the effect of a binding price ceiling",
+      "originalItemId": null
+    },
+    {
+      "id": "econ-micro-q5",
+      "quizId": "econ-micro",
+      "stem": "You skip a $20 concert to work a shift that pays $50. What is the opportunity cost of working?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "$20"
+        },
+        {
+          "id": "b",
+          "text": "$50"
+        },
+        {
+          "id": "c",
+          "text": "The concert you gave up"
+        },
+        {
+          "id": "d",
+          "text": "$30"
+        }
+      ],
+      "answerKey": "c",
+      "objective": "identify opportunity cost as the next best alternative forgone",
+      "originalItemId": null
+    },
+    {
+      "id": "econ-micro-q6",
+      "quizId": "econ-micro",
+      "stem": "Which would shift the demand curve for electric cars to the right? Select all that apply.",
+      "type": "multi",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Gas prices rise"
+        },
+        {
+          "id": "b",
+          "text": "The price of electric cars falls"
+        },
+        {
+          "id": "c",
+          "text": "A tax credit for buying electric cars"
+        },
+        {
+          "id": "d",
+          "text": "Consumer incomes rise, if electric cars are a normal good"
+        }
+      ],
+      "answerKey": [
+        "a",
+        "c",
+        "d"
+      ],
+      "objective": "distinguish demand shifters from a change in the good's own price",
+      "originalItemId": null
+    }
+  ]
+}

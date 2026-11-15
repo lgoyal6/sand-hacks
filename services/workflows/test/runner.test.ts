@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import { loadSchema, PGliteBranchStore } from "../src/db/index.js";
 import { parseMarkdownQuiz, saveQuiz } from "../src/ingest/markdown.js";
 import { runTransform } from "../src/runner.js";
-import { createTransformWorkflow } from "../src/mastra/index.js";
-import { decide, loadExperiments, type Attacker, type Generator, type Judge, type Solver, type TransformEvent } from "../src/steps/index.js";
+import { mastra, setTransformContext } from "../src/mastra/index.js";
+import { applyApprovals, decide, loadExperiments, type Attacker, type Generator, type Judge, type Solver, type TransformEvent } from "../src/steps/index.js";
 import { sameAnswer, extractFinal } from "../src/steps/answers.js";
 
 const md = await readFile(new URL("../../../data/quizzes/sample-stats.md", import.meta.url), "utf8");
@@ -123,30 +123,47 @@ describe("transform runner (fake models, PGlite branches)", () => {
     await store.close();
   }, 60_000);
 
-  it("the Mastra wrapper runs the same steps and streams runner events", async () => {
+  it("the Mastra workflow suspends for the professor and applies the decision on resume", async () => {
     const store = await PGliteBranchStore.create(await loadSchema());
     const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
     await saveQuiz((await store.main()).db, quiz);
-    const wf = createTransformWorkflow({
-      store,
-      deps: { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker },
-      opts: { candidatesPerItem: 1, strategies: ["isomorphic"] },
-    });
-    const run = await wf.createRun();
+    setTransformContext({ store, deps: { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker }, describe: "fakes", independentPanel: false });
+    const run = await mastra.getWorkflow("transform").createRun();
+
     const stream = run.stream({
-      inputData: { quizId: "sample-stats", itemIds: ["sample-stats-q2"], solveRates: null, leakedItemIds: [], assumeSolveRate: 0.9 },
+      inputData: { quizId: "sample-stats", itemIds: ["sample-stats-q2"], solveRates: null, leakedItemIds: [], assumeSolveRate: 0.9, candidatesPerItem: 2, attackModel: "test:no-baseline" },
     });
     const types: string[] = [];
     for await (const chunk of stream.fullStream) {
       const c = chunk as { type: string; payload?: { output?: { type?: string } } };
       if (c.type === "workflow-step-output" && c.payload?.output?.type) types.push(c.payload.output.type);
     }
-    const res = await stream.result;
-    expect(res.status).toBe("success");
-    const out = (res as { result: { experiments: { status: string }[]; notes: string[] } }).result;
-    expect(out.experiments.map((e) => e.status)).toEqual(["verified"]);
-    expect(out.notes[0]).toMatch(/ASSUMED 0.9/);
+    const first = await stream.result;
+    expect(first.status).toBe("suspended");
     expect(types).toContain("verified");
+    const waiting = (first as { steps: Record<string, { suspendPayload?: { verified: { id: string }[] } }> }).steps["professor-approval"]!.suspendPayload!.verified;
+    expect(waiting.map((v) => v.id)).toEqual(["sample-stats-q2-v1"]); // v2 (application) fails the key check in the fakes
+
+    const done = await run.resume({ step: "professor-approval", resumeData: { decisions: [{ id: "sample-stats-q2-v1", approve: true }] } });
+    expect(done.status).toBe("success");
+    const out = (done as { result: { decided: string[]; experiments: { id: string; status: string }[]; notes: string[] } }).result;
+    expect(out.decided).toEqual(["sample-stats-q2-v1"]);
+    expect(out.experiments.find((e) => e.id === "sample-stats-q2-v1")!.status).toBe("approved");
+    expect(out.notes[0]).toMatch(/ASSUMED 0.9/);
+    // Only verified variants can be decided; a second decision on the same id is a no-op.
+    expect(await applyApprovals((await store.main()).db, [{ id: "sample-stats-q2-v1", approve: false }])).toEqual([]);
+    setTransformContext(null);
+    await store.close();
+  }, 60_000);
+
+  it("a retake with no valid agent runs leaves candidates unverified, not rejected", async () => {
+    const store = await PGliteBranchStore.create(await loadSchema());
+    const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
+    await saveQuiz((await store.main()).db, quiz);
+    const allProviderErrors: Attacker = { attack: async (q) => ({ solveRates: q.items.map((i) => ({ itemId: i.id, runs: 0, correct: 0, solveRate: 0, agentSolvable: false })) }) };
+    const res = await runTransform(store, quiz, [{ item: quiz.items[0]!, solveRate: 1 }], { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker: allProviderErrors }, { candidatesPerItem: 1, strategies: ["isomorphic"] });
+    expect(res.experiments[0]!.status).toBe("proposed");
+    expect(res.experiments[0]!.reasons.at(-1)).toMatch(/^not verified: the agent retake produced no valid runs/);
     await store.close();
   }, 60_000);
 

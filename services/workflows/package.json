@@ -7,18 +7,21 @@
     "typecheck": "tsc --noEmit",
     "killtest:neon": "tsx --env-file-if-exists=../../.env.local scripts/neon-killtest.ts",
     "ingest": "tsx --env-file-if-exists=../../.env.local src/cli/ingest.ts",
-    "transform": "tsx --env-file-if-exists=../../.env.local src/cli/transform.ts"
+    "transform": "tsx --env-file-if-exists=../../.env.local src/cli/transform.ts",
+    "mastra:dev": "mastra dev --env ../../.env.local"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",
     "@google/genai": "3.3.0",
     "@mastra/core": "1.83.0",
+    "@mastra/pg": "1.36.0",
     "@neondatabase/serverless": "^1.2.1",
     "@unprompted/shared": "workspace:^",
     "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
+    "mastra": "1.39.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"

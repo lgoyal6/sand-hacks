@@ -3,7 +3,7 @@ import path from "node:path";
 import type { Item, Quiz, SolveRate, VariantStrategy } from "@unprompted/shared";
 import { z } from "zod";
 import { answerText, extractFinal } from "./answers.js";
-import type { GeminiModel, JsonModel } from "./llm.js";
+import { InfraError, type GeminiModel, type JsonModel } from "./llm.js";
 import type { Attacker, Candidate, GeneratedCandidate, Generator, Judge, PanelVote, Solver, SolveResult } from "./types.js";
 
 // ---------- shared prompt helpers ----------
@@ -45,7 +45,7 @@ const CandidateSchema = z.object({
 });
 
 export class GeminiGenerator implements Generator {
-  constructor(private model: GeminiModel) {}
+  constructor(private model: JsonModel) {}
 
   async generate(source: Item, strategy: VariantStrategy, attempt: number): Promise<GeneratedCandidate> {
     const prompt = `You rewrite quiz questions so they still test the SAME learning objective but are harder for an AI agent to answer by lookup or pattern matching.
@@ -102,20 +102,57 @@ export function normalizeCandidate(out: z.infer<typeof CandidateSchema>, source:
 // ---------- solver (code interpreter) ----------
 
 export class GeminiCodeSolver implements Solver {
-  constructor(private model: GeminiModel) {}
+  constructor(
+    private model: GeminiModel,
+    /** Set when a fallback solver exists: switch on quota instead of waiting. */
+    private failFastOnQuota = false,
+  ) {}
 
-  async solve(candidate: Candidate, run = 0): Promise<SolveResult> {
-    const prompt = `Solve this quiz question. Use Python code execution to compute or verify every quantitative step.
+  /** Same prompt, for a model without the code tool (fallback path). */
+  static prompt(candidate: Candidate, withCode: boolean) {
+    return `Solve this quiz question.${withCode ? " Use Python code execution to compute or verify every quantitative step." : " Work every quantitative step carefully."}
 
 ${renderItem(candidate)}
 
 End your reply with one line exactly like:
 FINAL: <answer>
 where <answer> is the option letter${candidate.type === "multi" ? "s, comma-separated" : ""}${candidate.type === "numeric" ? " or, for numeric questions, the number" : ""}.`;
-    const { text, usedCode } = await this.model.withCode(prompt, { temperature: 0.7, salt: `run${run}` });
+  }
+
+  async solve(candidate: Candidate, run = 0): Promise<SolveResult> {
+    const prompt = GeminiCodeSolver.prompt(candidate, true);
+    const { text, usedCode } = await this.model.withCode(prompt, { temperature: 0.7, salt: `run${run}`, failFastOnQuota: this.failFastOnQuota });
     const answer = extractFinal(text);
     if (!answer) throw new Error("solver reply had no FINAL: line");
     return { answer, usedCode, model: this.model.name };
+  }
+}
+
+/**
+ * Prefer the code-interpreter solver; if it is unavailable (quota), solve without code through
+ * another model and report usedCode=false, so the check never claims code that didn't run.
+ */
+export class FallbackSolver implements Solver {
+  constructor(
+    private primary: Solver | null,
+    private fallback: JsonModel | null,
+  ) {}
+
+  async solve(candidate: Candidate, run = 0): Promise<SolveResult> {
+    if (this.primary) {
+      try {
+        return await this.primary.solve(candidate, run);
+      } catch (e) {
+        if (!this.fallback || !(e instanceof InfraError)) throw e;
+      }
+    }
+    if (!this.fallback) throw new InfraError("no solver available (set GEMINI_API_KEY or GMI_API_KEY)");
+    const out = await this.fallback.json(
+      GeminiCodeSolver.prompt(candidate, false).replace(/End your reply[\s\S]*$/, "Reply with JSON: the final answer (option letter, or the number)."),
+      z.object({ answer: z.string() }),
+      { temperature: 0.7, salt: `run${run}` },
+    );
+    return { answer: out.answer.trim(), usedCode: false, model: this.fallback.name };
   }
 }
 
@@ -152,24 +189,6 @@ Key: ${answerText(candidate.answerKey)}
     const v = await this.model.json(prompt, VoteSchema, { temperature: this.temperature });
     return { judge: this.name, ...v };
   }
-}
-
-/**
- * Three panel seats. Prefer different model families (Gemini + GMI open models).
- * Without GMI, fall back to three different Gemini models and say so in the seat names,
- * so the output never presents them as independent model families.
- */
-export function buildPanel(gemini: JsonModel, others: JsonModel[], geminiFallbacks: JsonModel[]): { judges: Judge[]; independentFamilies: boolean } {
-  if (others.length >= 2) {
-    return { judges: [gemini, others[0]!, others[1]!].map((m) => new ModelJudge(m)), independentFamilies: true };
-  }
-  const seats = [gemini, ...others, ...geminiFallbacks].slice(0, 3);
-  if (seats.length < 3) throw new Error("objective panel needs 3 seats");
-  const sameFamily = seats.filter((m) => m.name.startsWith("gemini:")).length > 1;
-  return {
-    judges: seats.map((m) => new ModelJudge(m, sameFamily && m.name.startsWith("gemini:") ? `${m.name} (same family)` : m.name)),
-    independentFamilies: !sameFamily,
-  };
 }
 
 // ---------- re-attack via Workstream A ----------

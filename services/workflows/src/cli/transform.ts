@@ -9,16 +9,15 @@
 import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import type { LeakFinding, SolveRate, VariantExperiment, VariantStrategy } from "@unprompted/shared";
+import { REPO_ROOT } from "../paths.js";
+import type { AgentRun, LeakFinding, SolveRate, VariantExperiment, VariantStrategy } from "@unprompted/shared";
 import { loadQuiz, parseMarkdownQuiz, saveQuiz } from "../ingest/markdown.js";
-import { openBranchStore } from "../db/index.js";
 import { ALL_STRATEGIES, runTransform } from "../runner.js";
-import { buildPanel, CliAttacker, GeminiCodeSolver, GeminiGenerator } from "../steps/adapters.js";
-import { envVal, GeminiModel, modelsFromEnv } from "../steps/llm.js";
-import { selectTargets } from "../steps/index.js";
-import type { Attacker, TransformEvent } from "../steps/types.js";
+import { baselineSolveRates, DEFAULT_ATTACK_MODEL, selectTargets } from "../steps/index.js";
+import type { TransformEvent } from "../steps/types.js";
+import { buildContext } from "../context.js";
 
-const ROOT = path.resolve(import.meta.dirname, "../../../..");
+const ROOT = REPO_ROOT;
 const FIX = path.join(ROOT, "data/fixtures");
 
 const { values } = parseArgs({
@@ -44,22 +43,17 @@ async function readJson<T>(file: string): Promise<T | null> {
   }
 }
 
-const models = modelsFromEnv();
-if (!models) {
-  console.error("GEMINI_API_KEY is not set in the repo-root .env.local; refusing to fake variants.");
-  process.exit(1);
-}
-const key = envVal("GEMINI_API_KEY")!;
-const solverModel = new GeminiModel(key, envVal("GEMINI_SOLVER_MODEL") ?? "gemini-3.6-flash");
-const fallbackSeats = (envVal("GEMINI_PANEL_FALLBACKS") ?? "gemini-3.6-flash,gemini-3.5-flash-lite").split(",").map((m) => new GeminiModel(key, m.trim()));
-const panel = buildPanel(models.gemini, models.others, fallbackSeats);
-
 const quizFile = path.resolve(ROOT, values.quiz!);
 const quizId = path.basename(quizFile, ".md");
 const quiz = parseMarkdownQuiz(await readFile(quizFile, "utf8"), { quizId, courseId: "sandbox-course" });
 
 // Which items to transform: agent-solvable (A) or leaked (D), unless --items says otherwise.
-const rates = await readJson<SolveRate[]>(path.join(FIX, "solve_rates.json"));
+// Like-for-like: baseline from A's runs with the same agent model the retake will use.
+const attackModel = values["attack-models"] ?? DEFAULT_ATTACK_MODEL;
+const agentRuns = (await readJson<AgentRun[]>(path.join(FIX, "agent_runs.json"))) ?? [];
+const sameModel = baselineSolveRates(agentRuns, attackModel, quizId);
+const rates = sameModel.length ? sameModel : await readJson<SolveRate[]>(path.join(FIX, "solve_rates.json"));
+if (!sameModel.length) console.log(`NOTE no ${attackModel} baseline for ${quizId}; using pooled solve_rates.json (not like-for-like)`);
 const leaks = (await readJson<LeakFinding[]>(path.join(FIX, "leaks.json"))) ?? [];
 const assumed = values["assume-solve-rate"] != null ? Number(values["assume-solve-rate"]) : null;
 let picked;
@@ -75,16 +69,7 @@ if (!targets.length) {
   process.exit(1);
 }
 
-const attacker: Attacker = values["no-attack"]
-  ? { attack: async () => Promise.reject(new Error("re-attack disabled with --no-attack")) }
-  : new CliAttacker({
-      repoRoot: ROOT,
-      repeats: Number(values["attack-repeats"]),
-      models: values["attack-models"] ?? "gemini:gemini-3.5-flash",
-      log: (s) => process.stderr.write(`  [attack] ${s}\n`),
-    });
-
-const eventsFile = values.events ? path.resolve(values.events) : path.join(FIX, "variants_events.jsonl");
+const eventsFile = values.events ? path.resolve(ROOT, values.events) : path.join(FIX, "variants_events.jsonl");
 await mkdir(FIX, { recursive: true });
 await mkdir(path.dirname(eventsFile), { recursive: true });
 await writeFile(eventsFile, "");
@@ -111,11 +96,20 @@ const log = async (e: TransformEvent) => {
   console.log(`${((Date.now() - t0) / 1000).toFixed(1).padStart(6)}s ${id.padEnd(22)} ${line}`);
 };
 
-const store = await openBranchStore();
-console.log(
-  `Transform ${targets.map((t) => t.item.id).join(", ")} on ${store.kind}; generator ${models.gemini.name}, solver ${solverModel.name}, ` +
-    `panel [${panel.judges.map((j) => j.name).join("; ")}]${panel.independentFamilies ? "" : " (one model family)"}`,
-);
+let ctx;
+try {
+  ctx = await buildContext({
+    noAttack: values["no-attack"],
+    attackRepeats: Number(values["attack-repeats"]),
+    attackModels: attackModel,
+    log: (s) => process.stderr.write(`  [attack] ${s}\n`),
+  });
+} catch (e) {
+  console.error(String((e as Error).message));
+  process.exit(1);
+}
+const { store, deps } = ctx;
+console.log(`Transform ${targets.map((t) => t.item.id).join(", ")} on ${store.kind}; ${ctx.describe}`);
 for (const n of notes) console.log(`NOTE ${n}`);
 
 let result;
@@ -129,7 +123,7 @@ try {
     store,
     onMain,
     targets,
-    { generator: new GeminiGenerator(models.gemini), solver: new GeminiCodeSolver(solverModel), judges: panel.judges, attacker },
+    deps,
     {
       candidatesPerItem: Number(values.n),
       strategies: (values.strategies?.split(",") as VariantStrategy[] | undefined) ?? ALL_STRATEGIES,

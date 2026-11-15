@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "id": "prb_f1355536-8b8",
+    "createdAt": "2026-11-15T00:58:07.783Z",
+    "attemptId": "att_7874d205-d6d",
+    "itemId": "sample-stats-q3",
+    "quizId": "sample-stats",
+    "confidenceBefore": 5,
+    "mode": "typed",
+    "transcript": "Unprompted: You answered 1/6. Walk me through how you got there, as if you were explaining it to a friend.\nStudent (typed): E2E smoke test explanation: I used the formula from the lecture.\nUnprompted: E2E stub: suppose the sample size doubled. What changes, and why?\nStudent (typed): E2E smoke test counterfactual answer.",
+    "explanation": "E2E smoke test explanation: I used the formula from the lecture.",
+    "counterfactualAnswer": "E2E smoke test counterfactual answer.",
+    "counterfactualLatencyMs": 74,
+    "confidenceAfter": 4,
+    "completedAt": "2026-11-15T00:58:30.092Z"
+  }
+]

@@ -2,9 +2,22 @@
 // Used by the student runtime (apps/web) and by the Explain coach agent's generateFollowup tool
 // (services/workflows). Pure: no filesystem, no framework; caching is the caller's job.
 import type { Item } from "@unprompted/shared";
-import { geminiJson, type GeminiOptions } from "./gemini";
+import { geminiJson, gmiGeminiJson, type GeminiOptions } from "./gemini";
 
 export const FALLBACK_FOLLOWUP = "Good. Now suppose one number in the problem changed, say it doubled. What would happen to your answer, and why?";
+
+// Generic "what if" follow-ups per question type, for when Gemini is unavailable (quota, outage).
+export function fallbackFollowup(item: Pick<Item, "type">): string {
+  switch (item.type) {
+    case "numeric":
+      return "Suppose one of the numbers in the problem doubled. What would happen to your answer, and why?";
+    case "mcq":
+    case "multi":
+      return "Pick one of the other options. What would have to be different about the problem for that one to be right?";
+    default:
+      return "What is one change to the situation in the question that would change your answer? Walk me through why.";
+  }
+}
 
 export interface FollowupInput {
   item: Item; // needs the answer key: only call server-side
@@ -59,17 +72,35 @@ export const FOLLOWUP_SCHEMA = {
   required: ["question", "changed"],
 } as const;
 
-// Never throws: falls back to a generic template question if Gemini is unavailable.
-export async function generateFollowup(input: FollowupInput, gemini: Partial<GeminiOptions> = {}): Promise<Followup> {
-  const apiKey = gemini.apiKey ?? (typeof process !== "undefined" ? process.env.GEMINI_API_KEY?.trim() : undefined);
-  if (!apiKey) return { question: FALLBACK_FOLLOWUP, source: "template" };
-  try {
-    const out = await geminiJson<{ question: string; changed: string }>(buildFollowupPrompt(input), FOLLOWUP_SCHEMA, { ...gemini, apiKey });
+// Never throws. Order: Gemini direct (flash-lite chain) -> Gemini via GMI Cloud -> template per question type.
+export async function generateFollowup(
+  input: FollowupInput,
+  gemini: Partial<GeminiOptions> & { gmi?: { apiKey?: string; baseUrl?: string } } = {},
+): Promise<Followup> {
+  const env = typeof process !== "undefined" ? process.env : ({} as Record<string, string | undefined>);
+  const apiKey = gemini.apiKey ?? env.GEMINI_API_KEY?.trim();
+  const gmiKey = gemini.gmi?.apiKey ?? env.GMI_API_KEY?.trim();
+  const gmiBase = gemini.gmi?.baseUrl ?? env.GMI_BASE_URL?.trim() ?? "https://api.gmi-serving.com/v1";
+  const prompt = buildFollowupPrompt(input);
+  const accept = (out: { question?: string; changed?: string; _model: string }): Followup | null => {
     const q = out.question?.trim();
-    if (!q || q.length > 400) return { question: FALLBACK_FOLLOWUP, source: "template" };
-    return { question: q, changed: out.changed, source: "gemini", model: out._model };
-  } catch (err) {
-    console.error("[probe-core] follow-up generation failed, using template:", (err as Error).message);
-    return { question: FALLBACK_FOLLOWUP, source: "template" };
+    return q && q.length <= 400 ? { question: q, changed: out.changed, source: "gemini", model: out._model } : null;
+  };
+  if (apiKey) {
+    try {
+      const ok = accept(await geminiJson<{ question: string; changed: string }>(prompt, FOLLOWUP_SCHEMA, { ...gemini, apiKey }));
+      if (ok) return ok;
+    } catch (err) {
+      console.warn("[probe-core] direct Gemini failed:", (err as Error).message);
+    }
   }
+  if (gmiKey) {
+    try {
+      const ok = accept(await gmiGeminiJson<{ question: string; changed: string }>(`${prompt}\n\nReturn JSON: {"question": string, "changed": string}`, { apiKey: gmiKey, baseUrl: gmiBase }));
+      if (ok) return ok;
+    } catch (err) {
+      console.warn("[probe-core] GMI Gemini failed:", (err as Error).message);
+    }
+  }
+  return { question: fallbackFollowup(input.item), source: "template" };
 }

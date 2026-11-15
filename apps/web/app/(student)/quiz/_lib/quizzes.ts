@@ -63,12 +63,18 @@ export async function getQuiz(id: string): Promise<Quiz | null> {
   }
 }
 
-// Quizzes students can take: B's ingested fixtures (data/fixtures/quiz-*.json).
+// Quizzes students can take: B's ingested fixtures (data/fixtures/quiz-*.json) plus raw data/quizzes/*.md.
 export async function listQuizzes(): Promise<Quiz[]> {
-  const files = await fs.readdir(path.join(DATA_DIR, "fixtures")).catch(() => [] as string[]);
-  const ids = files.filter((f) => /^quiz-.+\.json$/.test(f)).map((f) => f.slice(5, -5));
-  const quizzes = await Promise.all(ids.map((id) => getQuiz(id)));
-  return quizzes.filter((q): q is Quiz => q !== null);
+  const [fixtures, mds] = await Promise.all([
+    fs.readdir(path.join(DATA_DIR, "fixtures")).catch(() => [] as string[]),
+    fs.readdir(path.join(DATA_DIR, "quizzes")).catch(() => [] as string[]),
+  ]);
+  const ids = new Set([
+    ...fixtures.filter((f) => /^quiz-.+\.json$/.test(f)).map((f) => f.slice(5, -5)),
+    ...mds.filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3)),
+  ]);
+  const quizzes = await Promise.all([...ids].sort().map((id) => getQuiz(id).catch(() => null)));
+  return quizzes.filter((q): q is Quiz => q !== null && q.items.length > 0);
 }
 
 export function toPublic(q: Quiz): PublicQuiz {

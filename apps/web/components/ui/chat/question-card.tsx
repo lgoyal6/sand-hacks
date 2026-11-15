@@ -138,3 +138,88 @@ export function QuestionCard({
     </div>
   );
 }
+
+export interface ChoiceOptionProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type" | "children"> {
+  /** Letter badge, e.g. "A". */
+  letter: string;
+  children: React.ReactNode;
+  /** "radio" (default) or "checkbox". */
+  kind?: "radio" | "checkbox";
+  /** After grading. */
+  state?: "correct" | "incorrect";
+}
+
+/**
+ * One answer option for custom question bodies. Keeps a REAL native input (ids, name, value, checked,
+ * onChange all pass through) so stable selectors and agents keep working; only the look is ours.
+ */
+export function ChoiceOption({ letter, children, kind = "radio", state, className, disabled, ...input }: ChoiceOptionProps) {
+  return (
+    <label
+      className={cn(
+        "group/opt relative flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-3 text-[15px] transition-colors hover:bg-muted/60",
+        "has-[:checked]:border-foreground/70 has-[:checked]:bg-muted/60 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+        disabled && "cursor-default hover:bg-transparent",
+        state === "correct" && "border-verified/50 bg-verified-soft has-[:checked]:border-verified/60 has-[:checked]:bg-verified-soft",
+        state === "incorrect" && "border-foreground/20 bg-muted",
+        className,
+      )}
+    >
+      <input type={kind} disabled={disabled} className="peer sr-only" {...input} />
+      <span
+        aria-hidden
+        className={cn(
+          "grid size-6 shrink-0 place-items-center rounded-full border border-border text-xs font-medium text-muted-foreground transition-colors",
+          "peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background",
+          state === "correct" && "border-verified bg-verified text-white peer-checked:border-verified peer-checked:bg-verified",
+        )}
+      >
+        {state === "correct" ? <Check className="size-3.5" /> : state === "incorrect" ? <X className="size-3.5" /> : letter}
+      </span>
+      <span className="flex-1">{children}</span>
+    </label>
+  );
+}
+
+/** Vertical stack for ChoiceOption. */
+export function ChoiceList({ children, label = "Choices" }: { children: React.ReactNode; label?: string }) {
+  return (
+    <div role="group" aria-label={label} className="space-y-2">
+      {children}
+    </div>
+  );
+}
+
+/** Text/numeric answer input matching the option style. Pass id="answer-input" etc. straight through. */
+export const AnswerInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(function AnswerInput(
+  { className, ...props },
+  ref,
+) {
+  return (
+    <input
+      ref={ref}
+      className={cn(
+        "h-11 w-full rounded-xl border border-border bg-background px-4 text-[15px] outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-70",
+        className,
+      )}
+      {...props}
+    />
+  );
+});
+
+/** Pill buttons for question footers and inline actions in tutor messages. */
+export function PillButton({ variant = "primary", className, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "ghost" }) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-30",
+        variant === "primary" && "bg-primary text-primary-foreground hover:opacity-90",
+        variant === "secondary" && "border border-border bg-background text-foreground hover:bg-muted",
+        variant === "ghost" && "text-muted-foreground hover:bg-muted hover:text-foreground",
+        className,
+      )}
+      {...props}
+    />
+  );
+}

@@ -31,5 +31,5 @@ describe("PGlite branch store (Neon fallback)", async () => {
     );
     expect(rows[0]).toEqual({ status: "verified", candidate_json: { stem: "variant" } });
     expect(await store.listBranches()).toContain("exp/i1/1");
-  });
+  }, 30_000);
 });

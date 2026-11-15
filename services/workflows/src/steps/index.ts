@@ -214,3 +214,54 @@ export function selectTargets(
   }
   return { targets, notes };
 }
+
+// ---------- 7. professor decision (human in the loop) ----------
+
+export interface ApprovalDecision {
+  id: string;
+  approve: boolean;
+  note?: string;
+}
+
+/**
+ * Apply the professor's decisions on main. Only verified variants can be decided:
+ * approve -> "approved"; reject -> "rejected" with the professor's reason.
+ * Returns the ids that changed (anything else was not verified, or already decided).
+ */
+export async function applyApprovals(db: Db, decisions: ApprovalDecision[]): Promise<string[]> {
+  const changed: string[] = [];
+  for (const d of decisions) {
+    const reason = d.approve ? null : `Rejected by professor${d.note ? `: ${d.note}` : ""}`;
+    const { rows } = await db.query<{ id: string }>(
+      `update variant_experiment
+          set status = $2,
+              reasons_json = case when $3::text is null then reasons_json else coalesce(reasons_json, '[]'::jsonb) || to_jsonb($3::text) end
+        where id = $1 and status = 'verified'
+        returning id`,
+      [d.id, d.approve ? "approved" : "rejected", reason],
+    );
+    if (rows[0]) changed.push(rows[0].id);
+  }
+  return changed;
+}
+
+// ---------- like-for-like baseline ----------
+
+/** The agent model used for retakes; the baseline must come from the same model. */
+export const DEFAULT_ATTACK_MODEL = "gmi:google/gemini-3.8-flash";
+
+/**
+ * Original solve rates for one agent model, from A's agent_runs.json. Comparing a variant's retake
+ * against a pooled baseline (several models) would mix model strength into the measured drop.
+ */
+export function baselineSolveRates(runs: import("@unprompted/shared").AgentRun[], model: string, quizId: string): SolveRate[] {
+  const by = new Map<string, { correct: number; runs: number }>();
+  for (const r of runs) {
+    if (r.quizId !== quizId || r.model !== model) continue;
+    const b = by.get(r.itemId) ?? { correct: 0, runs: 0 };
+    b.runs += 1;
+    if (r.correct) b.correct += 1;
+    by.set(r.itemId, b);
+  }
+  return [...by].map(([itemId, b]) => ({ itemId, runs: b.runs, correct: b.correct, solveRate: b.correct / b.runs, agentSolvable: b.correct / b.runs >= 0.6 }));
+}

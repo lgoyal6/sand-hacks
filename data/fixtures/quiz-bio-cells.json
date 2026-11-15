@@ -1,0 +1,156 @@
+{
+  "id": "bio-cells",
+  "courseId": "sandbox-course",
+  "title": "Biology: Cells and Energy",
+  "sourceFormat": "markdown",
+  "items": [
+    {
+      "id": "bio-cells-q1",
+      "quizId": "bio-cells",
+      "stem": "Which organelle is the main site of ATP production in aerobic respiration?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Ribosome"
+        },
+        {
+          "id": "b",
+          "text": "Golgi apparatus"
+        },
+        {
+          "id": "c",
+          "text": "Mitochondrion"
+        },
+        {
+          "id": "d",
+          "text": "Lysosome"
+        }
+      ],
+      "answerKey": "c",
+      "objective": "identify where most cellular ATP is made",
+      "originalItemId": null
+    },
+    {
+      "id": "bio-cells-q2",
+      "quizId": "bio-cells",
+      "stem": "A cell is placed in a solution with a higher solute concentration than its cytoplasm. What happens to the water?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Water moves into the cell"
+        },
+        {
+          "id": "b",
+          "text": "Water moves out of the cell"
+        },
+        {
+          "id": "c",
+          "text": "No water moves"
+        },
+        {
+          "id": "d",
+          "text": "Solutes move in and water stays"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "predict osmosis in a hypertonic solution",
+      "originalItemId": null
+    },
+    {
+      "id": "bio-cells-q3",
+      "quizId": "bio-cells",
+      "stem": "Which are found in both plant and animal cells? Select all that apply.",
+      "type": "multi",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Cell membrane"
+        },
+        {
+          "id": "b",
+          "text": "Chloroplasts"
+        },
+        {
+          "id": "c",
+          "text": "Mitochondria"
+        },
+        {
+          "id": "d",
+          "text": "Ribosomes"
+        }
+      ],
+      "answerKey": [
+        "a",
+        "c",
+        "d"
+      ],
+      "objective": "compare structures shared by plant and animal cells",
+      "originalItemId": null
+    },
+    {
+      "id": "bio-cells-q4",
+      "quizId": "bio-cells",
+      "stem": "An enzyme is heated far above its optimal temperature and stops working. Why?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It runs out of substrate"
+        },
+        {
+          "id": "b",
+          "text": "Its shape changes and the active site no longer fits the substrate"
+        },
+        {
+          "id": "c",
+          "text": "It becomes a different enzyme"
+        },
+        {
+          "id": "d",
+          "text": "It speeds up too much"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "explain enzyme denaturation through active-site shape",
+      "originalItemId": null
+    },
+    {
+      "id": "bio-cells-q5",
+      "quizId": "bio-cells",
+      "stem": "A human body cell has 46 chromosomes. How many chromosomes are in each cell produced by meiosis?",
+      "type": "numeric",
+      "answerKey": "23",
+      "objective": "relate meiosis to halving the chromosome number",
+      "originalItemId": null
+    },
+    {
+      "id": "bio-cells-q6",
+      "quizId": "bio-cells",
+      "stem": "What are the main products of photosynthesis?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Carbon dioxide and water"
+        },
+        {
+          "id": "b",
+          "text": "Glucose and oxygen"
+        },
+        {
+          "id": "c",
+          "text": "ATP and carbon dioxide"
+        },
+        {
+          "id": "d",
+          "text": "Oxygen and carbon dioxide"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "identify the outputs of photosynthesis",
+      "originalItemId": null
+    }
+  ]
+}

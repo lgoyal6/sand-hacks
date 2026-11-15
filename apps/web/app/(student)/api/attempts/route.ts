@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   const { plan } = await planProbes(quiz.items.map((i) => i.id), mode);
   const attempt = await createAttempt({
     probePlan: plan,
-    quizId: quiz.id,
+    quiz,
     mode,
     studentPseudonym: body.studentPseudonym,
     consentAudio: body.consentAudio,
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
   if (req.headers.get("x-runner-token") !== expected) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   const student = new URL(req.url).searchParams.get("student");
   if (!student || !/^[\w-]{1,64}$/.test(student)) return NextResponse.json({ error: "student required" }, { status: 400 });
-  const attempts = (await listAttempts()).filter((a) => a.studentPseudonym === student);
+  const attempts = await listAttempts({ student });
   return NextResponse.json({
     attempts: attempts.map((a) => ({
       attemptId: a.id,

@@ -1,0 +1,84 @@
+[
+  {
+    "id": "sample-stats-q1-v2",
+    "itemId": "sample-stats-q1",
+    "neonBranch": "exp/sample-stats-q1/2",
+    "strategy": "application",
+    "candidate": {
+      "stem": "A wildlife researcher measures the carapace length of 36 randomly selected adult green sea turtles. The sample has a mean length of 105 cm and a standard deviation of 18 cm. What is the standard error of the mean for this sample?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0.5 cm"
+        },
+        {
+          "id": "b",
+          "text": "3.0 cm"
+        },
+        {
+          "id": "c",
+          "text": "6.0 cm"
+        },
+        {
+          "id": "d",
+          "text": "18.0 cm"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "compute standard error from s and n",
+      "originalItemId": "sample-stats-q1"
+    },
+    "status": "proposed",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "newSolveRate": 0
+    },
+    "reasons": [
+      "not verified: the agent retake produced no valid runs (provider errors), so agent resistance is unmeasured"
+    ]
+  },
+  {
+    "id": "sample-stats-q1-v1",
+    "itemId": "sample-stats-q1",
+    "neonBranch": "exp/sample-stats-q1/1",
+    "strategy": "isomorphic",
+    "candidate": {
+      "stem": "A quality control engineer measures the breaking strength of a random sample of 64 steel cables. The sample has a mean breaking strength of 450 MPa and a standard deviation of 24 MPa. What is the standard error of the sample mean?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0.375"
+        },
+        {
+          "id": "b",
+          "text": "3"
+        },
+        {
+          "id": "c",
+          "text": "8"
+        },
+        {
+          "id": "d",
+          "text": "192"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "compute standard error from s and n",
+      "originalItemId": "sample-stats-q1"
+    },
+    "status": "proposed",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "newSolveRate": 0
+    },
+    "reasons": [
+      "not verified: the agent retake produced no valid runs (provider errors), so agent resistance is unmeasured"
+    ]
+  }
+]

@@ -1,0 +1,156 @@
+{
+  "id": "stats-inference",
+  "courseId": "sandbox-course",
+  "title": "Intro Statistics: Inference",
+  "sourceFormat": "markdown",
+  "items": [
+    {
+      "id": "stats-inference-q1",
+      "quizId": "stats-inference",
+      "stem": "A 95% confidence interval for a mean is (42, 50). What is the sample mean?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "44"
+        },
+        {
+          "id": "b",
+          "text": "46"
+        },
+        {
+          "id": "c",
+          "text": "48"
+        },
+        {
+          "id": "d",
+          "text": "It cannot be determined"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "a symmetric confidence interval is centered on the point estimate",
+      "originalItemId": null
+    },
+    {
+      "id": "stats-inference-q2",
+      "quizId": "stats-inference",
+      "stem": "A researcher widens a confidence interval from 90% to 99% using the same data. What happens to its width?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It gets narrower"
+        },
+        {
+          "id": "b",
+          "text": "It gets wider"
+        },
+        {
+          "id": "c",
+          "text": "It stays the same"
+        },
+        {
+          "id": "d",
+          "text": "It depends on the sample mean"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "higher confidence requires a larger critical value and a wider interval",
+      "originalItemId": null
+    },
+    {
+      "id": "stats-inference-q3",
+      "quizId": "stats-inference",
+      "stem": "A sample of 100 has standard deviation 20. What is the standard error of the mean?",
+      "type": "numeric",
+      "answerKey": "2",
+      "objective": "compute standard error as s divided by the square root of n",
+      "originalItemId": null
+    },
+    {
+      "id": "stats-inference-q4",
+      "quizId": "stats-inference",
+      "stem": "A test of H0: mu = 10 gives p = 0.20 at alpha = 0.05. What is the correct conclusion?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Accept that mu equals 10"
+        },
+        {
+          "id": "b",
+          "text": "Fail to reject H0; the data are not strong evidence against mu = 10"
+        },
+        {
+          "id": "c",
+          "text": "Reject H0"
+        },
+        {
+          "id": "d",
+          "text": "There is a 20% chance H0 is true"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "interpret a non-significant result without accepting the null",
+      "originalItemId": null
+    },
+    {
+      "id": "stats-inference-q5",
+      "quizId": "stats-inference",
+      "stem": "Which changes make a hypothesis test more powerful, holding everything else fixed? Select all that apply.",
+      "type": "multi",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Larger sample size"
+        },
+        {
+          "id": "b",
+          "text": "Larger true effect size"
+        },
+        {
+          "id": "c",
+          "text": "Smaller alpha"
+        },
+        {
+          "id": "d",
+          "text": "Less variability in the data"
+        }
+      ],
+      "answerKey": [
+        "a",
+        "b",
+        "d"
+      ],
+      "objective": "identify the factors that increase statistical power",
+      "originalItemId": null
+    },
+    {
+      "id": "stats-inference-q6",
+      "quizId": "stats-inference",
+      "stem": "A study finds students who sleep more earn higher grades. Which conclusion is justified?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "More sleep causes higher grades"
+        },
+        {
+          "id": "b",
+          "text": "Sleep and grades are associated in this sample"
+        },
+        {
+          "id": "c",
+          "text": "Higher grades cause more sleep"
+        },
+        {
+          "id": "d",
+          "text": "There is no relationship"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "distinguish association from causation in observational data",
+      "originalItemId": null
+    }
+  ]
+}

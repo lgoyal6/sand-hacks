@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { GoogleGenAI } from "@google/genai";
+import { LLM_CACHE_DIR } from "../paths.js";
 import { z } from "zod";
 
 /** Read an env var; empty, whitespace-only or comment-only values count as unset. */
@@ -24,7 +25,7 @@ export class InfraError extends Error {}
  * LLM_CACHE=readwrite (default) | replay (cache only; a miss is an error, spends nothing) | off.
  * `salt` separates intentionally repeated calls (e.g. the solver's 3 independent runs).
  */
-const CACHE_DIR = path.resolve(import.meta.dirname, "../../.cache/llm");
+const CACHE_DIR = LLM_CACHE_DIR;
 export async function cached<T>(parts: unknown[], fn: () => Promise<T>): Promise<T> {
   const mode = envVal("LLM_CACHE") ?? "readwrite";
   if (mode === "off") return fn();
@@ -52,7 +53,7 @@ async function rateLimit(name: string) {
   if (at > now) await new Promise((r) => setTimeout(r, at - now));
 }
 
-export async function withRetry<T>(fn: () => Promise<T>, label: string, tries = 6): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, label: string, tries = 6, opts: { failFastOnQuota?: boolean } = {}): Promise<T> {
   let last: unknown;
   for (let i = 0; i < tries; i++) {
     await rateLimit(label.replace(/ \(code\)$/, ""));
@@ -64,6 +65,8 @@ export async function withRetry<T>(fn: () => Promise<T>, label: string, tries = 
       const quota = /\b429\b|RESOURCE_EXHAUSTED|rate.?limit/i.test(msg);
       // Fail fast on auth/bad requests/unknown models; retry quota, server errors, timeouts, bad JSON.
       if (!quota && /\b(400|401|403|404)\b/.test(msg)) break;
+      // Callers with a fallback (e.g. the code solver) would rather switch than wait out a quota window.
+      if (quota && opts.failFastOnQuota) break;
       // Google puts the wait in the 429 body: "retryDelay": "37s".
       const hinted = Number(msg.match(/retryDelay"?\s*[:=]\s*"?(\d+(?:\.\d+)?)s/)?.[1] ?? NaN);
       const wait = quota ? (Number.isFinite(hinted) ? hinted * 1000 + 1000 : 15_000 * (i + 1)) : 1000 * 2 ** i;
@@ -106,7 +109,7 @@ export class GeminiModel implements JsonModel {
    * Free-form answer with Gemini's built-in Python code execution tool.
    * Returns the response text and whether the model actually ran code.
    */
-  async withCode(prompt: string, opts: { temperature?: number; salt?: string } = {}): Promise<{ text: string; usedCode: boolean }> {
+  async withCode(prompt: string, opts: { temperature?: number; salt?: string; failFastOnQuota?: boolean } = {}): Promise<{ text: string; usedCode: boolean }> {
     return cached([this.name, "code", prompt, opts.temperature, opts.salt], () => withRetry(async () => {
       const res = await this.ai.models.generateContent({
         model: this.model,
@@ -117,7 +120,7 @@ export class GeminiModel implements JsonModel {
       const usedCode = parts.some((p) => p.executableCode || p.codeExecutionResult);
       const text = parts.map((p) => p.text ?? "").join("\n");
       return { text, usedCode };
-    }, `${this.name} (code)`));
+    }, `${this.name} (code)`, 6, { failFastOnQuota: opts.failFastOnQuota }));
   }
 }
 
@@ -142,6 +145,8 @@ export class OpenAICompatModel implements JsonModel {
         body: JSON.stringify({
           model: this.model,
           temperature: opts.temperature ?? 0.2,
+          // Reasoning models spend tokens thinking before the JSON; don't cut them off.
+          max_tokens: Number(envVal("GMI_MAX_TOKENS") ?? 8192),
           response_format: { type: "json_object" },
           messages: [
             ...(opts.system ? [{ role: "system", content: opts.system }] : []),
@@ -162,27 +167,21 @@ export class OpenAICompatModel implements JsonModel {
   }
 }
 
-export interface Models {
-  gemini: GeminiModel;
-  /** Extra panel seats from other model families; empty when GMI_API_KEY is missing. */
-  others: JsonModel[];
+/** Gemini through GMI's OpenAI-compatible API (no free-tier cap). Null without GMI_API_KEY. */
+export function gmiGemini(model: string, env = process.env): OpenAICompatModel | null {
+  const key = envVal("GMI_API_KEY", env);
+  if (!key) return null;
+  return new OpenAICompatModel(envVal("GMI_BASE_URL", env) ?? "https://api.gmi-serving.com/v1", key, model.startsWith("google/") ? model : `google/${model}`);
 }
 
-/** Build models from env, or null when GEMINI_API_KEY is missing (callers then refuse to run). */
-export function modelsFromEnv(env = process.env): Models | null {
+/** Direct Gemini API (needed for the code-execution tool). Null without GEMINI_API_KEY. */
+export function directGemini(model: string, env = process.env): GeminiModel | null {
   const key = envVal("GEMINI_API_KEY", env);
-  if (!key) return null;
-  const gemini = new GeminiModel(key, envVal("GEMINI_MODEL", env) ?? "gemini-3.5-flash");
-  const gmiKey = envVal("GMI_API_KEY", env);
-  const others: JsonModel[] = [];
-  if (gmiKey) {
-    const base = envVal("GMI_BASE_URL", env) ?? "https://api.gmi-serving.com/v1";
-    // Model ids are configurable because GMI's catalog changes; check `GET $GMI_BASE_URL/models`.
-    const ids = (envVal("GMI_PANEL_MODELS", env) ?? "deepseek-ai/DeepSeek-V3.2,Qwen/Qwen3-235B-A22B-Instruct-2507")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    for (const id of ids) others.push(new OpenAICompatModel(base, gmiKey, id));
-  }
-  return { gemini, others };
+  return key ? new GeminiModel(key, model) : null;
+}
+
+/** "gmi:google/gemini-3.8-flash" or "gemini:gemini-3.6-flash" -> "Gemini 3.8 Flash". */
+export function prettyModel(name: string): string {
+  const m = name.replace(/^(gmi|gemini):/, "").replace(/^google\//, "");
+  return m.replace(/^gemini-/, "Gemini ").replace(/-preview$/, " preview").replace(/-(flash|pro|lite)/g, (_, w: string) => ` ${w[0]!.toUpperCase()}${w.slice(1)}`);
 }

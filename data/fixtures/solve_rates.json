@@ -1,36 +1,78 @@
 [
   {
     "itemId": "sample-stats-q1",
-    "runs": 2,
-    "correct": 2,
+    "runs": 4,
+    "correct": 4,
     "solveRate": 1.0,
     "agentSolvable": true
   },
   {
     "itemId": "sample-stats-q2",
-    "runs": 2,
-    "correct": 2,
+    "runs": 4,
+    "correct": 4,
     "solveRate": 1.0,
     "agentSolvable": true
   },
   {
     "itemId": "sample-stats-q3",
-    "runs": 2,
-    "correct": 2,
+    "runs": 4,
+    "correct": 4,
     "solveRate": 1.0,
     "agentSolvable": true
   },
   {
     "itemId": "sample-stats-q4",
-    "runs": 2,
-    "correct": 2,
+    "runs": 4,
+    "correct": 4,
     "solveRate": 1.0,
     "agentSolvable": true
   },
   {
     "itemId": "sample-stats-q5",
-    "runs": 2,
-    "correct": 2,
+    "runs": 4,
+    "correct": 4,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "stats-inference-q1",
+    "runs": 7,
+    "correct": 7,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "stats-inference-q2",
+    "runs": 7,
+    "correct": 7,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "stats-inference-q3",
+    "runs": 7,
+    "correct": 7,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "stats-inference-q4",
+    "runs": 7,
+    "correct": 7,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "stats-inference-q5",
+    "runs": 7,
+    "correct": 7,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "stats-inference-q6",
+    "runs": 7,
+    "correct": 7,
     "solveRate": 1.0,
     "agentSolvable": true
   }

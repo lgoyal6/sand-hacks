@@ -5,6 +5,7 @@ import * as React from "react";
 import { Check, Copy, RotateCcw } from "lucide-react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { AgentAvatar, resolveAgent } from "@/components/ui/agent-avatar";
 
 export function Thread({ children, className }: { children: React.ReactNode; className?: string }) {
   const end = React.useRef<HTMLDivElement>(null);
@@ -53,7 +54,12 @@ export function Message({ role, agentName, children, copyText, onRegenerate, cla
       transition={{ duration: 0.25, ease: "easeOut" }}
       className={cn("group/msg", className)}
     >
-      {agentName && <p className="mb-1 text-xs font-medium text-muted-foreground">{agentName}</p>}
+      {agentName && (
+        <p className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+          {resolveAgent(agentName) && <AgentAvatar agent={agentName} size="xs" />}
+          {agentName}
+        </p>
+      )}
       <div className="text-[15px] leading-[1.7] text-foreground [&_p+p]:mt-3">{children}</div>
       {(copyText || onRegenerate) && (
         <div className="mt-1.5 flex gap-0.5 opacity-0 transition-opacity group-hover/msg:opacity-100 focus-within:opacity-100">
