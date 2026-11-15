@@ -9,7 +9,8 @@
     "ingest": "tsx --env-file-if-exists=../../.env.local src/cli/ingest.ts",
     "transform": "tsx --env-file-if-exists=../../.env.local src/cli/transform.ts",
     "mastra:dev": "mastra dev --env ../../.env.local",
-    "test:boot": "zsh scripts/boot-test.sh"
+    "test:boot": "zsh scripts/boot-test.sh",
+    "qti": "tsx --env-file-if-exists=../../.env.local src/cli/qti.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",
@@ -20,6 +21,8 @@
     "@neondatabase/serverless": "^1.2.1",
     "@unprompted/leakscan": "workspace:^",
     "@unprompted/shared": "workspace:^",
+    "fast-xml-parser": "5.12.1",
+    "fflate": "0.8.3",
     "zod": "4.6.7"
   },
   "devDependencies": {
