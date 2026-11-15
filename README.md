@@ -113,7 +113,7 @@ sequenceDiagram
         WF->>WF: Bright Data exact-phrase search: is the rewrite already online?
         WF->>Ag: re-attack the variant
         Ag-->>WF: new solve rate
-        WF->>Neon: keep if same answer, same skill, not online; record the agent solve rate either way
+        WF->>Neon: keep if same answer, same skill, not online, and record the agent solve rate either way
     end
     WF-->>Prof: suspended for approval
     Prof->>WF: approve → resume → merge survivors into main
