@@ -301,7 +301,6 @@ export function AgentAvatar({ agent, state = "idle", size = "sm", className, tit
         className={cn("shrink-0", className)}
         style={{ ["--aa-blink" as string]: BLINK[a.eyes] }}
       >
-        <title>{title ?? a.name}</title>
         <defs>
           <radialGradient id={`${id}-b`} cx="0.35" cy="0.3" r="0.85">
             <stop offset="0" stopColor={col.light} />
