@@ -84,6 +84,7 @@ def main() -> int:
     ap.add_argument("--target", choices=["sandbox", "runtime"], default="sandbox",
                     help="runtime = C's real quiz page (signs in as the demo student; RUNTIME_VOICE_REQUIRED=1 for voice)")
     ap.add_argument("--max-steps", type=int, default=80)
+    ap.add_argument("--keep-any", action="store_true", help="keep the clip even if the run did not submit")
     ap.add_argument("--out-dir", default=str(REPO / "data/demo"))
     a = ap.parse_args()
 
@@ -141,7 +142,7 @@ def main() -> int:
     base.with_suffix(".json").write_text(json.dumps(facts, indent=2) + "\n")
     shutil.rmtree(frames, ignore_errors=True)
     print(f"wrote {base}.mp4, {base.name}-fast.mp4, {base.name}.json")
-    return 0
+    return 0 if (facts["submitted"] or a.keep_any) else 3
 
 
 if __name__ == "__main__":

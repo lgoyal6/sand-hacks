@@ -25,7 +25,8 @@ PROXY=http://127.0.0.1:$(cat $WORK/proxy.port)
 env $(cat $WORK/env | xargs) ANONYMIZED_TELEMETRY=false BH_CHROME_PATH=$HERE/chrome.sh \
   HTTPS_PROXY=$PROXY https_proxy=$PROXY NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 \
   sandbox-exec -f $HERE/attack.sb -D REPO=$REPO -D PROJECTS=$PROJECTS -D HOME=$HOME -D WORK=${WORK:A} \
-  .venv/bin/python demo/record_demo.py --quiz - --out-dir $OUT "$@" < $WORK/quiz.json
+  .venv/bin/python demo/record_demo.py --quiz - --out-dir $OUT "$@" < $WORK/quiz.json || {
+    rc=$?; echo "[record] run did not submit (exit $rc): clip not kept" >&2; exit $rc; }
 # Demo videos stay out of git: they go to the shared context folder.
 DEST=${DEMO_VIDEO_DIR:-$PROJECTS/sand-hacks-context/demo-videos}
 mkdir -p $DEST && cp $OUT/* $DEST/ && ls -1 $OUT && echo "saved to $DEST"
