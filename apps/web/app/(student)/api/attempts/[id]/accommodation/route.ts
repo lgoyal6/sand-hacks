@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 import { addAccommodation, getAttempt } from "../../../../quiz/_lib/attempts";
 import { getQuiz, type FigureItem } from "../../../../quiz/_lib/quizzes";
 import { writeEvents } from "@/lib/telemetry/server";
+import { neon } from "@/lib/db/neon";
+
+// figure_text lives server-side in Neon for merged figure variants (B); never sent to the browser otherwise.
+async function figureTextFromNeon(itemId: string): Promise<string | null> {
+  const db = neon();
+  if (!db) return null;
+  try {
+    const { rows } = await db.query<{ figure_text: string | null }>("select figure_text from item where id = $1", [itemId]);
+    return rows[0]?.figure_text?.trim() || null;
+  } catch {
+    return null;
+  }
+}
 
 // POST /api/attempts/<id>/accommodation { itemId }: the student asked for the accessible (text) version of a
 // figure item. Returns the figure's data as text, records the accommodation (the item's think-aloud then
@@ -14,7 +27,7 @@ export async function POST(req: Request, ctx: RouteContext<"/api/attempts/[id]/a
   const quiz = await getQuiz(attempt.quizId);
   const item = quiz?.items.find((i) => i.id === body.itemId) as FigureItem | undefined;
   if (!item?.figure) return NextResponse.json({ error: "this question has no figure" }, { status: 400 });
-  const text = item.figureText?.trim() || item.figure.alt;
+  const text = item.figureText?.trim() || (await figureTextFromNeon(item.id)) || item.figure.alt;
   await addAccommodation(id, item.id, "figure_text");
   await writeEvents([
     { ts: new Date().toISOString(), attemptId: id, itemId: item.id, kind: "focus", payload: { type: "accommodation", accommodation: "figure_text", excludeFromDetection: true } },
