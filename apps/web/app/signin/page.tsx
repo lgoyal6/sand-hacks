@@ -1,11 +1,17 @@
 // Owner: C. Sign in: one-click demo accounts (so the demo never stalls) or email and password.
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { getViewer } from "@/lib/auth/server";
+import { homeFor } from "@/lib/home";
 import { demoSignIn, emailSignIn } from "./actions";
 import { Logo } from "@/components/ui/quiz";
 
 async function Body({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const next = typeof sp.next === "string" ? sp.next : "";
+  // Already signed in (a bookmark, Back after sign-in): go where they were headed, or to their home.
+  const viewer = await getViewer();
+  if (viewer) redirect(next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/signin") ? next : homeFor(viewer.role));
   const error = typeof sp.error === "string" ? sp.error : null;
   const signup = sp.mode === "signup";
   // The email form is not rendered at all by default: any password field makes the browser's password manager

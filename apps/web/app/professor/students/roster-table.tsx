@@ -1,7 +1,8 @@
 "use client";
 // Students roster table (owner: D). Test and agent accounts are hidden by default.
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { DataTable, type DataColumn } from "@/components/ui/data-table";
 import { Switch } from "@/components/ui/switch";
 import type { RosterRow } from "./_lib";
@@ -25,7 +26,10 @@ const columns: DataColumn<RosterRow>[] = [
     header: "Student",
     cell: ({ row }) => (
       <span className="flex items-center gap-2">
-        <span className="num text-xs font-medium">{row.original.pseudonym}</span>
+        {/* A real link (middle-click, new tab, keyboard); the row click is only a bigger target. */}
+        <Link href={`/professor/students/${encodeURIComponent(row.original.pseudonym)}`} onClick={(e) => e.stopPropagation()} className="num rounded text-xs font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          {row.original.pseudonym}
+        </Link>
         {row.original.who !== "human" && <span className="rounded-full bg-agent-soft px-1.5 py-0.5 text-[10px] font-medium text-agent">{row.original.who}</span>}
         {row.original.accommodated && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">accommodation</span>}
       </span>
@@ -66,9 +70,24 @@ const columns: DataColumn<RosterRow>[] = [
   { accessorKey: "lastActive", header: "Last active", cell: ({ row }) => <span className="num text-xs text-muted-foreground">{when(row.original.lastActive)}</span> },
 ];
 
+/** Reads ?accounts=all, so it sits under Suspense (the toggle lives in the URL: refresh and Back keep it). */
 export function RosterTable({ rows }: { rows: RosterRow[] }) {
+  return (
+    <React.Suspense fallback={<RosterTableInner rows={rows} showTest={false} />}>
+      <RosterTableFromUrl rows={rows} />
+    </React.Suspense>
+  );
+}
+
+function RosterTableFromUrl({ rows }: { rows: RosterRow[] }) {
+  const showTest = useSearchParams().get("accounts") === "all";
+  return <RosterTableInner rows={rows} showTest={showTest} />;
+}
+
+function RosterTableInner({ rows, showTest }: { rows: RosterRow[]; showTest: boolean }) {
   const router = useRouter();
-  const [showTest, setShowTest] = React.useState(false);
+  const pathname = usePathname();
+  const setShowTest = (v: boolean) => router.replace(v ? `${pathname}?accounts=all` : pathname, { scroll: false });
   const hidden = rows.filter((r) => r.who !== "human").length;
   const data = showTest ? rows : rows.filter((r) => r.who === "human");
   return (

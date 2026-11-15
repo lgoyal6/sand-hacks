@@ -3,13 +3,13 @@
 // @/components/ui/nav, search, history, then the signed-in user. Collapses to an icon strip.
 // Links come from the viewer's role, not from the caller, so every page shows the same nav.
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import * as React from "react";
 import { Check, ChevronsUpDown, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Logo as BrandLogo } from "@/components/ui/logo";
-import { isActive, linksFor, useNav, type NavLinkDef } from "@/components/ui/nav";
+import { homeFor, isActive, linksFor, useNav, type NavLinkDef } from "@/components/ui/nav";
 import { RoleSwitch } from "@/components/auth/role-switch";
 import { useLeakAlerts } from "@/components/dashboard/leak-alerts";
 
@@ -63,7 +63,7 @@ function ChatSidebarInner({ groups, collapsed, onCollapsedChange }: ChatSidebarP
   const unseenAlerts = useLeakAlerts(role === "professor").data?.unseen ?? 0;
   // Signed out with auth off (local dev): show both roles' links so every page stays reachable.
   const links: NavLinkDef[] = nav.loading ? [] : role ? linksFor(role) : [...linksFor("student"), ...linksFor("professor").map((l) => ({ ...l, section: l.section ?? "Professor" }))];
-  const home = role === "professor" ? "/studio" : "/";
+  const home = homeFor(role);
   const cls = nav.current;
   const classQuizIds = new Set(cls?.quizzes.map((q) => q.id) ?? []);
   const inClass = (href: string) => {
@@ -84,11 +84,14 @@ function ChatSidebarInner({ groups, collapsed, onCollapsedChange }: ChatSidebarP
   const shown = q
     ? norm.map((g) => ({ ...g, items: g.items.filter((i) => `${i.title} ${i.meta ?? ""}`.toLowerCase().includes(q)) })).filter((g) => g.items.length)
     : norm;
+  // Reads the live query (not window.location), so the highlight follows Back/Forward and in-app links.
+  const search = useSearchParams();
   const itemActive = (href: string) => {
     const [p, qs] = href.split("?");
     if (p !== pathname) return false;
     if (!qs) return true;
-    return typeof window !== "undefined" && new URLSearchParams(window.location.search).toString() === qs;
+    const want = new URLSearchParams(qs);
+    return [...want.entries()].every(([k, v]) => search.get(k) === v);
   };
 
   const iconBtn =

@@ -38,6 +38,8 @@ export function linksFor(role: NavRole | null): NavLinkDef[] {
   ];
 }
 
+export { homeFor } from "@/lib/home";
+
 /** Exact match, or a sub-path; "/professor" must not light up for "/professor/students". */
 export function isActive(pathname: string, l: NavLinkDef, all: NavLinkDef[]) {
   const hit = (href: string) => pathname === href || (href !== "/" && pathname.startsWith(href + "/"));
