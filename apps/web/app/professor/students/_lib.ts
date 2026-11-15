@@ -132,6 +132,8 @@ export interface ProbeDetail {
   counterfactualPrompt: string | null;
   counterfactualAnswer: string | null;
   counterfactualLatencyMs: number | null;
+  counterfactualSource: "gemini" | "template" | null;
+  counterfactualModel: string | null;
   finalScore: number | null;
   professorApproved: boolean;
   notes: string[];
@@ -170,7 +172,7 @@ export async function loadStudent(pseudonym: string): Promise<{ row: RosterRow; 
     ),
     db.query<{ attempt_id: string; item_id: string; answer: unknown }>("select attempt_id, item_id, answer from response where attempt_id = any($1)", [ids]),
     // select *: audio_deleted_at / transcript_deleted_at may not exist until the retention columns are added.
-    db.query<{ id: string; explanation: string | null; transcript: string | null; counterfactual_prompt: string | null; counterfactual_answer: string | null; audio_deleted_at?: Date | null; transcript_deleted_at?: Date | null; conversation_id?: string | null }>(
+    db.query<{ id: string; explanation: string | null; transcript: string | null; counterfactual_prompt: string | null; counterfactual_answer: string | null; audio_deleted_at?: Date | null; transcript_deleted_at?: Date | null; conversation_id?: string | null; counterfactual_source?: "gemini" | "template" | null; counterfactual_model?: string | null }>(
       "select * from probe where attempt_id = any($1)",
       [ids],
     ),
@@ -225,6 +227,8 @@ export async function loadStudent(pseudonym: string): Promise<{ row: RosterRow; 
                 counterfactualPrompt: t?.counterfactual_prompt ?? null,
                 counterfactualAnswer: t?.counterfactual_answer ?? null,
                 counterfactualLatencyMs: p.counterfactualLatencyMs,
+                counterfactualSource: t?.counterfactual_source ?? null,
+                counterfactualModel: t?.counterfactual_model ?? null,
                 finalScore: p.finalScore,
                 professorApproved: p.professorApproved,
                 // Accommodations are never checked.

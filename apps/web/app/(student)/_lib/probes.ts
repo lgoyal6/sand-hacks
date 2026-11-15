@@ -226,7 +226,9 @@ export async function counterfactualFor(item: Item, answer: string | string[] | 
   const exactKey = createHash("sha256").update(`${itemAnswer}|${explanation.trim().toLowerCase()}`).digest("hex").slice(0, 24);
   const cache = await readJson<CfCache>(CF_CACHE, {});
   const hit = cache[exactKey] ?? (process.env.NODE_ENV !== "production" && process.env.GEMINI_LIVE !== "1" ? Object.values(cache).find((c) => c.itemAnswer === itemAnswer) : undefined);
-  if (hit) return { prompt: hit.prompt, source: "gemini" as const, model: hit.model ? `${hit.model.replace(/ \(cached\)$/, "")} (cached)` : "cached" };
+  // Dev-only quota saver: a hit on item+answer alone was written for a different explanation, so label it as such.
+  const reused = hit && !cache[exactKey];
+  if (hit) return { prompt: hit.prompt, source: "gemini" as const, model: `${(hit.model ?? "gemini").replace(/ \((cached|reused[^)]*)\)$/, "")} (${reused ? "reused from another explanation" : "cached"})` };
   const models = process.env.GEMINI_MODEL?.trim() ? [process.env.GEMINI_MODEL.trim(), ...DEFAULT_GEMINI_CHAIN] : undefined;
   const f = await generateFollowup({ item, answer, explanation }, { apiKey: process.env.GEMINI_API_KEY?.trim(), models });
   if (f.source !== "gemini") return { prompt: f.question, source: "template" as const };

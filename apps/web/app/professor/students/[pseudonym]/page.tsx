@@ -145,6 +145,7 @@ function ProbeView({ p }: { p: NonNullable<AttemptDetail["items"][number]["probe
           <p className="text-xs font-medium">Follow-up: {p.counterfactualPrompt}</p>
           <p className="text-sm whitespace-pre-wrap">{p.counterfactualAnswer || <span className="text-muted-foreground">No answer.</span>}</p>
           {p.counterfactualLatencyMs != null && <p className="num text-xs text-muted-foreground">started answering after {(p.counterfactualLatencyMs / 1000).toFixed(1)} s</p>}
+          <FollowupBy source={p.counterfactualSource} model={p.counterfactualModel} />
         </div>
       )}
       {p.notes.length > 0 && (
@@ -156,4 +157,11 @@ function ProbeView({ p }: { p: NonNullable<AttemptDetail["items"][number]["probe
       <div>{p.finalScore != null ? <ApproveButton probeId={p.probeId} approved={p.professorApproved} score={p.finalScore} /> : <span className="text-xs text-muted-foreground">Not scored yet</span>}</div>
     </div>
   );
+}
+
+// Which path wrote the follow-up: a Gemini model reading this student's explanation, or the generic template.
+function FollowupBy({ source, model }: { source: "gemini" | "template" | null; model: string | null }) {
+  if (!source) return null;
+  const text = source === "template" ? "Follow-up from the generic template (Gemini unavailable)" : `Follow-up by ${model ?? "Gemini"}`;
+  return <p className="text-[11px] text-muted-foreground/80">{text}</p>;
 }
