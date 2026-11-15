@@ -5,7 +5,7 @@
 import "server-only";
 import { Pool } from "pg";
 import { quizVersionRecord, type ItemType } from "@unprompted/shared";
-import { fingerprint, type AnchorRecord } from "@/lib/notary";
+import { keyedFingerprint, type AnchorRecord } from "@/lib/notary";
 import { neon } from "@/lib/db/neon";
 
 const API = "https://console.neon.tech/api/v2";
@@ -44,10 +44,13 @@ export interface AppealData {
   changedCount: number;
   timings: { branchMs: number; readMs: number; totalMs: number };
   /**
-   * Integrity: SHA-256 of quizVersionRecord(the quiz exactly as read from the branch), the hash recorded
-   * at attempt start, and its Solana devnet anchor. matchesRecorded = the branch read re-hashes to it.
+   * Integrity: keyed fingerprint (HMAC-SHA-256 with the server-only NOTARY_SALT) of quizVersionRecord(the
+   * quiz exactly as read from the branch), the value recorded at attempt start, and its Solana devnet anchor.
+   * Keyed because the record includes answer keys: a plain hash on a public chain could be brute-forced.
+   * Omitted (fingerprintUnavailable set) when NOTARY_SALT is missing; never falls back to a plain hash.
    */
   fingerprint?: { sha256: string; recordedSha256: string | null; matchesRecorded: boolean | null; anchor: AnchorRecord | null };
+  fingerprintUnavailable?: string;
   /** Which items were read: exactly what was served (delivered_item_ids), or the quiz's originals for older attempts. */
   servedFrom?: "delivered_item_ids" | "originals";
 }
@@ -159,19 +162,23 @@ export async function appealSnapshot(attemptId: string): Promise<AppealData> {
           changedSince: changed,
         };
       });
-    const sha256 = fingerprint(
+    const sha256 = keyedFingerprint(
       quizVersionRecord(
         a.quiz_id,
         items.map((i) => ({ id: i.id, stem: i.stem, type: i.type, ...(i.choices ? { choices: i.choices } : {}), answerKey: i.key })),
       ),
     );
     return {
-      fingerprint: {
-        sha256,
-        recordedSha256: a.quiz_version_sha256,
-        matchesRecorded: a.quiz_version_sha256 ? a.quiz_version_sha256 === sha256 : null,
-        anchor: a.quiz_version_anchor,
-      },
+      ...(sha256
+        ? {
+            fingerprint: {
+              sha256,
+              recordedSha256: a.quiz_version_sha256,
+              matchesRecorded: a.quiz_version_sha256 ? a.quiz_version_sha256 === sha256 : null,
+              anchor: a.quiz_version_anchor,
+            },
+          }
+        : { fingerprintUnavailable: "NOTARY_SALT is not set on this server" }),
       servedFrom: served ? "delivered_item_ids" : "originals",
       attemptId,
       student: a.student_pseudonym,
