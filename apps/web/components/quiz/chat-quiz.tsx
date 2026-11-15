@@ -180,7 +180,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     setBusy(true);
     setError(null);
     try {
-      const d = await post<{ attemptId: string }>("/api/attempts", { quizId: target.id, mode: m, studentPseudonym: student });
+      const d = await post<{ attemptId: string }>("/api/attempts", { quizId: target.id, mode: m, studentPseudonym: student, itemIds: target.items.map((i) => i.id) });
       setQuizId(target.id);
       setMode(m);
       setAttemptId(d.attemptId);
@@ -209,7 +209,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const finishQuiz = async () => {
     if (!attemptId) return;
     emitAgentStatus("tutor", "adding up your results");
-    const s = await post<NonNullable<typeof summary>>(`/api/attempts/${attemptId}/finish`);
+    const s = await post<NonNullable<typeof summary>>(`/api/attempts/${attemptId}/finish`, { itemIds: quiz.items.map((i) => i.id) });
     setSummary(s);
     setPhase("done");
     emitAgentStatus("tutor", "results ready", "done");

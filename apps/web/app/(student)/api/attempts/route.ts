@@ -4,12 +4,14 @@ import { getQuiz } from "../../quiz/_lib/quizzes";
 import { planProbes } from "../../_lib/policy";
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => ({}))) as { quizId?: string; mode?: AttemptMode; studentPseudonym?: string; consentAudio?: boolean };
+  const body = (await req.json().catch(() => ({}))) as { quizId?: string; mode?: AttemptMode; studentPseudonym?: string; consentAudio?: boolean; itemIds?: string[] };
   if (body.studentPseudonym !== undefined && !/^[\w-]{1,64}$/.test(body.studentPseudonym)) body.studentPseudonym = undefined;
   const quiz = body.quizId ? await getQuiz(body.quizId) : null;
   if (!quiz) return NextResponse.json({ error: "quiz not found" }, { status: 404 });
   const mode: AttemptMode = body.mode === "graded" ? "graded" : "practice";
-  const { plan } = await planProbes(quiz.items.map((i) => i.id), mode);
+  // A focused session ("Practice this") plans probes over just its items.
+  const focus = Array.isArray(body.itemIds) ? quiz.items.filter((i) => body.itemIds!.includes(i.id)).map((i) => i.id) : [];
+  const { plan } = await planProbes(focus.length ? focus : quiz.items.map((i) => i.id), mode);
   const attempt = await createAttempt({
     probePlan: plan,
     quiz,
