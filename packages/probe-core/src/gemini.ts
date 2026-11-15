@@ -1,33 +1,25 @@
-// Minimal Gemini REST client. Server only; the key never reaches the browser.
-// Tries a short chain of models: on this key the bigger flash models often return 503 (high demand)
-// or 429 (quota), while the flash-lite models answer in about a second. GEMINI_MODEL goes first if set.
-import "server-only";
+// Minimal Gemini REST client with a model fallback chain. Pure: pass the API key in.
+// On the team's free-tier key the bigger flash models often return 503 (high demand) or 429 (quota);
+// the flash-lite models answer in about a second, so they go first.
+export const DEFAULT_GEMINI_CHAIN = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest"];
 
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-const DEFAULT_CHAIN = ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest"];
 
-export function geminiAvailable() {
-  return Boolean(process.env.GEMINI_API_KEY?.trim());
+export interface GeminiOptions {
+  apiKey: string;
+  models?: string[];
+  timeoutMs?: number;
+  temperature?: number;
 }
 
-function chain(model?: string) {
-  const first = model ?? process.env.GEMINI_MODEL?.trim();
-  return [...new Set([first, ...DEFAULT_CHAIN].filter(Boolean) as string[])];
-}
-
-export async function geminiJson<T>(
-  prompt: string,
-  schema: object,
-  opts: { model?: string; timeoutMs?: number; temperature?: number } = {},
-): Promise<T & { _model: string }> {
-  const key = process.env.GEMINI_API_KEY?.trim();
-  if (!key) throw new Error("GEMINI_API_KEY missing");
+export async function geminiJson<T>(prompt: string, schema: object, opts: GeminiOptions): Promise<T & { _model: string }> {
+  if (!opts.apiKey) throw new Error("Gemini API key missing");
   const errors: string[] = [];
-  for (const model of chain(opts.model)) {
+  for (const model of [...new Set(opts.models?.length ? opts.models : DEFAULT_GEMINI_CHAIN)]) {
     try {
       const res = await fetch(`${BASE}/${model}:generateContent`, {
         method: "POST",
-        headers: { "content-type": "application/json", "x-goog-api-key": key },
+        headers: { "content-type": "application/json", "x-goog-api-key": opts.apiKey },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: {
@@ -41,7 +33,7 @@ export async function geminiJson<T>(
       });
       if (!res.ok) {
         errors.push(`${model}: ${res.status}`);
-        if ([429, 500, 503, 404].includes(res.status)) continue;
+        if ([404, 429, 500, 503].includes(res.status)) continue;
         throw new Error(`Gemini ${model} ${res.status}: ${(await res.text()).slice(0, 200)}`);
       }
       const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };

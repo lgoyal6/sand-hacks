@@ -12,7 +12,7 @@ for (const f of [".env.local", ".env"]) {
 
 const nextConfig: NextConfig = {
   /* config options here */
-  transpilePackages: ["@unprompted/shared"],
+  transpilePackages: ["@unprompted/shared", "@unprompted/probe-core"],
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

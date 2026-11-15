@@ -6,7 +6,9 @@ import path from "node:path";
 import type { Item, Probe } from "@unprompted/shared";
 import { appendJsonl, DATA_DIR, fixturePath, readJson, updateJson } from "@/lib/db/fixtures";
 import { tiger } from "@/lib/db/tiger";
-import { geminiAvailable, geminiJson } from "./gemini";
+import { DEFAULT_GEMINI_CHAIN, FALLBACK_FOLLOWUP, generateFollowup, openingPrompt } from "@unprompted/probe-core";
+
+const geminiAvailable = () => Boolean(process.env.GEMINI_API_KEY?.trim());
 
 // Probe plus runtime fields that don't belong in the shared contract.
 export type ProbeRecord = Probe & {
@@ -69,67 +71,28 @@ export async function writeTiming(probeId: string, rows: { phase: ProbePhase; ms
   return "jsonl";
 }
 
-function describeAnswer(item: Item, answer: string | string[] | undefined) {
-  if (answer === undefined) return "(no answer recorded)";
-  const ids = Array.isArray(answer) ? answer : [answer];
-  if (!item.choices) return String(answer);
-  return ids.map((id) => `${id}) ${item.choices!.find((c) => c.id === id)?.text ?? "?"}`).join("; ");
-}
-
-// The opening prompt quotes the student's own answer back, without saying whether it was right.
-export function openingPrompt(item: Item, answer: string | string[] | undefined) {
-  return `You answered ${describeAnswer(item, answer)}. Walk me through how you got there, as if you were explaining it to a friend.`;
-}
-
 // Gemini is on a shared free tier (~20 requests/model/day), so generations are cached locally
 // (data/sessions/ is gitignored). Exact key: item + answer + explanation. In development, any cached
 // question for the same item + answer is reused unless GEMINI_LIVE=1.
 const CF_CACHE = path.join(DATA_DIR, "sessions", "counterfactual-cache.json");
 type CfCache = Record<string, { prompt: string; model?: string; itemAnswer: string; at: string }>;
 
-// A counterfactual follow-up (4.4): perturb one thing so the answer follows from the same causal model.
+// The opening prompt and the follow-up generator live in @unprompted/probe-core so the Explain coach
+// agent (services/workflows) uses the same logic.
+export { openingPrompt };
+
+// A counterfactual follow-up (4.4), cached locally to spare the shared free-tier Gemini quota.
 export async function counterfactualFor(item: Item, answer: string | string[] | undefined, explanation: string) {
-  const fallback = {
-    prompt: "Good. Now suppose one number in the problem changed, say it doubled. What would happen to your answer, and why?",
-    source: "template" as const,
-  };
+  const fallback = { prompt: FALLBACK_FOLLOWUP, source: "template" as const };
   if (!geminiAvailable() || process.env.PROBE_COUNTERFACTUAL === "template") return fallback;
   const itemAnswer = `${item.id}|${JSON.stringify(answer ?? null)}`;
   const exactKey = createHash("sha256").update(`${itemAnswer}|${explanation.trim().toLowerCase()}`).digest("hex").slice(0, 24);
   const cache = await readJson<CfCache>(CF_CACHE, {});
   const hit = cache[exactKey] ?? (process.env.NODE_ENV !== "production" && process.env.GEMINI_LIVE !== "1" ? Object.values(cache).find((c) => c.itemAnswer === itemAnswer) : undefined);
-  if (hit) return { prompt: hit.prompt, source: "gemini" as const, model: hit.model ? `${hit.model} (cached)` : "cached" };
-  const prompt = [
-    "You write ONE spoken follow-up question for a short think-aloud check in an intro course.",
-    "Goal: test whether the student holds a working model of the problem, not whether they memorized the answer.",
-    "Rules:",
-    "- Change exactly one parameter, condition, or assumption of the ORIGINAL question (e.g. the sample size doubles, a value becomes negative, the test becomes one-sided), or ask which step would break.",
-    "- The new answer must follow from the same reasoning as the original. Answerable in 20-40 seconds by talking, without a calculator.",
-    "- Perturb an INPUT of the problem (data, sample, setup), never the quantity the student must reason about. The question must not contain its own answer.",
-    "- Build on the student's own answer and words where possible. Don't reveal whether their answer was right. Don't include the answer.",
-    "- Warm, plain, one or two sentences, under 40 words. No preamble like 'Great job'.",
-    "",
-    `Learning objective: ${item.objective || "(not given)"}`,
-    `Original question: ${item.stem}`,
-    item.choices ? `Choices: ${item.choices.map((c) => `${c.id}) ${c.text}`).join(" | ")}` : "",
-    `Answer key (for your reasoning only, never reveal): ${Array.isArray(item.answerKey) ? item.answerKey.join(",") : item.answerKey}`,
-    `Student's answer: ${describeAnswer(item, answer)}`,
-    `Student's explanation: ${explanation.trim().slice(0, 2000) || "(none)"}`,
-  ]
-    .filter(Boolean)
-    .join("\n");
-  try {
-    const out = await geminiJson<{ question: string; changed: string }>(prompt, {
-      type: "object",
-      properties: { question: { type: "string" }, changed: { type: "string", description: "what was perturbed" } },
-      required: ["question", "changed"],
-    });
-    const q = out.question?.trim();
-    if (!q || q.length > 400) return fallback;
-    await updateJson<CfCache>(CF_CACHE, {}, (c) => ({ ...c, [exactKey]: { prompt: q, model: out._model, itemAnswer, at: new Date().toISOString() } }));
-    return { prompt: q, source: "gemini" as const, model: out._model };
-  } catch (err) {
-    console.error("[probe] counterfactual generation failed, using template:", (err as Error).message);
-    return fallback;
-  }
+  if (hit) return { prompt: hit.prompt, source: "gemini" as const, model: hit.model ? `${hit.model.replace(/ \(cached\)$/, "")} (cached)` : "cached" };
+  const models = process.env.GEMINI_MODEL?.trim() ? [process.env.GEMINI_MODEL.trim(), ...DEFAULT_GEMINI_CHAIN] : undefined;
+  const f = await generateFollowup({ item, answer, explanation }, { apiKey: process.env.GEMINI_API_KEY!.trim(), models });
+  if (f.source !== "gemini") return fallback;
+  await updateJson<CfCache>(CF_CACHE, {}, (c) => ({ ...c, [exactKey]: { prompt: f.question, model: f.model, itemAnswer, at: new Date().toISOString() } }));
+  return { prompt: f.question, source: "gemini" as const, model: f.model };
 }

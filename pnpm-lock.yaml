@@ -24,6 +24,9 @@ importers:
       '@tanstack/react-table':
         specifier: ^8
         version: 8.21.3(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@unprompted/probe-core':
+        specifier: workspace:*
+        version: link:../../packages/probe-core
       '@unprompted/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -94,6 +97,12 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+
+  packages/probe-core:
+    dependencies:
+      '@unprompted/shared':
+        specifier: workspace:*
+        version: link:../shared
 
   packages/shared: {}
 
