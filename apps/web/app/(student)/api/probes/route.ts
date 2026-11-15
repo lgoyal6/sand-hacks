@@ -21,6 +21,6 @@ export async function POST(req: Request) {
   const item = quiz?.items.find((i) => i.id === body.itemId);
   if (!item) return NextResponse.json({ error: "item not found" }, { status: 404 });
   const answer = attempt.responses.find((r) => r.itemId === item.id)?.answer;
-  const probe = await createProbe({ attemptId: attempt.id, itemId: item.id, quizId: attempt.quizId, confidenceBefore: c, mode: body.mode === "voice" ? "voice" : "typed" });
+  const probe = await createProbe({ attemptId: attempt.id, itemId: item.id, quizId: attempt.quizId, confidenceBefore: c, mode: (attempt.probePlan ?? []).includes(`acc:${item.id}`) ? "accommodation" : body.mode === "voice" ? "voice" : "typed" });
   return NextResponse.json({ probeId: probe.id, opening: openingPrompt(item, answer) });
 }

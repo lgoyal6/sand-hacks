@@ -23,6 +23,8 @@ export interface TurnResult {
   error?: string;
   /** Researcher only. `verified` = the URL appeared in that turn's Bright Data results. */
   sources?: Source[];
+  /** B's demo replay: this answer is a recorded earlier turn (agents server down/slow, or replay forced). */
+  replay?: { recordedAt?: string; reason?: string };
 }
 
 export async function agentTurn(
@@ -33,6 +35,7 @@ export async function agentTurn(
 ): Promise<TurnResult> {
   let text = "";
   let final: TurnResult | null = null;
+  let replay: TurnResult["replay"];
   const res = await fetch(`/api/agents/${agent}/turn`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -53,7 +56,9 @@ export async function agentTurn(
     } catch {
       return;
     }
-    if ("agentId" in m) {
+    if (m.type === "replay") {
+      replay = { recordedAt: m.recordedAt as string | undefined, reason: m.reason as string | undefined };
+    } else if ("agentId" in m) {
       window.dispatchEvent(new CustomEvent<AgentEvent>(AGENT_STATUS_EVENT, { detail: m as unknown as AgentEvent }));
       onEvent?.(m as unknown as AgentEvent);
     } else if (m.type === "delta") {
@@ -74,5 +79,5 @@ export async function agentTurn(
     lines.forEach(handle);
   }
   handle(buf);
-  return final ?? { text };
+  return { ...(final ?? { text }), ...(replay ? { replay } : {}) };
 }

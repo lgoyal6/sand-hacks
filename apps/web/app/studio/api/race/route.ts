@@ -5,6 +5,7 @@ import type { AgentRun } from "@unprompted/shared";
 import { FIXTURES_DIR, readJson } from "@/lib/db/fixtures";
 import { getStudioData } from "../../_lib/data";
 import { buildRace } from "../../_lib/race";
+import { replayJson, withReplay } from "../../_lib/replay";
 
 const ATTACK_MODEL = process.env.ATTACK_MODELS?.trim() || "gmi:google/gemini-3.8-flash";
 
@@ -30,14 +31,16 @@ export async function GET(req: Request) {
   const itemId = new URL(req.url).searchParams.get("item") ?? "";
   if (!/^[\w-]+-q\d+$/.test(itemId)) return Response.json({ error: "item must look like <quizId>-q<n>" }, { status: 400 });
   const quizId = itemId.replace(/-q\d+$/, "");
-  const [data, branches, runs] = await Promise.all([
-    getStudioData(quizId),
-    neonBranches(),
-    readJson<AgentRun[]>(path.join(FIXTURES_DIR, "agent_runs.json"), []),
-  ]);
-  const same = runs.filter((r) => r.itemId === itemId && r.model === ATTACK_MODEL);
-  const baseline = same.length
-    ? { itemId, runs: same.length, correct: same.filter((r) => r.correct).length, solveRate: 0, agentSolvable: true, model: ATTACK_MODEL }
-    : null;
-  return Response.json(buildRace(itemId, data.experiments, branches, baseline));
+  try {
+    return replayJson(
+      await withReplay(req, "race", itemId, async () => {
+        const [data, branches, runs] = await Promise.all([getStudioData(quizId), neonBranches(), readJson<AgentRun[]>(path.join(FIXTURES_DIR, "agent_runs.json"), [])]);
+        const same = runs.filter((r) => r.itemId === itemId && r.model === ATTACK_MODEL);
+        const baseline = same.length ? { itemId, runs: same.length, correct: same.filter((r) => r.correct).length, solveRate: 0, agentSolvable: true, model: ATTACK_MODEL } : null;
+        return buildRace(itemId, data.experiments, branches, baseline);
+      }),
+    );
+  } catch (e) {
+    return Response.json({ error: (e as Error).message }, { status: 503 });
+  }
 }

@@ -17,6 +17,7 @@ import { ChatLayout, Chip, Composer, Message, PillButton, QuestionCard, Thinking
 import { useTelemetry } from "@/lib/telemetry/use-telemetry";
 import { emitAgentStatus } from "@/lib/telemetry/agent-status";
 import { agentTurn, type Source } from "@/lib/agents/agent-turn";
+import { trackTextSignals, type TextSignals } from "@/lib/telemetry/text-signals";
 import { ConfidencePicker, ExplainBox, ThinkAloudScene, type ThinkAloudStep } from "@/components/ui/quiz";
 import { useVoiceProbe, type ProbePhase, type VoiceResult } from "@/components/probe/use-voice-probe";
 import { ItemView, type ItemResult } from "./item-view";
@@ -42,7 +43,7 @@ type Phase =
   | "done";
 
 type Entry =
-  | { id: number; who: "tutor" | "student"; text: string; agent?: string; sources?: Source[] }
+  | { id: number; who: "tutor" | "student"; text: string; agent?: string; sources?: Source[]; note?: string }
   // An answered question, kept in the thread (locked, no ids) so the student sees what they chose.
   | { id: number; who: "card"; itemId: string; index: number; answer: Answer; mode: Mode; result?: ItemResult };
 
@@ -168,6 +169,22 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const [lastKey, setLastKey] = useState<string[] | null>(null);
   const [tutorLive, setTutorLive] = useState<string | null>(null); // streaming agent reply
   const [figureTexts, setFigureTexts] = useState<Record<string, string>>({}); // accessible versions shown
+  // Typed-input signals per probe textarea (evidence for the professor, never a verdict).
+  const trackers = useRef<Record<string, ReturnType<typeof trackTextSignals>>>({});
+  const signals = useRef<Record<string, TextSignals>>({});
+  const attachTracker = (field: "explanation" | "followup", el: HTMLTextAreaElement | null) => {
+    if (el && !trackers.current[field]) trackers.current[field] = trackTextSignals(el);
+    if (!el && trackers.current[field]) {
+      signals.current[field] = trackers.current[field].read();
+      trackers.current[field].stop();
+      delete trackers.current[field];
+    }
+  };
+  const explanationRef = useCallback((el: HTMLTextAreaElement | null) => attachTracker("explanation", el), []);
+  const followupRef = useCallback((el: HTMLTextAreaElement | null) => attachTracker("followup", el), []);
+  const readSignals = (field: "explanation" | "followup") => {
+    if (trackers.current[field]) signals.current[field] = trackers.current[field].read();
+  };
   const [liveAgent, setLiveAgent] = useState<"tutor" | "researcher">("tutor");
   const [liveStep, setLiveStep] = useState<string | null>(null); // e.g. "Searching the web (Bright Data)"
   const [lastCardId, setLastCardId] = useState<number | null>(null);
@@ -199,7 +216,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const isLast = index === quiz.items.length - 1;
   const telemetry = useTelemetry(attemptId, item?.id, phase !== "home" && phase !== "intro" && phase !== "done");
 
-  const say = useCallback((who: "tutor" | "student", text: string, extra: { agent?: string; sources?: Source[] } = {}) => {
+  const say = useCallback((who: "tutor" | "student", text: string, extra: { agent?: string; sources?: Source[]; note?: string } = {}) => {
     setEntries((e) => [...e, { id: nextId.current++, who, text, ...extra }]);
   }, []);
 
@@ -326,6 +343,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
         setRetried(false);
         setProbeId(null);
         probeIdRef.current = null;
+        signals.current = {};
         setPhase("probe_choice");
       } else if (mode === "practice") setPhase("feedback");
       else await nextQuestion();
@@ -385,7 +403,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const switchToTyping = () => {
     const r = voice.abandon();
     for (const l of r.lines) say(l.role === "agent" ? "tutor" : "student", l.text, l.role === "agent" ? { agent: "Explain coach" } : {});
-    if (r.conversationId && probeIdRef.current) post(`/api/probes/${probeIdRef.current}`, { conversationId: r.conversationId }, "PATCH").catch(() => {});
+    if (r.conversationId && probeIdRef.current) post(`/api/probes/${probeIdRef.current}`, { conversationId: r.conversationId, mode: "typed" }, "PATCH").catch(() => {});
     setChannel("typed");
     // The coach already asked the opening out loud; don't ask it twice.
     if (r.lines.some((l) => l.role === "agent")) setOpening("Go ahead and type it instead. Same question, your own words.");
@@ -397,6 +415,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
 
   const submitExplanation = async () => {
     if (!probeId || !draft.trim()) return;
+    readSignals("explanation");
     mark("speech_end");
     const text = draft.trim();
     setExplanation(text);
@@ -428,6 +447,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
 
   const submitCounterfactual = () => {
     if (!draft.trim()) return;
+    readSignals("followup");
     mark("cf_speech_end");
     setCfAnswer(draft.trim());
     say("tutor", cfPrompt, { agent: "Explain coach" });
@@ -455,6 +475,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
               confidenceAfter: after,
               counterfactualLatencyMs: typedLatency,
               retried,
+              explainSignals: signals.current,
             },
         "PATCH",
       );
@@ -519,7 +540,11 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     if (r.text) {
       // The Researcher appends its own "Sources:" list; we render citations from `sources` instead.
       const body = agent === "researcher" ? r.text.replace(/\n+\s*sources?:\s*\n[\s\S]*$/i, "").trim() : r.text;
-      say("tutor", body, { agent: agent === "researcher" ? "Researcher" : undefined, sources: r.sources?.filter((x) => x.verified) });
+      // Honest labelling when B's server answered with a recorded earlier turn.
+      const note = r.replay
+        ? `Replaying a recorded answer${r.replay.recordedAt ? ` from ${new Date(r.replay.recordedAt).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : ""}.`
+        : undefined;
+      say("tutor", body, { agent: agent === "researcher" ? "Researcher" : undefined, sources: r.sources?.filter((x) => x.verified), note });
     } else if (fallback) fallback();
     else say("tutor", "I can't answer right now. Let's keep going, and ask me again in a moment.");
   };
@@ -617,21 +642,30 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           footer={
             phase === "probe_after" && before !== null
               ? `Before you explained, you said ${before} of 7 sure.`
-              : "Graded on your reasoning, never on wording or accent."
+              : phase === "probe_choice" && mode === "graded"
+                ? "Typed answers are fine; your teacher may follow up in person."
+                : "Graded on your reasoning, never on wording or accent."
           }
           actions={
             phase === "probe_choice" ? (
-              <>
-                <PillButton id="probe-type" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>Type it</PillButton>
-                <PillButton id="probe-voice" variant="secondary" disabled={!voiceAvailable} title={voiceAvailable ? undefined : "Voice isn't set up yet"} onClick={() => { setChannel("voice"); setPhase("probe_consent"); }}>
-                  Talk it through
-                </PillButton>
-                {mode === "practice" && (
-                  <PillButton id="probe-skip" variant="ghost" onClick={() => { if (lastCardId !== null && lastCorrect !== null) revealResult(lastCardId, lastCorrect, lastKey ?? undefined); setPhase("feedback"); }}>
-                    Skip this time
+              mode === "graded" && voiceAvailable ? (
+                <>
+                  <PillButton id="probe-voice" onClick={() => { setChannel("voice"); setPhase("probe_consent"); }}>Talk it through</PillButton>
+                  <PillButton id="probe-type" variant="secondary" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>Type it instead</PillButton>
+                </>
+              ) : (
+                <>
+                  <PillButton id="probe-type" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>Type it</PillButton>
+                  <PillButton id="probe-voice" variant="secondary" disabled={!voiceAvailable} title={voiceAvailable ? undefined : "Voice isn't set up yet"} onClick={() => { setChannel("voice"); setPhase("probe_consent"); }}>
+                    Talk it through
                   </PillButton>
-                )}
-              </>
+                  {mode === "practice" && (
+                    <PillButton id="probe-skip" variant="ghost" onClick={() => { if (lastCardId !== null && lastCorrect !== null) revealResult(lastCardId, lastCorrect, lastKey ?? undefined); setPhase("feedback"); }}>
+                      Skip this time
+                    </PillButton>
+                  )}
+                </>
+              )
             ) : phase === "probe_consent" ? (
               <>
                 <PillButton id="probe-consent-continue" onClick={() => setPhase("probe_before")} disabled={!consent}>Continue</PillButton>
@@ -665,6 +699,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           {phase === "probe_before" && <ConfidencePicker name="confidence-before" legend="How sure are you?" value={before} onChange={setBefore} />}
           {phase === "probe_explain" && (
             <ExplainBox
+              ref={explanationRef}
               id="probe-explanation"
               aria-label="Your explanation"
               placeholder="In your own words..."
@@ -678,6 +713,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           )}
           {phase === "probe_cf" && (
             <ExplainBox
+              ref={followupRef}
               id="probe-cf-answer"
               aria-label="Your answer to the follow-up"
               placeholder="What changes, and why?"
@@ -745,6 +781,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                 <p>
                   <RichText text={e.text} />
                 </p>
+                {e.note && <p className="mt-2 text-xs text-muted-foreground">{e.note}</p>}
                 {e.sources && e.sources.length > 0 && (
                   <ol className="mt-3 space-y-1 text-sm" aria-label="Sources">
                     {e.sources.map((src, i) => (

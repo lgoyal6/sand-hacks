@@ -2,14 +2,23 @@
 // Pseudonyms only; never names or emails.
 import { getViewer } from "@/lib/auth/server";
 import { neon } from "@/lib/db/neon";
+import { replayJson, withReplay } from "../../_lib/replay";
 
 export async function GET(req: Request) {
   const v = await getViewer().catch(() => null);
   if (!v || v.role !== "professor") return Response.json({ error: "Professors only." }, { status: 403 });
   const quiz = new URL(req.url).searchParams.get("quiz") ?? "";
   if (!/^[\w-]+$/.test(quiz)) return Response.json({ error: "quiz is required" }, { status: 400 });
+  try {
+    return replayJson(await withReplay(req, "attempts", quiz, () => listAttempts(quiz)));
+  } catch (e) {
+    return Response.json({ error: (e as Error).message }, { status: 503 });
+  }
+}
+
+async function listAttempts(quiz: string) {
   const db = neon();
-  if (!db) return Response.json([]);
+  if (!db) return [];
   const { rows } = await db.query<{ id: string; student_pseudonym: string; mode: string; started_at: Date; answered: number; replayable: boolean }>(
     `select a.id, a.student_pseudonym, a.mode, a.started_at,
             (select count(*)::int from response r where r.attempt_id = a.id) as answered,
@@ -17,5 +26,5 @@ export async function GET(req: Request) {
        from attempt a where a.quiz_id = $1 order by a.started_at desc limit 12`,
     [quiz],
   );
-  return Response.json(rows.map((r) => ({ attemptId: r.id, student: r.student_pseudonym, mode: r.mode, startedAt: new Date(r.started_at).toISOString(), answered: r.answered, replayable: r.replayable })));
+  return rows.map((r) => ({ attemptId: r.id, student: r.student_pseudonym, mode: r.mode, startedAt: new Date(r.started_at).toISOString(), answered: r.answered, replayable: r.replayable }));
 }

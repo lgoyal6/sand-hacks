@@ -21,6 +21,7 @@ import {
   loadAttackSummary,
   loadAttempts,
   loadPseudonyms,
+  loadProbeEvidence,
   loadLeaks,
   loadProbes,
   loadQuiz,
@@ -47,6 +48,9 @@ export default function Page() {
         </Suspense>
         <Suspense fallback={<PanelSkeleton />}>
           <ExplainGapPanel />
+        </Suspense>
+        <Suspense fallback={<PanelSkeleton />}>
+          <ExplanationsPanel />
         </Suspense>
         <Suspense fallback={<PanelSkeleton />}>
           <SessionsPanel />
@@ -193,6 +197,69 @@ async function TreePanel() {
       </div>
       {tree ? <TreeCard data={tree} /> : <PanelEmpty>{error ? `Couldn't read the experiment tree: ${error}` : "No experiments yet."}</PanelEmpty>}
     </div>
+  );
+}
+
+const EVIDENCE_CLASS: Record<string, string> = {
+  "typed by hand": "text-foreground",
+  voice: "text-foreground",
+  pasted: "text-gap",
+  "appeared without typing": "text-gap",
+  "no text": "text-muted-foreground",
+  "excluded (accommodation)": "text-muted-foreground",
+};
+
+async function ExplanationsPanel() {
+  await connection();
+  const [ev, quiz] = await Promise.all([loadProbeEvidence(), loadQuiz()]);
+  const labels = itemLabels(quiz.data);
+  return (
+    <Panel
+      title="Think-aloud explanations"
+      description="How each explanation was given. Typed explanations can be AI-written; pair them with voice or a follow-up chat. Accommodations are never checked."
+      meta={<SourceNote origin={ev.origin} updatedAt={ev.updatedAt} />}
+    >
+      {ev.data.length ? (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-muted-foreground">
+                <th className="py-1.5 pr-3 font-medium">Student</th>
+                <th className="py-1.5 pr-3 font-medium">Question</th>
+                <th className="py-1.5 pr-3 font-medium">Mode</th>
+                <th className="py-1.5 pr-3 text-right font-medium">Score</th>
+                <th className="py-1.5 font-medium">Typing evidence</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {ev.data.map((r) => (
+                <tr key={r.probeId}>
+                  <td className="num py-2 pr-3 text-xs">{r.student}</td>
+                  <td className="num py-2 pr-3 text-xs">{labels.get(r.itemId)?.label ?? r.itemId}</td>
+                  <td className="py-2 pr-3">
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${r.mode === "voice" ? "bg-understood-soft text-understood" : r.mode === "typed" ? "bg-muted text-foreground" : "bg-muted text-muted-foreground"}`}>
+                      {r.mode === "accommodation" ? "Accommodation" : r.mode === "voice" ? "Voice" : "Typed"}
+                    </span>
+                  </td>
+                  <td className="num py-2 pr-3 text-right">{r.score == null ? <span className="text-xs text-muted-foreground">not graded</span> : `${r.score}/4`}</td>
+                  <td className="py-2 text-xs">
+                    <span className={EVIDENCE_CLASS[r.evidence]}>{r.evidence === "appeared without typing" ? "Text appeared without typing" : r.evidence.charAt(0).toUpperCase() + r.evidence.slice(1)}</span>
+                    {r.mode === "typed" && r.chars > 0 && (
+                      <span className="num ml-2 text-muted-foreground">
+                        {r.keys} keys for {r.chars} characters{r.pastes ? `, ${r.pastes} paste${r.pastes > 1 ? "s" : ""}` : ""}
+                      </span>
+                    )}
+                    {r.evidence === "appeared without typing" && <span className="mt-0.5 block text-muted-foreground">Suggest a voice follow-up.</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <PanelEmpty>No think-aloud explanations yet.</PanelEmpty>
+      )}
+    </Panel>
   );
 }
 

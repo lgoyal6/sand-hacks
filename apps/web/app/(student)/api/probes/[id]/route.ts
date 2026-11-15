@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getProbe, patchProbe } from "../../../_lib/probes";
+import { getProbe, patchProbe, saveExplainSignals } from "../../../_lib/probes";
+import { writeEvents } from "@/lib/telemetry/server";
 
 // Completes a probe: transcript, confidence after, counterfactual latency. Grading (the council) happens later.
 export async function PATCH(req: Request, ctx: RouteContext<"/api/probes/[id]">) {
@@ -15,6 +16,8 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/probes/[id]">)
     retried?: boolean;
     conversationId?: string;
     reset?: boolean;
+    mode?: "voice" | "typed";
+    explainSignals?: Record<string, unknown>;
   };
   if (b.reset) {
     // One retry: clear the answer parts, keep the question and the first confidence rating.
@@ -36,6 +39,20 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/probes/[id]">)
     if (!Number.isInteger(c) || c < 1 || c > 7) return NextResponse.json({ error: "confidenceAfter must be 1..7" }, { status: 400 });
     patch.confidenceAfter = c;
     patch.completedAt = new Date().toISOString();
+  }
+  // A voice probe that switched to typing becomes typed (an accommodation stays an accommodation).
+  if ((b.mode === "typed" || b.mode === "voice") && probe.mode !== "accommodation") patch.mode = b.mode;
+  if (b.explainSignals && typeof b.explainSignals === "object") {
+    await saveExplainSignals(id, b.explainSignals);
+    await writeEvents(
+      Object.entries(b.explainSignals).map(([field, sig]) => ({
+        ts: new Date().toISOString(),
+        attemptId: probe.attemptId,
+        itemId: probe.itemId,
+        kind: "answer" as const,
+        payload: { type: "probe_text", probeId: id, field, mode: (patch.mode as string) ?? probe.mode, ...(sig as object) },
+      })),
+    ).catch(() => {});
   }
   const out = await patchProbe(id, patch);
   return NextResponse.json({ ok: true, probe: { id: out!.id, completedAt: out!.completedAt } });
