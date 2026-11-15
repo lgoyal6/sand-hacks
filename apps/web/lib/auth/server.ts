@@ -4,6 +4,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { createNeonAuth } from "@neon/auth/next/server";
+import { connection } from "next/server";
 import { neon } from "@/lib/db/neon";
 
 export type Role = "student" | "professor";
@@ -76,6 +77,9 @@ export interface Viewer {
 /** The signed-in viewer, or null (auth off, no session, or auth unreachable). Never exposes the email. */
 export async function getViewer(): Promise<Viewer | null> {
   if (!authConfigured()) return null;
+  // A session only exists at request time: opt the caller out of prerendering explicitly,
+  // instead of letting cookies() reject during the build.
+  await connection();
   try {
     const { data } = await auth().getSession();
     const u = data?.user;
