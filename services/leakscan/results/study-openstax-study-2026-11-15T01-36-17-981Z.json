@@ -1,0 +1,2709 @@
+{
+  "summary": {
+    "testset": "openstax-study",
+    "startedAt": "2026-11-15T01:36:17.981Z",
+    "finishedAt": "2026-11-15T01:51:16.765Z",
+    "exercises": 92,
+    "queries": 114,
+    "queryErrors": 4,
+    "foundOnStudySites": 78,
+    "pctFoundOnStudySites": 84.8,
+    "withAnswerSignalInSnippet": 39,
+    "bySubject": {
+      "statistics": {
+        "exercises": 20,
+        "foundOnStudySites": 19,
+        "pct": 95
+      },
+      "calculus": {
+        "exercises": 12,
+        "foundOnStudySites": 12,
+        "pct": 100
+      },
+      "biology": {
+        "exercises": 20,
+        "foundOnStudySites": 18,
+        "pct": 90
+      },
+      "microeconomics": {
+        "exercises": 20,
+        "foundOnStudySites": 19,
+        "pct": 95
+      },
+      "physics": {
+        "exercises": 20,
+        "foundOnStudySites": 10,
+        "pct": 50
+      }
+    },
+    "bySite": {
+      "Quizlet": {
+        "exercises": 33,
+        "results": 34
+      },
+      "Brainly": {
+        "exercises": 33,
+        "results": 34
+      },
+      "Vaia": {
+        "exercises": 30,
+        "results": 31
+      },
+      "Chegg": {
+        "exercises": 21,
+        "results": 26
+      },
+      "Studocu": {
+        "exercises": 3,
+        "results": 3
+      },
+      "Numerade": {
+        "exercises": 2,
+        "results": 2
+      },
+      "Course Hero": {
+        "exercises": 1,
+        "results": 1
+      }
+    },
+    "results": {
+      "total": 159,
+      "onStudySites": 132,
+      "partialMatchesExcluded": 1,
+      "otherSites": 27
+    },
+    "matchScoreHistogram": [
+      {
+        "bucket": "0.50-0.59",
+        "results": 1
+      },
+      {
+        "bucket": "0.60-0.69",
+        "results": 2
+      },
+      {
+        "bucket": "0.70-0.79",
+        "results": 0
+      },
+      {
+        "bucket": "0.80-0.89",
+        "results": 2
+      },
+      {
+        "bucket": "0.90-0.99",
+        "results": 4
+      },
+      {
+        "bucket": "1.00",
+        "results": 150
+      }
+    ],
+    "method": "One exact-phrase Google query (Bright Data SERP API) per exercise using its most distinctive 8-12 word window; if nothing matched, one keyword query restricted to study sites. A result counts as a leak when it is on a homework-help site, its title+snippet match the exercise at >= 0.5, and it contains the exercise's ask (>= 60% of its content words), so shared phrases alone don't count. Answer signal = the snippet mentions an answer, solution, solved, step-by-step, or expert-verified; we never open paywalled pages.",
+    "caveats": [
+      "Search results vary by day and region; this is one snapshot.",
+      "Match scores measure text overlap, not proof that the page holds the same question or a correct answer.",
+      "Calculus has 12 exercises, not 20 (its review pages are mostly symbolic).",
+      "Exercises are OpenStax excerpts (<= 125 chars); sites that paraphrase questions are undercounted."
+    ]
+  },
+  "findings": [
+    {
+      "id": "leak-c7f4f545b842",
+      "itemId": "openstax-statistics-1.43",
+      "subject": "statistics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/521532239/stats-unit-1-flash-cards/",
+      "matchScore": 1,
+      "snippet": "STATS Unit 1 Flashcards — Ski resorts are interested in the mean age that children take their first ski and snowboard lessons. They need this information to plan their ski classes ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-4785cb4b26cc",
+      "itemId": "openstax-statistics-1.43",
+      "subject": "statistics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/659913160/hmwk-ch-1-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Hmwk: Ch. 1 Flashcards — Ski resorts are interested in the mean age that children take their first ski and snowboard lessons. They need this information to plan their ski classes ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-7fc363df132b",
+      "itemId": "openstax-statistics-1.44",
+      "subject": "statistics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/424861853/stat-201-hw-1-flash-cards/",
+      "matchScore": 0.93,
+      "snippet": "STAT 201 HW 1 Flashcards — A cardiologist is interested in the mean recovery period of her patients who have had heart attacks. i. X = the mean recovery period of one ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-76577bbd9f05",
+      "itemId": "openstax-statistics-1.44",
+      "subject": "statistics",
+      "site": "Studocu",
+      "url": "https://www.studocu.com/en-us/messages/question/10421465/a-cardiologist-is-interested-in-the-mean-recovery-period-of-her-patients-who-have-had-heart-attacks",
+      "matchScore": 0.93,
+      "snippet": "A cardiologist is interested in the mean recovery period of her — A cardiologist is interested in the mean recovery period of her patients who have had heart attacks. She collects data on only 50 of her ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-590776deb3ec",
+      "itemId": "openstax-statistics-1.66",
+      "subject": "statistics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/sampling-and-data/q66-suppose-you-want-to-determine-the-mean-number-of-student/",
+      "matchScore": 1,
+      "snippet": "Suppose you want to determine the mean number of students ... — Suppose you want to determine the mean number of students per statistics class in your state. Describe a possible sampling method in three to five complete ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-c98ced3b7e9d",
+      "itemId": "openstax-statistics-1.66",
+      "subject": "statistics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/28328351",
+      "matchScore": 1,
+      "snippet": "Suppose you want to determine the mean number of ... — Suppose you want to determine the mean number of students per statistics class in your state. Describe a possible sampling method in three ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-00f0bdb873c0",
+      "itemId": "openstax-statistics-1.68",
+      "subject": "statistics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/sampling-and-data/q68-list-some-practical-difficulties-involved-in-getting-acc/",
+      "matchScore": 1,
+      "snippet": "Q.68 List some practical difficulties... [FREE SOLUTION] | Vaia — List some practical difficulties involved in getting accurate results from a telephone survey. · 1. It is impossible to tell who is answering the phone. · 2. It ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-218025dbdd78",
+      "itemId": "openstax-statistics-1.68",
+      "subject": "statistics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/list-practical-difficulties-involved-getting-accurate-results-telephone-survey--many-peopl-q92769386",
+      "matchScore": 0.68,
+      "snippet": "Solved List some practical difficulties involved in getting — List some practicaldifficulties involved in getting accurate resultsfrom a telephone survey.a.Many people hang up on phone surveys.b.Not all ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-e4ceb2361d07",
+      "itemId": "openstax-statistics-1.70",
+      "subject": "statistics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/44084081",
+      "matchScore": 1,
+      "snippet": "[FREE] With your classmates, brainstorm some ways you could ... — With your classmates, brainstorm some ways you could overcome these problems if you needed to conduct a phone or mail survey.",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-1a312a2733b1",
+      "itemId": "openstax-statistics-1.70",
+      "subject": "statistics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/sampling-and-data/q70-with-your-classmates-brainstorm-some-ways-you-could-over/",
+      "matchScore": 1,
+      "snippet": "Q.70 With your classmates, brainstorm... [FREE SOLUTION] — With your classmates, brainstorm some ways you could overcome these problems if you needed to conduct a phone or mail survey. Short Answer. Expert verified. 1 ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-8946ef30c8e3",
+      "itemId": "openstax-statistics-1.87",
+      "subject": "statistics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/796721998/qa-m8-flash-cards/",
+      "matchScore": 1,
+      "snippet": "QA M8 Flashcards — \"How does sleep deprivation affect your ability to drive? A recent study measured the effects on 19 professional drivers. Each driver participated in two ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-837a66a8628b",
+      "itemId": "openstax-statistics-1.87",
+      "subject": "statistics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/48296904?source=next+question",
+      "matchScore": 1,
+      "snippet": "How does sleep deprivation affect your ability to drive? A recent ... — How does sleep deprivation affect your ability to drive? A recent study measured the effects on 19 professional drivers. Each driver participated in two ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-232d0da58d4f",
+      "itemId": "openstax-statistics-2.82",
+      "subject": "statistics",
+      "site": "Course Hero",
+      "url": "https://www.coursehero.com/tutors-problems/Statistics-and-Probability/32105356-The-median-age-for-US-Black-people-currently-is-309-years-for/",
+      "matchScore": 1,
+      "snippet": "The median age for U.S. Black people currently is 30.9 years — The median age for U.S. Black people currently is 30.9 years; for U.S. White people it is 42.3 years. Based upon this information, ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-d754fbe02042",
+      "itemId": "openstax-statistics-2.93",
+      "subject": "statistics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/descriptive-statistics/q93-the-median-age-of-the-us-population-in-1980-was-300-year/",
+      "matchScore": 1,
+      "snippet": "The median age of the US population in 1980 was 30.0 ... - Vaia — The median age of the U.S. population in 1980 was 30.0 years. In 1991, the median age was 33.1 years. a. What does it mean for the median age to rise?Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-ba7bfe27b376",
+      "itemId": "openstax-statistics-2.93",
+      "subject": "statistics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/41423400",
+      "matchScore": 1,
+      "snippet": "The median age of the US population in 1980 was 30.0 ... — The median age of the U.S. population in 1980 was 30.0 years. In 1991, the median age was 33.1 years. For the median age to rise, ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-c54442cb534a",
+      "itemId": "openstax-statistics-2.104",
+      "subject": "statistics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/descriptive-statistics/q104-a-music-school-has-budgeted-to-purchase-three-musical-i/",
+      "matchScore": 1,
+      "snippet": "Q.104 A music school has budgeted to p... [FREE SOLUTION] — A music school has budgeted to purchase three musical instruments. They plan to purchase a piano costing 3,000, a guitar costing 550, and a drum set costing ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-bc467a5c82ff",
+      "itemId": "openstax-statistics-2.104",
+      "subject": "statistics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/10908556",
+      "matchScore": 1,
+      "snippet": "[FREE] A music school has budgeted to purchase three ... — A music school has budgeted to purchase three musical instruments. They plan to purchase: A piano costing $3,000; A guitar costing $550 ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-5bbce81b37e0",
+      "itemId": "openstax-statistics-2.105",
+      "subject": "statistics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/descriptive-statistics/q105-an-elementary-school-class-ran-one-mile-with-a-mean-of-/",
+      "matchScore": 1,
+      "snippet": "An elementary school class ran one mile with a mean of ... - Vaia — An elementary school class ran one mile with a mean of 11 minutes and a standard deviation of three minutes. Rachel, a student in the class, ran one mile in ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-6a35c118d1e2",
+      "itemId": "openstax-statistics-2.105",
+      "subject": "statistics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/37151824",
+      "matchScore": 1,
+      "snippet": "[FREE] An elementary school class ran one mile with a ... — An elementary school class ran one mile with a mean of 11 minutes and a standard deviation of three minutes. Rachel, a student in the class, ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-2a95180bcb0c",
+      "itemId": "openstax-statistics-4.80",
+      "subject": "statistics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/discrete-random-variables/q-80-florida-state-university-has-statistics-classes-schedul/",
+      "matchScore": 1,
+      "snippet": "Introductory Statistics - Math - Vaia — Florida State University has 14 statistics classes scheduled for its Summer 2013 term. One class has space available for 30 students, eight classes have space ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-296601543fbd",
+      "itemId": "openstax-statistics-4.80",
+      "subject": "statistics",
+      "site": "Studocu",
+      "url": "https://www.studocu.com/en-us/messages/question/9048261/florida-state-university-has-14-statistics-classes-scheduled-for-its-summer-2013-term-one-class-has",
+      "matchScore": 1,
+      "snippet": "Florida State University has 14 statistics classes scheduled — Florida State University has 14 statistics classes scheduled for its Summer 2013 term. One class has space available for 30 students, eight classes have ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-6b54cebfb53b",
+      "itemId": "openstax-statistics-4.88",
+      "subject": "statistics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/school-newspaper-reporter-decides-randomly-survey-19-students-see-attend-tet-vietnamese-ne-q207147150",
+      "matchScore": 0.9,
+      "snippet": "A school newspaper reporter decides to randomly survey — Question: A school newspaper reporter decides to randomly survey 19 students to see if they will attend Tet (Vietnamese New Year) ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-b6e49d82a8a4",
+      "itemId": "openstax-statistics-4.88",
+      "subject": "statistics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/40170576",
+      "matchScore": 0.9,
+      "snippet": "A school newspaper reporter decides to randomly survey ... — A school newspaper reporter decides to randomly survey 11 students to see if they will attend Tet (Vietnamese New Year) festivities this year.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-75cf4f3774f9",
+      "itemId": "openstax-statistics-4.96",
+      "subject": "statistics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/discrete-random-variables/q-96-suppose-that-about-85-of-graduating-students-attend-the/",
+      "matchScore": 1,
+      "snippet": "Suppose that about 85% of graduating students attend ... - Vaia — Suppose that about 85% of graduating students attend their graduation. A group of 22 graduating students is randomly chosen.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-88521b65c202",
+      "itemId": "openstax-statistics-4.96",
+      "subject": "statistics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/suppose-85-graduating-students-attend-graduation-group-21-graduating-students-randomly-cho-q264731810",
+      "matchScore": 1,
+      "snippet": "Suppose that about 85% of graduating students attend ... — Question: Suppose that about 85% of graduating students attend their graduation. A group of 21 graduating students is randomly chosen.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-99fbbc204bd9",
+      "itemId": "openstax-statistics-4.102",
+      "subject": "statistics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/9-population-niger-access-internet-suppose-randomly-sample-150-people-niger-let-x-number-p-q202402534",
+      "matchScore": 1,
+      "snippet": "Solved Only 9% of the population of Niger has access to the — Only 9% of the population of Niger has access to the internet. Suppose we randomly sample 150 peoplein Niger. Let x= the number of people who have access ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-4b259ac71d6a",
+      "itemId": "openstax-statistics-4.118",
+      "subject": "statistics",
+      "site": "homework.study.com",
+      "url": "https://homework.study.com/explanation/the-maternity-ward-at-dr-jose-fabella-memorial-hospital-in-manila-in-the-philippines-is-one-of-the-busiest-in-the-world-with-an-average-of-60-births-per-day-let-x-the-number-of-births-in-an-hour.html",
+      "matchScore": 1,
+      "snippet": "The maternity ward at Dr. Jose Fabella Memorial Hospital in ... — The maternity ward at Dr. Jose Fabella Memorial Hospital in Manila in the Philippines is one of the busiest in the world with an average of 60 births per day.",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-20999313698b",
+      "itemId": "openstax-statistics-4.118",
+      "subject": "statistics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/maternity-ward-dr-jose-fabella-memorial-hospital-manila-philippines-one-busiest-world-aver-q187883632",
+      "matchScore": 1,
+      "snippet": "Solved The maternity ward at Dr. Jose Fabella Memorial — The maternity ward at Dr. Jose Fabella Memorial Hospital in Manila in the Philippines is one of the busiest in the world with an average of 60 births per ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-8ba44a4314b5",
+      "itemId": "openstax-statistics-5.77",
+      "subject": "statistics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/3-subway-train-arrives-every-eight-minutes-rush-hour-interested-length-time-commuter-must--q53441785",
+      "matchScore": 1,
+      "snippet": "Solved 3. A subway train arrives every eight minutes during — 3. A subway train arrives every eight minutes during rush hour. We are interested in the length of time a commuter must wait for a train to arrive. ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-914ea80ff9bc",
+      "itemId": "openstax-statistics-5.77",
+      "subject": "statistics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/subway-train-arrives-every-eight-minutes-rush-hour-interested-length-time-commuter-must-wa-q100535613",
+      "matchScore": 1,
+      "snippet": "Solved A subway train arrives every eight minutes during — A subway train arrives every eight minutes during rush hour. Weare interested in the length of time a commuter must wait for atrain to arrive. ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-d9585975edc7",
+      "itemId": "openstax-statistics-5.86",
+      "subject": "statistics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/suppose-length-phone-calls-measured-minutes-known-exponential-distribution-average-length--q264657361",
+      "matchScore": 1,
+      "snippet": "Solved Suppose that the length of phone calls, measured in — Suppose that the length of phone calls, measured in minutes, is known to have an exponential distribution with the average length of a call equal ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-5a18d349e9ff",
+      "itemId": "openstax-statistics-5.97",
+      "subject": "statistics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/continuous-random-variables/q97-in-major-league-baseball-a-no-hitter-is-a-game-in-which-/",
+      "matchScore": 1,
+      "snippet": "Q.97 In major league baseball, a no-h... [FREE SOLUTION] | Vaia — In major league baseball, a no-hitter is a game in which a pitcher, or pitchers, doesn't give up any hits throughout the game. No-hitters occur at a rate of ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-4e4bf6259e9c",
+      "itemId": "openstax-statistics-5.97",
+      "subject": "statistics",
+      "site": "Numerade",
+      "url": "https://www.numerade.com/questions/in-major-league-baseball-a-no-hitter-is-a-game-in-which-a-pitcher-or-pitchers-doesnt-give-up-any-hit/",
+      "matchScore": 1,
+      "snippet": "In major league baseball, a no-hitter is a game in which a... — In major league baseball, a no-hitter is a game in which a pitcher, or pitchers, doesn't give up",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-bfd6417786ee",
+      "itemId": "openstax-statistics-5.101",
+      "subject": "statistics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/continuous-random-variables/q-101-at-an-urgent-care-facility-patients-arrive-at-an-avera/",
+      "matchScore": 1,
+      "snippet": "Q. 101 At an urgent care facility, pati... [FREE SOLUTION] - Vaia — At an urgent care facility, patients arrive at an average rate of one patient every seven minutes. Assume that the duration between arrivals is ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-ca6804c740c6",
+      "itemId": "openstax-statistics-5.101",
+      "subject": "statistics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/33663932",
+      "matchScore": 1,
+      "snippet": "At an urgent care facility, patients arrive at an average rate ... — At an urgent care facility, patients arrive at an average rate of one patient every seven minutes. Assume that the duration between arrivals ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-30e7d86043e6",
+      "itemId": "openstax-calculus-1.330",
+      "subject": "calculus",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/330-car-racing-along-circular-track-diameter-1-mathrm-mi--trainer-standing-center-circle-m-q103556357",
+      "matchScore": 1,
+      "snippet": "Solved 330. A car is racing along a circular track with — 330. A car is racing along a circular track with diameter of 1mi. A trainer standing in the center of the circle marks his progress every 5sec. After 5sec ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-4a0c2593270e",
+      "itemId": "openstax-calculus-1.330",
+      "subject": "calculus",
+      "site": "courses.lumenlearning.com",
+      "url": "https://courses.lumenlearning.com/suny-openstax-calculus1/chapter/exercises-for-1-1/",
+      "matchScore": 1,
+      "snippet": "Chapter 1 Review Exercises | Calculus Volume 1 — 21. A car is racing along a circular track with diameter of 1 mi. A trainer standing in the center of the circle marks his progress every 5 sec.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-0a5a798de65e",
+      "itemId": "openstax-calculus-1.331",
+      "subject": "calculus",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/following-problems-consider-restaurant-owner-wants-sell-t-shirts-advertising-brand-recalls-q31617286",
+      "matchScore": 1,
+      "snippet": "Solved For the following problems, consider a restaurant — For the following problems, consider a restaurant owner who wants to sell T-shirts advertising his brand. He recalls that there is a fixed cost and ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-fa29de90f678",
+      "itemId": "openstax-calculus-1.335",
+      "subject": "calculus",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/following-problems-consider-radioactive-dating-human-skeleton-found-archeological-dig-carb-q31617508",
+      "matchScore": 1,
+      "snippet": "Solved For the following problems, consider radioactive — 335. If the skeleton is expected to be 2000 years old, what percentage of radiocarbon should be present?",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-0560cedfeef0",
+      "itemId": "openstax-calculus-1.335",
+      "subject": "calculus",
+      "site": "courses.lumenlearning.com",
+      "url": "https://courses.lumenlearning.com/suny-openstax-calculus1/chapter/exercises-for-1-1/",
+      "matchScore": 1,
+      "snippet": "Chapter 1 Review Exercises | Calculus Volume 1 — If the skeleton is expected to be 2000 years old, what percentage of radiocarbon should be present? Show Solution. 78.51%. 27. Find the inverse of the carbon ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": false
+    },
+    {
+      "id": "leak-bbd101ddd819",
+      "itemId": "openstax-calculus-1.336",
+      "subject": "calculus",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/48920382",
+      "matchScore": 1,
+      "snippet": "Find the inverse of the carbon-dating equation. What does it ... — Find the inverse of the carbon-dating equation. What does it mean? If there is 25% radiocarbon, how old is the skeleton? A. 2,400 years old",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-86d44af4c8c4",
+      "itemId": "openstax-calculus-1.336",
+      "subject": "calculus",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/49098139?source=previous+question",
+      "matchScore": 1,
+      "snippet": "Find the inverse of the carbon-dating equation. What does it ... — This answer is FREE! See the answer to your question: Find the inverse of the carbon-dating equation. What does it mean? If there is 25% radioc… - brainly.com.",
+      "partial": true,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-9bca00224404",
+      "itemId": "openstax-calculus-2.230",
+      "subject": "calculus",
+      "site": "Numerade",
+      "url": "https://www.numerade.com/ask/question/a-ball-is-thrown-into-the-air-and-the-vertical-position-is-given-by-xt-49-t225-t5-use-the-intermediate-value-theorem-to-show-that-the-ball-must-land-on-the-ground-sometime-between-5-sec-and-6-sec-af-2/",
+      "matchScore": 1,
+      "snippet": "A ball is thrown into the air and the vertical position is... — $ Use the Intermediate Value Theorem to show that the ball must land on the ground sometime between 5 sec and 6 sec after the throw. A ball ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-00eae347820a",
+      "itemId": "openstax-calculus-2.231",
+      "subject": "calculus",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/50090627",
+      "matchScore": 1,
+      "snippet": "A particle moving along a line has a displacement according to ... — A particle moving along a line has a displacement according to the function x(t)=t2−2t+4, where x is measured in meters and t is measured in seconds.",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-8271db6cb2fd",
+      "itemId": "openstax-calculus-2.231",
+      "subject": "calculus",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/particle-moving-along-line-displacement-according-function-x-t-t-2-2-t-4-x-measured-meters-q109976112",
+      "matchScore": 1,
+      "snippet": "Solved A particle moving along a line has a displacement — A particle moving along a line has a displacement according to the function x(t)=t2−2t+4 where x is measured in meters and t is measured in seconds. ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-0434f9f1b0ed",
+      "itemId": "openstax-calculus-4.549",
+      "subject": "calculus",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/25581404",
+      "matchScore": 1,
+      "snippet": "[FREE] A car is being compacted into a rectangular solid. ... — The volume is decreasing at a rate of 2m3/sec. The length and width of the compactor are square, but the height is not the same length as the ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-801cd0733e19",
+      "itemId": "openstax-calculus-4.550",
+      "subject": "calculus",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/550-rocket-launched-space-kinetic-energy-given-k-t-left-frac-1-2-right-m-t-v-t-2-k-kinetic-q124297415",
+      "matchScore": 1,
+      "snippet": "Solved 550. A rocket is launched into space; its kinetic — 550. A rocket is launched into space; its kinetic energy is given by K(t)=(21)m(t)v(t)2, where K is the kinetic energy in joules, m is the mass of the rocket ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-a938d9e109cf",
+      "itemId": "openstax-calculus-4.551",
+      "subject": "calculus",
+      "site": "courses.lumenlearning.com",
+      "url": "https://courses.lumenlearning.com/calculus1/chapter/chapter-4-review-exercises/",
+      "matchScore": 1,
+      "snippet": "Module 4 Review Problems | Calculus I — 27. The famous Regiomontanus' problem for angle maximization was proposed during the 15th century. A painting hangs on a wall with the bottom of the painting a ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-5f412f61014a",
+      "itemId": "openstax-calculus-4.551",
+      "subject": "calculus",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/9-famous-regiomontanus-problem-angle-maximization-proposed-15th-century-paining-hangs-wall-q33498103",
+      "matchScore": 0.85,
+      "snippet": "Solved 9. The famous Regiomontanus'problem for angle — 9. The famous Regiomontanus'problem for angle maximization was proposed during the 15th century. A paining hangs on a wall with the bottom of the painting ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-61fc36f35731",
+      "itemId": "openstax-calculus-4.552",
+      "subject": "calculus",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/5-airline-sells-tickets-tokyo-detroit-1200--500-seats-avallable-troical-twight-books-350-s-q113066438",
+      "matchScore": 1,
+      "snippet": "Solved 5) An airline sells tickets from Tokyo to Detroit — 5) An airline sells tickets from Tokyo to Detroit for $1200. There are 500 seats avallable and a troical twight books 350 seats when the price is $1200. ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-2b60d4b4d05f",
+      "itemId": "openstax-calculus-4.552",
+      "subject": "calculus",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/38212776",
+      "matchScore": 1,
+      "snippet": "An airline sells tickets from Tokyo to Detroit for $1200. ... — An airline sells tickets from Tokyo to Detroit for $1200. There are 500 seats available, and a typical flight books 350 seats.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-c2905f2a60fb",
+      "itemId": "openstax-calculus-5.460",
+      "subject": "calculus",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/average-cost-per-gigabyte-ram-approximated-function-c-t-8-500-000-065-t-t-measured-years-s-q131152224",
+      "matchScore": 1,
+      "snippet": "Solved The average cost per gigabyte of RAM can be — The average cost per gigabyte of RAM can be approximated by the function C(t)=8,500,000(0.65)t, where t is measured in years since 1980, and C is cost in ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-637a57ceb844",
+      "itemId": "openstax-calculus-5.460",
+      "subject": "calculus",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/average-cost-per-gigabyte-ram-approximated-function-c-t-8-500-000-065-t-t-measured-years-s-q129338727",
+      "matchScore": 1,
+      "snippet": "Solved The average cost per gigabyte of RAM can be — The average cost per gigabyte of RAM can be approximated by the function C(t) = 8,500, 000(0.65) t, where t is measured in years since 1980, and C is ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-590d76cc3d50",
+      "itemId": "openstax-calculus-5.462",
+      "subject": "calculus",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/velocity-bullet-rifle-approximated-v-t-6400-t-2-6505-t-2686-boldsymbol-t-seconds-shot-bold-q106554945",
+      "matchScore": 1,
+      "snippet": "Solved The velocity of a bullet from a rifle can be — The velocity of a bullet from a rifle can be approximated by v(t)=6400t2−6505t+ 2686, where t is seconds after the shot and v is the velocity measured ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-274a28c31ae2",
+      "itemId": "openstax-calculus-5.462",
+      "subject": "calculus",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/32526903",
+      "matchScore": 1,
+      "snippet": "3.2 The velocity of a bullet from a rifle can be approximated ... — 3.2 The velocity of a bullet from a rifle can be approximated by. v(t)=6400t2−6505t+2686. where t is seconds after the shot and v is the ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-3a3d1cd41529",
+      "itemId": "openstax-biology-1.9",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/349960424/ch-1-flash-cards/",
+      "matchScore": 1,
+      "snippet": "ch. 1 Flashcards — A person notices that her houseplants that are regularly exposed to music seem to grow more quickly than those in rooms with no music.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-cf4d866f1ccd",
+      "itemId": "openstax-biology-1.9",
+      "subject": "biology",
+      "site": "opened.cuny.edu",
+      "url": "https://opened.cuny.edu/courseware/lesson/605/student-old/?task=8",
+      "matchScore": 1,
+      "snippet": "The Science of Biology — A person notices that her houseplants that are regularly exposed to music seem to grow more quickly than those in rooms with no music. As a result, she ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-18df5174920b",
+      "itemId": "openstax-biology-1.14",
+      "subject": "biology",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/biology/concepts-of-biology-2013-edition/chapter-1/problem-4-which-of-the-following-sequences-represents-the-hi/",
+      "matchScore": 1,
+      "snippet": "Problem 4 Which of the following sequences... [FREE ... - Vaia — Which of the following sequences represents the hierarchy of biological organization from the most complex to the least complex level? a. organelle, tissue, ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-ef668d10ed8d",
+      "itemId": "openstax-biology-1.14",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/354001052/ap-biology-chapter-1-flash-cards/",
+      "matchScore": 1,
+      "snippet": "AP Biology Chapter 1 Flashcards — Which of the following sequences represents the hierarchy of biological organization from least to most complex level? Molecule, cell organ system, population, ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-ab73ab24ebd0",
+      "itemId": "openstax-biology-1.15",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/36942531",
+      "matchScore": 1,
+      "snippet": "Where in a phylogenetic tree would you expect to find the ... — Where in a phylogenetic tree would you expect to find the organism that evolved in the most distant past?Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-b713fbba0236",
+      "itemId": "openstax-biology-1.15",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/512736717/bio-quiz-1-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Bio Quiz 1 Flashcards — Where in a phylogenetic tree would you expect to find the organism that had evolved most recently? 2. Which of the following can strengthen a scientific theory?Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-5b186e217df7",
+      "itemId": "openstax-biology-2.4",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/explanations/questions/if-xenon-has-an-atomic-number-of-54-and-a-mass-number-of-108-how-many-neutrons-does-it-have-26536f48-aa5cd10c-a875-4cc3-8c34-7aaf894a2d7f",
+      "matchScore": 1,
+      "snippet": "If xenon has an atomic number of 54 and a mass ... — If xenon has an atomic number of 54 and a mass number of 108, how manyneutrons does it have?",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-d87a9563949f",
+      "itemId": "openstax-biology-2.4",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/52013637",
+      "matchScore": 1,
+      "snippet": "If xenon has an atomic number of 54 and a mass number of 108, ... — This answer is FREE! See the answer to your question: If xenon has an atomic number of 54 and a mass number of 108, how many neutrons does it h… - brainly.com.",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-13ea1ac4880b",
+      "itemId": "openstax-biology-2.6",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/31251153",
+      "matchScore": 0.52,
+      "snippet": "What is the electron configuration for potassium (atomic ... — Electron Configuration of Potassium: Potassium, with an atomic number of 19, has the following electron configuration: 1s² 2s² 2p⁶ 3s² 3p⁶ 4s¹.",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-a29f85e8b191",
+      "itemId": "openstax-biology-2.13",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/469731001/chapter-23-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Chapter 2.3 Flashcards — Which of the following is not a functional group that can bond with carbon? Sodium. What functional group is present in the molecule NH2CO2H? Amino. What are ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-cf5518a6f965",
+      "itemId": "openstax-biology-2.13",
+      "subject": "biology",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/biology/biology-2e/the-chemical-foundation-of-life/q-13-which-of-the-following-is-not-a-functional-group-that-c/",
+      "matchScore": 1,
+      "snippet": "Which of the following is not a functional group that can bond ... — Which of the following is not a functional group that can bond with carbon? a. sodium b. hydroxyl c. phosphate d. carbonyl. Short Answer. Expert verified.Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-7fb71beec0a9",
+      "itemId": "openstax-biology-3.5",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/426946108/ap-biology-chapter-3-flash-cards/",
+      "matchScore": 1,
+      "snippet": "AP Biology chapter 3 Flashcards — During the breakdown of polymers, which of the following reactions takes place? hydrolysis.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-93b3c3a1f2a5",
+      "itemId": "openstax-biology-3.5",
+      "subject": "biology",
+      "site": "Studocu",
+      "url": "https://www.studocu.com/en-us/messages/question/8491077/during-the-breakdown-of-polymers-which-of-the-following-reactions-takes",
+      "matchScore": 1,
+      "snippet": "[Solved] During the breakdown of polymers which ... — During the breakdown of polymers, which of the following reactions takes place?AcondensationBcovalent bondCdehydrationDhydrolysis",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-61651efdbc50",
+      "itemId": "openstax-biology-3.11",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/explanations/questions/which-of-the-following-is-not-an-extracellular-matrix-role-of-carbohydrates-a-protect-an-insects-internal-organs-from-external-trauma-b-prev-16b95b0c-cb87f8ea-cd37-4030-bd40-f3c0cf4cfb7c",
+      "matchScore": 1,
+      "snippet": "Which of the following is not an extracellular matrix role o — Which of the following is not an extracellular matrix role of carbohydrates? a. protect an insect's internal organs from external trauma. b. prevent plant cells ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-f6bda3cd3a17",
+      "itemId": "openstax-biology-3.11",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/52167294",
+      "matchScore": 1,
+      "snippet": "Which of the following is not an extracellular matrix role ... — Which of the following is not an extracellular matrix role of carbohydrates? A. Protect an insect's internal organs from external trauma.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-d4e17e35c4e9",
+      "itemId": "openstax-biology-3.14",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/463804144/ch-3-flash-cards/",
+      "matchScore": 1,
+      "snippet": "ch 3 Flashcards — Cholesterol is an integral part of plasma membranes. Based on its structure, where is it found in the membrane? a. on the extracellular surface b. embedded ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-10343c5b51d7",
+      "itemId": "openstax-biology-3.14",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/13051528",
+      "matchScore": 1,
+      "snippet": "Cholesterol is an integral part of plasma membranes. ... — Cholesterol is an integral part of plasma membranes. Based on its structure, where is it found in the membrane? A. On the extracellular surfaceRead more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-e31fb794199d",
+      "itemId": "openstax-biology-3.17",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/476704505/proteins-quiz-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Proteins quiz Flashcards — Mad cow disease is an infectious disease where one misfolded protein causes all other copies of the protein to being misfolding.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-0cf7643d9a1b",
+      "itemId": "openstax-biology-3.17",
+      "subject": "biology",
+      "site": "opened.cuny.edu",
+      "url": "https://opened.cuny.edu/courseware/lesson/615/student/?section=8",
+      "matchScore": 1,
+      "snippet": "Proteins — Mad cow disease is an infectious disease where one misfolded protein causes all other copies of the protein to being misfolding.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-e0abb01ad4b0",
+      "itemId": "openstax-biology-3.20",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/543132690/biochem-classwork-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Biochem Classwork Flashcards — How does the double helix structure of DNA support its role in encoding the genome? a. The sugar-phosphate backbone provides a template for DNA replication. b.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-e482d28b495d",
+      "itemId": "openstax-biology-3.20",
+      "subject": "biology",
+      "site": "opened.cuny.edu",
+      "url": "https://opened.cuny.edu/courseware/lesson/616/student/?section=7",
+      "matchScore": 1,
+      "snippet": "Nucleic Acids - Biology 2e The Chemistry of Life — How does the double helix structure of DNA support its role in encoding the genome? The sugar-phosphate backbone provides a template for DNA replication ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-b92a0f8207cb",
+      "itemId": "openstax-biology-4.13",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/634734807/homework-4-cell-structure-bio-151-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Homework 4 - Cell Structure - Bio 151 Flashcards — Tay-Sachs disease is a genetic disorder that results in the destruction of neurons due to a buildup of sphingolipids in the cells.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-307366919ed8",
+      "itemId": "openstax-biology-4.13",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/44083100",
+      "matchScore": 1,
+      "snippet": "[FREE] Tay-Sachs disease is a genetic disorder that results ... — Tay-Sachs disease is a genetic disorder that results in the destruction of neurons due to a buildup of sphingolipids in the cells.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-02e37448c891",
+      "itemId": "openstax-biology-4.14",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/334144373/the-endomembrane-system-and-proteins-sci-150-flash-cards/",
+      "matchScore": 1,
+      "snippet": "The Endomembrane System and Proteins (SCI-150) — which of the following is not a component of the endomembrane system? a. mitochondrion b. golgi apparatus c. endoplasmic reticulum d. lysosome. b ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-7d6a1a472d90",
+      "itemId": "openstax-biology-4.14",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/45213182",
+      "matchScore": 1,
+      "snippet": "[FREE] Which of the following is not a component ... — Which of the following is not a component of the endomembrane system? A. Rough endoplasmic reticulum. B. Smooth endoplasmic reticulumRead more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-2fb78a125103",
+      "itemId": "openstax-biology-4.15",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/44303687",
+      "matchScore": 1,
+      "snippet": "The process by which a cell engulfs a foreign particle is ... — The process by which a cell engulfs a foreign particle is known as phagocytosis. This form of endocytosis allows the cell to capture and ingest ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-ade052829c8a",
+      "itemId": "openstax-biology-4.15",
+      "subject": "biology",
+      "site": "oertx.highered.texas.gov",
+      "url": "https://oertx.highered.texas.gov/courseware/lesson/1626/student-old/?task=7",
+      "matchScore": 1,
+      "snippet": "The Endomembrane System and Proteins — The process by which a cell engulfs a foreign particle is known as: endosymbiosis; phagocytosis; hydrolysis; membrane synthesis. Show Hint. Hint: B. Which of ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-b68b37581711",
+      "itemId": "openstax-biology-4.16",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/483261949/biology-multiple-choice-chapter-4-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Biology multiple choice chapter 4 Flashcards — Which of the following is most likely to have the greatest concentration of smooth endoplasmic reticulum? a. a cell that secretes enzymes b. a cell that ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-6ecda8c381f0",
+      "itemId": "openstax-biology-4.16",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/52073894",
+      "matchScore": 1,
+      "snippet": "Which of the following is most likely to have the greatest ... — The cell most likely to have the greatest concentration of smooth endoplasmic reticulum is the one that makes steroid hormones, as these require ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-21b6ccc796cb",
+      "itemId": "openstax-biology-4.18",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/44083103",
+      "matchScore": 1,
+      "snippet": "Congenital disorders of glycosylation are a growing class of rare ... — Congenital disorders of glycosylation are a growing class of rare diseases. Which organelle would be most commonly involved in the glycoprotein disorder portion ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-ea1db55ef0ea",
+      "itemId": "openstax-biology-4.18",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/778158850/chapter-4-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Chapter 4 Flashcards — Congenital disorders of glycosylation are a growing class of rare diseases. Which organelle would be most commonly involved in the glycoprotein portion of the ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-fb5186a43aaa",
+      "itemId": "openstax-biology-4.20",
+      "subject": "biology",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/483261949/biology-multiple-choice-chapter-4-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Biology multiple choice chapter 4 Flashcards — Which of the following do not play a role in intracellular movement?a. microfilaments and intermediate filaments b. microfilaments and microtubules c ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-52cf3a48a984",
+      "itemId": "openstax-biology-4.20",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/29673880",
+      "matchScore": 1,
+      "snippet": "Which of the following do not play a role in intracellular ... — Which of the following do not play a role in intracellular movement? A. Microfilaments and microtubules. B. Microfilaments and intermediate ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-73005e86e170",
+      "itemId": "openstax-biology-4.24",
+      "subject": "biology",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/28726556?source=previous+question",
+      "matchScore": 1,
+      "snippet": "Diseased animal cells may produce molecules that activate ... — Diseased animal cells may produce molecules that activate death cascades to kill the cells in a controlled manner. Why would neighboring healthy cells also die?",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-bd010e54e658",
+      "itemId": "openstax-biology-4.24",
+      "subject": "biology",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/biology/biology-2e/cell-structure/q24-diseased-animal-cells-may-produce-molecules-that-activat/",
+      "matchScore": 1,
+      "snippet": "Q.24 Diseased animal cells may produc... [FREE SOLUTION] — Diseased animal cells may produce molecules that activate death cascades to kill the cells in a controlled manner. Why would neighboring healthy cells also die?",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-dce92f5262fa",
+      "itemId": "openstax-microeconomics-1.10",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/314779972/micro-economics-chapter-1-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Micro Economics Chapter 1 Flashcards — Give the three reasons that explain why the division of labor increases an economy's level of production. First, division of labor allows for specialization ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-9ca11eb80a78",
+      "itemId": "openstax-microeconomics-1.10",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-microeconomics-2nd/welcome-to-economics/q-10-give-the-three-reasons-that-explain-why-the-division-of/",
+      "matchScore": 1,
+      "snippet": "Give the three reasons that explain why the division of labor ... — The three reasons that explain why the division of labor increases an economy's level of production are: Specialization; Economies of Scale; Flexible and ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-246a9324a3ff",
+      "itemId": "openstax-microeconomics-1.17",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-microeconomics-2nd/welcome-to-economics/q-17-are-firms-primarily-buyers-or-sellers-in-the-goods-and-/",
+      "matchScore": 1,
+      "snippet": "Are firms primarily buyers or sellers in the goods and services ... — Are firms primarily buyers or sellers in the goods and services market? In the labor market? Short Answer. Expert verified. Firms are primarily sellers in the ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-da9c667aef06",
+      "itemId": "openstax-microeconomics-1.17",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/221306711/principle-of-macroeconomics-ch-1-2-review-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Principle of Macroeconomics Ch 1-2 Review Flashcards — Are firms primarily buyers or sellers in the goods and services market? How about in the labor market? Firms are primarily sellers in the goods and services ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-1808e8bac9a0",
+      "itemId": "openstax-microeconomics-1.18",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/71278721/unit-1-economic-review-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Unit 1 Economic Review Flashcards — What are the three ways that societies can organize themselves economically? Traditional economy, command economy, and market economy. What is globalization ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-a4badd3ab6a5",
+      "itemId": "openstax-microeconomics-1.18",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-for-ap-courses-2-edition/chapter-1/problem-18-what-are-the-three-ways-that-societies-can-organi/",
+      "matchScore": 1,
+      "snippet": "What are the three ways that societies can organize ... - Vaia — What are the three ways that societies can organize themselves economically? · 1. Traditional Economic System · 2. Command Economic System · 3. Market Economic ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-671ed87241eb",
+      "itemId": "openstax-microeconomics-1.19",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/576203961/macro-ch-1-2-written-questions-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Macro: Ch 1 & 2 Written Questions Flashcards — How do you think it might have affected the economy over the past decade? Globalization is the expansion of the connections between people around the world ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-bdcfa52537ba",
+      "itemId": "openstax-microeconomics-1.19",
+      "subject": "microeconomics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/13176616?source=next+question",
+      "matchScore": 1,
+      "snippet": "What is globalization? How do you think it might have affected ... — What is globalization? How do you think it might have affected the economy over the past decade? 1. See answer. spark. Explain with Learning Companion.",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-89df5862fda3",
+      "itemId": "openstax-microeconomics-2.9",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-for-ap-courses-2-edition/chapter-2/problem-9-explain-why-individuals-make-choices-that-are-dire/",
+      "matchScore": 1,
+      "snippet": "Explain why individuals make choices that are directly ... - Vaia — Explain why individuals make choices that are directly on the budget constraint, rather than inside the budget constraint or outside it. Short Answer. Expert ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-36fc187b127e",
+      "itemId": "openstax-microeconomics-2.9",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/417203397/macroeconomics-unit-1-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Macroeconomics Unit 1 Flashcards — Explain why individuals make choices that are directly on the budget constraint, rather than inside the budget constraint or outside it. Tap the card to flip.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-309532d65502",
+      "itemId": "openstax-microeconomics-2.12",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-for-ap-courses-2-edition/chapter-2/problem-12-why-is-a-production-possibilities-frontier-typica/",
+      "matchScore": 1,
+      "snippet": "Why is a production possibilities frontier typically drawn ... - Vaia — Why is a production possibilities frontier typically drawn as a curve, rather than a straight line? Short Answer. Expert verified. A production possibilities ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-c0ab4567aff8",
+      "itemId": "openstax-microeconomics-2.12",
+      "subject": "microeconomics",
+      "site": "khanacademy.org",
+      "url": "https://www.khanacademy.org/economics-finance-domain/microeconomics/basic-economic-concepts-gen-micro/production-possibilities/a/the-production-possibilities-frontier-and-social-choices-cnx-2",
+      "matchScore": 1,
+      "snippet": "The Production Possibilities Frontier (article) — Why is a production possibilities frontier typically drawn as a curve, rather than a straight line? Explain why societies cannot make a choice above their ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-f5c53eff284c",
+      "itemId": "openstax-microeconomics-2.13",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-for-ap-courses-2-edition/chapter-2/problem-13-explain-why-societies-cannot-make-a-choice-above-/",
+      "matchScore": 1,
+      "snippet": "Explain why societies cannot make a choice above their ... - Vaia — Explain why societies cannot make a choice above their production possibilities frontier and should not make a choice below it. Short Answer. Expert verified.Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-dca559105f63",
+      "itemId": "openstax-microeconomics-2.13",
+      "subject": "microeconomics",
+      "site": "oertx.highered.texas.gov",
+      "url": "https://oertx.highered.texas.gov/courseware/lesson/1873/student/?section=10",
+      "matchScore": 1,
+      "snippet": "The Production Possibilities Frontier and Social Choices — Explain why societies cannot make a choice above their production possibilities frontier and should not make a choice below it. What are diminishing ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-6e4a08c96bba",
+      "itemId": "openstax-microeconomics-2.17",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-2-edition/chapter-2/problem-17-is-the-economic-model-of-decision-making-intended/",
+      "matchScore": 1,
+      "snippet": "Understanding the economic model of decision-making - Vaia — Is the economic model of decision-making intended as a literal description of how individuals, firms, and the governments actually make decisions? Short ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-23b330af55de",
+      "itemId": "openstax-microeconomics-2.17",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/569005616/chapter-2-review-qs-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Chapter 2 Review Q's Flashcards — Is the economic model of decision-making intended as a literal description of how individuals, firms, and the governments actually make decisions? No ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-1c83014eb835",
+      "itemId": "openstax-microeconomics-2.18",
+      "subject": "microeconomics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/44084705",
+      "matchScore": 1,
+      "snippet": "What are four responses to the claim that people should ... — The four responses to the claim that people should not behave in a certain way are to Reject, Accept, Modify, or Ignore it. Each response ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-0f1654f6f298",
+      "itemId": "openstax-microeconomics-2.18",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-2nd/choice-in-a-world-of-scarcity/18-what-are-four-responses-to-the-claim-that-people-should-n/",
+      "matchScore": 1,
+      "snippet": "18 What are four responses to the c... [FREE SOLUTION] - Vaia — Four responses to the claim that people should not behave in the way, described in this chapter, are written below: 1. Economic decisions are taken on the ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-019566e19257",
+      "itemId": "openstax-microeconomics-3.13",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/569036830/chapter-3-review-qs-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Chapter 3 Review Q's Flashcards — What does a downward-sloping demand curve mean about how buyers in a market will react to a higher price? A downward sloping demand curve means that buyers will ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-f18c9dba944e",
+      "itemId": "openstax-microeconomics-3.13",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-for-ap-courses-2-edition/chapter-3/problem-13-what-does-a-downward-sloping-demand-curve-mean-ab/",
+      "matchScore": 1,
+      "snippet": "What does a downward-sloping demand curve mean ... - Vaia — What does a downward-sloping demand curve mean about how buyers in a market will react to a higher price? Short Answer. Expert verified. A downward-sloping ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-79eee7971903",
+      "itemId": "openstax-microeconomics-3.14",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/569036830/chapter-3-review-qs-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Chapter 3 Review Q's Flashcards — Will demand curves have the same exact shape in all markets? If not, how will they differ? The shape of a demand curve will be different depending o the market ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-709913f3f2e8",
+      "itemId": "openstax-microeconomics-3.14",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-2nd/demand-and-supply/q-14-will-demand-curves-have-the-same-exact-shape-in-all-mar/",
+      "matchScore": 1,
+      "snippet": "Q. 14 Will demand curves have the same... [FREE SOLUTION] — Will demand curves have the same exact shape in all markets? If not, how will they differ? Short Answer. Expert verified. Generally, the demand curve slopes ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-5b24543a0e3c",
+      "itemId": "openstax-microeconomics-3.20",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/585156507/macro-quiz-2-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Macro Quiz 2 Flashcards — What is the difference between the demand and the quantity demanded of a product, say milk? Explain in words and show the difference on a graph with a ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-414846202ca1",
+      "itemId": "openstax-microeconomics-3.20",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-2nd/demand-and-supply/q-20-what-is-the-difference-between-the-demand-and-the-quant/",
+      "matchScore": 1,
+      "snippet": "What is the difference between the demand and the quantity ... — What is the difference between the demand and the quantity demanded of a product, say milk? Explain in words and show the difference on a graph with a demand ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-f9be2256efb8",
+      "itemId": "openstax-microeconomics-3.22",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-microeconomics-2nd/demand-and-supply/q22-when-analyzing-a-market-how-do-economists-deal-with-the-/",
+      "matchScore": 1,
+      "snippet": "When analyzing a market, how do economists deal with ... - Vaia — Economists deal with the problem that many factors that affect the market are changing at the same time by taking only one factor, the rest factors remain ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-b18a5a26c2f7",
+      "itemId": "openstax-microeconomics-3.22",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-2-edition/chapter-3/problem-22-when-analyzing-a-market-how-do-economists-deal-wi/",
+      "matchScore": 0.6,
+      "snippet": "Problem 22 When analyzing a market, how do ... [FREE ... - Vaia — Economists deal with the problem of multiple changing factors in a market by using models to simplify complex situations, making assumptions, applying the ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-b2961cb3c179",
+      "itemId": "openstax-microeconomics-3.23",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/569036830/chapter-3-review-qs-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Chapter 3 Review Q's Flashcards — Name some factors that can cause a shift in the demand curve in markets for goods and services. Changes in the wealth of consumers, such as in a recession ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-bde381494ab8",
+      "itemId": "openstax-microeconomics-3.23",
+      "subject": "microeconomics",
+      "site": "courses.lumenlearning.com",
+      "url": "https://courses.lumenlearning.com/suny-microeconomics2/chapter/shifts-in-demand-and-supply-for-goods-and-services/",
+      "matchScore": 1,
+      "snippet": "Shifts in Demand and Supply for Goods and Services — Name some factors that can cause a shift in the demand curve in markets for goods and services. Name some factors that can cause a shift in the supply curve ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-29f7ba9d4e9b",
+      "itemId": "openstax-microeconomics-4.14",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-microeconomics-2nd/labor-and-financial-markets/q-14-are-households-demanders-or-suppliers-in-the-goods-mark/",
+      "matchScore": 1,
+      "snippet": "Are households demanders or suppliers in the goods market ... — Are households demanders or suppliers in the goods market? Are firms demanders or suppliers in the goods market? What about the labor market and the ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-2a5d10bf9296",
+      "itemId": "openstax-microeconomics-4.14",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/832854245/economics-ch-4-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Economics - CH. 4 Flashcards — Are households demanders or suppliers in the goods market? Are firms demanders or suppliers in the goods market? What about the labor market and the financial ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-d9c9de0f00f4",
+      "itemId": "openstax-microeconomics-4.15",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/861460674/chapter-4-labor-market-questions-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Chapter 4 Labor Market questions — What about the labor market and the financial market? a. Name some factors that can cause a shift in the demand curve in labor markets. a. About us. About ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-d69e964528cb",
+      "itemId": "openstax-microeconomics-4.15",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-microeconomics-2nd/labor-and-financial-markets/q15-name-some-factors-that-can-cause-a-shift-in-the-demand-c/",
+      "matchScore": 1,
+      "snippet": "Name some factors that can cause a shift in the demand curve ... — Name some factors that can cause a shift in the demand curve in labor markets. Short Answer. Expert verified. A change in the quantity demanded of the product ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-f8af6690ea11",
+      "itemId": "openstax-microeconomics-4.16",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/832854245/economics-ch-4-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Economics - CH. 4 Flashcards — Name some factors that can cause a shift in the supply curve in labor markets. a change in worker preferences, a change in nonlabor income, a change in the ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-5ecaf6fca070",
+      "itemId": "openstax-microeconomics-4.16",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-2-edition/chapter-4/problem-16-name-some-factors-that-can-cause-a-shift-in-the-s/",
+      "matchScore": 1,
+      "snippet": "Name some factors that can cause a shift in the supply curve ... — Factors that can cause a shift in the supply curve in labor markets include: 1) Increase in population, which leads to a rightward shift due to more ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-da4172147c72",
+      "itemId": "openstax-microeconomics-4.18",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/514490725/chapter-4-labor-and-financial-markets-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Chapter 4: Labor and Financial Markets Flashcards — What would be a sign of a shortage in financial markets? interest rate is below equilibrium. Would usury laws help or hinder resolution of a shortage in ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-7c7b7663a331",
+      "itemId": "openstax-microeconomics-4.18",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-for-ap-courses-2-edition/chapter-4/problem-18-what-would-be-a-sign-of-a-shortage-in-financial-m/",
+      "matchScore": 1,
+      "snippet": "What would be a sign of a shortage in financial markets? - Vaia — What would be a sign of a shortage in financial markets? Short Answer. Expert verified. A sign of a shortage in financial markets would be higher interest ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-10577f924ce4",
+      "itemId": "openstax-microeconomics-4.19",
+      "subject": "microeconomics",
+      "site": "Quizlet",
+      "url": "https://quizlet.com/514490725/chapter-4-labor-and-financial-markets-flash-cards/",
+      "matchScore": 1,
+      "snippet": "Chapter 4: Labor and Financial Markets Flashcards — Would usury laws help or hinder resolution of a shortage in financial markets? It would have no effect if the ceiling is set above equilibrium; It would ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-2938b161e6e1",
+      "itemId": "openstax-microeconomics-4.19",
+      "subject": "microeconomics",
+      "site": "Vaia",
+      "url": "https://www.vaia.com/en-us/textbooks/economics/principles-of-macroeconomics-2nd/labor-and-financial-markets/q-19-would-usury-laws-help-or-hinder-resolution-of-a-shortag/",
+      "matchScore": 1,
+      "snippet": "Would usury laws help or hinder resolution of a shortage in ... — Would usury laws help or hinder resolution of a shortage in financial markets? Short Answer. Expert verified. Usury law will hinder the resolution of a ...Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-df371a66f46e",
+      "itemId": "openstax-physics-1.4",
+      "subject": "physics",
+      "site": "collegephysicsanswers.com",
+      "url": "https://collegephysicsanswers.com/openstax-solutions/american-football-played-100-yd-long-field-excluding-end-zones-how-long-field?srsltid=AYCX9vI1H6Ar42UxD9eMO7XqwjWz9lgClSpHOuVXyz2PCNaRycNA-mbg",
+      "matchScore": 1,
+      "snippet": "American football is played on a 100-yd-long field ... — American football is played on a 100-yd-long field, excluding the end zones. How long is the field in meters? (Assume that 1 meter equals ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-da0c4bcbe6e2",
+      "itemId": "openstax-physics-1.4",
+      "subject": "physics",
+      "site": "youtube.com",
+      "url": "https://www.youtube.com/watch?v=wGGiHcs_PUQ",
+      "matchScore": 1,
+      "snippet": "American football is played on a 100-yd-long field, excluding ... — American football is played on a 100-yd-long field, excluding the end zones. How long is the field in meters? (Assume that 1 meter equals ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-c76535be5359",
+      "itemId": "openstax-physics-1.5",
+      "subject": "physics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/32902785",
+      "matchScore": 1,
+      "snippet": "Soccer fields vary in size. A large soccer field is 115 m long ... — A large soccer field is 115 m long and 85.0 m wide. = 278.87 feet. the area of the soccer field is approximately 105,190.21 square feet.",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-c128bb78158f",
+      "itemId": "openstax-physics-1.5",
+      "subject": "physics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/10885118",
+      "matchScore": 1,
+      "snippet": "Soccer fields vary in size. A large soccer field is 115 m long ... — So, the correct dimensions of the large soccer field in feet and inches are approximate Length 377 feet 4 inches and Width 278 feet 9.2 inches.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-6cfffe5ced33",
+      "itemId": "openstax-physics-1.9",
+      "subject": "physics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/13119565",
+      "matchScore": 1,
+      "snippet": "Tectonic plates are large segments of the Earth's crust that ... — Tectonic plates are large segments of the Earth's crust that move slowly. Suppose that one such plate has an average speed of 4.0 cm/year.Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-acf6629d7eb6",
+      "itemId": "openstax-physics-1.16",
+      "subject": "physics",
+      "site": "collegephysicsanswers.com",
+      "url": "https://collegephysicsanswers.com/openstax-solutions/can-contains-375-ml-soda-how-much-left-after-308-ml-removed",
+      "matchScore": 1,
+      "snippet": "A can contains 375 mL of soda. How much is left after 308 ... — A can contains 375 mL of soda. How much is left after 308 mL is removed?",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-4bc679780875",
+      "itemId": "openstax-physics-1.16",
+      "subject": "physics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/13260479",
+      "matchScore": 1,
+      "snippet": "A can contains 375 mL of soda. How much is left after 308 ... — A can contains 375 mL of soda. How much is left after 308 mL is removed? 1. See answer. spark. Explain with Learning Companion.Read more",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-3dd3c74c6fb1",
+      "itemId": "openstax-physics-1.30",
+      "subject": "physics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/44078019",
+      "matchScore": 1,
+      "snippet": "Approximately how many generations have passed since ... — Approximately how many generations have passed since the year 0 AD if a generation is about one-third of a lifetime? A. Approximately 60Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-2330d2659bab",
+      "itemId": "openstax-physics-1.30",
+      "subject": "physics",
+      "site": "youtube.com",
+      "url": "https://www.youtube.com/watch?v=j2ct9UWXTtQ",
+      "matchScore": 1,
+      "snippet": "A generation is about one-third of a lifetime. Approximately how ... — A generation is about one-third of a lifetime. Approximately how many generations have passed since the year 0 AD? OpenStax™ is a registered ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-a91b92dc566a",
+      "itemId": "openstax-physics-1.36",
+      "subject": "physics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/13126722",
+      "matchScore": 1,
+      "snippet": "Assuming one nerve impulse must end before another can ... — Assuming one nerve impulse must end before another can begin, what is the maximum firing rate of a nerve in impulses per second?Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-15c493274728",
+      "itemId": "openstax-physics-1.36",
+      "subject": "physics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/duration-nerve-impulse-0001-second-assuming-one-nerve-impulse-must-end-another-begin-maxim-q135841376",
+      "matchScore": 1,
+      "snippet": "Solved The duration of a nerve impulse is about 0.001 — The duration of a nerve impulse is about 0.001 second. Assuming one nerve impulse must end before another can begin, what is the maximum firing rate of ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-c03cd3f7d5ad",
+      "itemId": "openstax-physics-2.7",
+      "subject": "physics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/north-american-european-continents-moving-apart-rate-3-cm-y-rate-long-take-drift-660-km-fa-q194306670",
+      "matchScore": 1,
+      "snippet": "The North American and European continents are — The North American and European continents are moving apart at a rate of about 3 cm/y. At this rate how long will it take them to drift 660 km farther apart ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-3daf58a4bdb4",
+      "itemId": "openstax-physics-2.7",
+      "subject": "physics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/north-american-european-continents-moving-apart-rate-3-cm-y-rate-long-take-drift-520-km-fa-q136134630",
+      "matchScore": 1,
+      "snippet": "Solved The North American and European continents are — The North American and European continents are moving apart at a rate of about 3 cm/y. At this rate how long will it take them to drift 520 km farther ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-9edbe469a6df",
+      "itemId": "openstax-physics-2.8",
+      "subject": "physics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/land-west-san-andreas-fault-southern-california-moving-average-velocity-6-cm-y-northwest-r-q131181882",
+      "matchScore": 1,
+      "snippet": "Solved Land west of the San Andreas fault in southern — Land west of the San Andreas fault in southern California is moving at an average velocity of about 6 ﻿cm/y northwest relative to land east of the fault. ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-6411e0a15de2",
+      "itemId": "openstax-physics-2.8",
+      "subject": "physics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/chegg-8-question-land-west-san-andreas-fault-southern-california-moving-average-velocity-6-q266640024",
+      "matchScore": 0.85,
+      "snippet": "Solved Chegg(8) Question: Land west of the San Andreas — tand west of the San Andreas fault in southern Calfornia is moving at an average velocity of about 6 c m y ﻿northwest relative to land east of the fault.",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-2df850c7bcb5",
+      "itemId": "openstax-physics-2.14",
+      "subject": "physics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/football-quarterback-runs-150-m-straight-playing-field-250-s-hit-pushed-300-m-straight-bac-q118534538",
+      "matchScore": 1,
+      "snippet": "Solved A football quarterback runs 15.0 m straight down the — A football quarterback runs 15.0 m straight down the playing field in 2.50 s. He is then hit and pushed 3.00 m straight backward in 1.75 s. He breaks the ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-d6e911eedd09",
+      "itemId": "openstax-physics-2.14",
+      "subject": "physics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/2-football-quarterback-runs-150-mathrm-~m-straight-playing-field-250-mathrm-~s--hit-pushed-q118537360",
+      "matchScore": 1,
+      "snippet": "Solved 2) A football quarterback runs 15.0 m straight down — 2) A football quarterback runs 15.0 m straight down the playing field in 2.50 s. He is then hit and pushed 3.00 m straight backward in 1.75 s. He breaks ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-103227ceadd3",
+      "itemId": "openstax-physics-2.19",
+      "subject": "physics",
+      "site": "youtube.com",
+      "url": "https://www.youtube.com/watch?v=tt5YKZE4juk",
+      "matchScore": 1,
+      "snippet": "Assume that an intercontinental ballistic missile goes from rest ... — Assume that an intercontinental ballistic missile goes from rest to a suborbital speed of 6.50 km/s in 60.0 s (the actual speed and time are ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-97b38a41ba5e",
+      "itemId": "openstax-physics-2.19",
+      "subject": "physics",
+      "site": "Brainly",
+      "url": "https://brainly.com/question/13073722",
+      "matchScore": 1,
+      "snippet": "Assume that an intercontinental ballistic missile goes from ... — Assume that an intercontinental ballistic missile goes from rest to a suborbital speed of 6.50 km/s in 60.0 s (the actual speed and time are ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": true
+    },
+    {
+      "id": "leak-d4535565486f",
+      "itemId": "openstax-physics-3.22",
+      "subject": "physics",
+      "site": "youtube.com",
+      "url": "https://www.youtube.com/watch?v=KkrwzTg49hE",
+      "matchScore": 1,
+      "snippet": "Physics Problem: Vector Addition — A farmer wants to fence off a four-sided plot of flat land. They measure the first three sides, shown as A, B, and C in Figure 3.57, ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-8a739dc400a3",
+      "itemId": "openstax-physics-3.22",
+      "subject": "physics",
+      "site": "Chegg",
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/farmer-wants-fence-four-sided-plot-flat-land-measure-first-three-sides-shown-b-c-figure-co-q207497331",
+      "matchScore": 1,
+      "snippet": "Solved A farmer wants to fence off a four-sided plot of — A farmer wants to fence off a four-sided plot of flat land. They measure the first three sides, shown as A,B, and C in the figure and then correctly calculate ...",
+      "partial": false,
+      "answerSignal": true,
+      "studySite": true
+    },
+    {
+      "id": "leak-041bbd85e142",
+      "itemId": "openstax-physics-3.61",
+      "subject": "physics",
+      "site": "youtube.com",
+      "url": "https://www.youtube.com/watch?v=uLv2yE3BMjA",
+      "matchScore": 1,
+      "snippet": "A sandal is dropped from the top of a 15.0-m-high mast on ... — A sandal is dropped from the top of a 15.0-m-high mast on a ship moving at 1.75 m/s due south. Calculate the velocity of the sandal when it ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-0c851c6edff5",
+      "itemId": "openstax-physics-3.61",
+      "subject": "physics",
+      "site": "collegephysicsanswers.com",
+      "url": "https://collegephysicsanswers.com/openstax-solutions/sandal-dropped-top-150-m-high-mast-ship-moving-175-ms-due-south-calculate?srsltid=AYCX9vLSUerBm_3j0Bcb_qMiMLM7EjSruxzyJxLjoYTulgt_OKEXdOsm",
+      "matchScore": 1,
+      "snippet": "A sandal is dropped from the top of a 15.0-m-high mast on ... — A sandal is dropped from the top of a 15.0-m-high mast on a ship moving at 1.75 m/s due south. Calculate the velocity of the sandal when it hits ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-ab46c24036b4",
+      "itemId": "openstax-physics-4.9",
+      "subject": "physics",
+      "site": "youtube.com",
+      "url": "https://www.youtube.com/watch?v=QsVhD_5Iveg",
+      "matchScore": 1,
+      "snippet": "Suppose two children push horizontally, but in exactly opposite ... — Suppose two children push horizontally, but in exactly opposite directions, on a third child in a wagon. The first child exerts a force ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-63fd3e54e8ec",
+      "itemId": "openstax-physics-4.9",
+      "subject": "physics",
+      "site": "collegephysicsanswers.com",
+      "url": "https://collegephysicsanswers.com/openstax-solutions/suppose-two-children-push-horizontally-exactly-opposite-directions-third-child?srsltid=AYCX9vJvEYhiheIC_F3gqOao32OWDTHUrbLlYm0JeqxEQylWv3L2-eul",
+      "matchScore": 1,
+      "snippet": "Suppose two children push horizontally, but in exactly ... — Suppose two children push horizontally, but in exactly opposite directions, on a third child in a wagon. The first child exerts a force ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-e9e0d07607fb",
+      "itemId": "openstax-physics-4.14",
+      "subject": "physics",
+      "site": "youtube.com",
+      "url": "https://www.youtube.com/watch?v=r92P9qttOO0",
+      "matchScore": 1,
+      "snippet": "Suppose the mass of a fully loaded module in which astronauts ... — Suppose the mass of a fully loaded module in which astronauts take off from the Moon is 10000 kg. The thrust of its engines is 30000 N. (a) ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-c7bb1e31d76a",
+      "itemId": "openstax-physics-4.14",
+      "subject": "physics",
+      "site": "collegephysicsanswers.com",
+      "url": "https://collegephysicsanswers.com/openstax-solutions/suppose-mass-fully-loaded-module-which-astronauts-take-moon-10000-kg-thrust-its?srsltid=AYCX9vKox8ECwd2P6N85c02gMQ2svX2Qorb_V3hra56ONSX6zPAv1E_u",
+      "matchScore": 1,
+      "snippet": "Suppose the mass of a fully loaded module in which ... — Suppose the mass of a fully loaded module in which astronauts take off from the Moon is 10,000 kg. The thrust of its engines is 30,000 N. (a) ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-ede007cb06e2",
+      "itemId": "openstax-physics-4.26",
+      "subject": "physics",
+      "site": "youtube.com",
+      "url": "https://www.youtube.com/watch?v=xajfPyIHN9o",
+      "matchScore": 1,
+      "snippet": "4.26 | When landing after a spectacular somersault, a 40.0-kg ... — When landing after a spectacular somersault, a 40.0-kg gymnast decelerates by pushing straight down on the mat. Calculate the force she must ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-c950c2ee6212",
+      "itemId": "openstax-physics-4.26",
+      "subject": "physics",
+      "site": "collegephysicsanswers.com",
+      "url": "https://collegephysicsanswers.com/openstax-solutions/when-landing-after-spectacular-somersault-400-kg-gymnast-decelerates-pushing?srsltid=AYCX9vJUOgW49zNzcRjeh7k65o26RZRj-l3Sb-ON_DcZ-f19NLNUAFIs",
+      "matchScore": 1,
+      "snippet": "When landing after a spectacular somersault, a 40.0-kg ... — When landing after a spectacular somersault, a 40.0-kg gymnast decelerates by pushing straight down on the mat. Calculate the force she must ...Read more",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-27b6ef7e670b",
+      "itemId": "openstax-physics-4.44",
+      "subject": "physics",
+      "site": "youtube.com",
+      "url": "https://www.youtube.com/watch?v=r8d4ddwzYCY",
+      "matchScore": 1,
+      "snippet": "When starting a foot race, a 70.0-kg sprinter exerts an average ... — When starting a foot race, a 70.0-kg sprinter exerts an average force of 650 N backward on the ground for 0.800 s. (a) What is his final ...",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    },
+    {
+      "id": "leak-23391180b7e9",
+      "itemId": "openstax-physics-4.44",
+      "subject": "physics",
+      "site": "collegephysicsanswers.com",
+      "url": "https://collegephysicsanswers.com/openstax-solutions/integrated-concepts-when-starting-foot-race-700-kg-sprinter-exerts-average-force?srsltid=AYCX9vI9wFZmm-dnoVT23gJCANKlqWcarBm_39ZX-rfkycxUgvi_-i7g",
+      "matchScore": 1,
+      "snippet": "Integrated Concepts** When starting a foot race, a 70.0-kg ... — Integrated Concepts** When starting a foot race, a 70.0-kg sprinter exerts an average force of 650 N backward on the ground for 0.800 s.",
+      "partial": false,
+      "answerSignal": false,
+      "studySite": false
+    }
+  ],
+  "queries": [
+    {
+      "itemId": "openstax-statistics-1.43",
+      "pass": "exact",
+      "query": "\"mean age that children take their first ski and snowboard\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-1.44",
+      "pass": "exact",
+      "query": "\"A cardiologist is interested in the mean recovery period of\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-1.66",
+      "pass": "exact",
+      "query": "\"want to determine the mean number of students per statistics\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-1.68",
+      "pass": "exact",
+      "query": "\"List some practical difficulties involved in getting accurate results from\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-1.68",
+      "pass": "fuzzy",
+      "query": "difficulties practical telephone involved accurate getting results survey (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-statistics-1.70",
+      "pass": "exact",
+      "query": "\"With your classmates, brainstorm some ways you could overcome these problems\"",
+      "results": 8
+    },
+    {
+      "itemId": "openstax-statistics-1.87",
+      "pass": "exact",
+      "query": "\"drive? A recent study measured the effects on 19 professional\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-2.82",
+      "pass": "exact",
+      "query": "\"30.9 years; for U.S. White people it is 42.3 years\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-2.93",
+      "pass": "exact",
+      "query": "\"the U.S. population in 1980 was 30.0 years. In 1991\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-2.104",
+      "pass": "exact",
+      "query": "\"A music school has budgeted to purchase three musical instruments\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-2.105",
+      "pass": "exact",
+      "query": "\"school class ran one mile with a mean of 11\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-4.72",
+      "pass": "exact",
+      "query": "\"lottery ticket to a lottery that costs $10 per ticket\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-4.72",
+      "pass": "fuzzy",
+      "query": "10 lottery ticket costs buy per (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-statistics-4.80",
+      "pass": "exact",
+      "query": "\"Florida State University has 14 statistics classes scheduled for its summer term\"",
+      "results": 4
+    },
+    {
+      "itemId": "openstax-statistics-4.80",
+      "pass": "fuzzy",
+      "query": "14 university statistics scheduled florida classes summer state (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-statistics-4.88",
+      "pass": "exact",
+      "query": "\"A school newspaper reporter decides to randomly survey 12 students\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-4.96",
+      "pass": "exact",
+      "query": "\"Suppose that about 85% of graduating students attend their graduation\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-4.102",
+      "pass": "exact",
+      "query": "\"Only 9% of the population of Niger has access to the internet\"",
+      "results": 6
+    },
+    {
+      "itemId": "openstax-statistics-4.118",
+      "pass": "exact",
+      "query": "\"maternity ward at Dr. Jose Fabella Memorial Hospital in Manila\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-statistics-5.77",
+      "pass": "exact",
+      "query": "\"A subway train arrives every eight minutes during rush hour\"",
+      "results": 0,
+      "error": "Bright Data SERP returned non-JSON (0 bytes): "
+    },
+    {
+      "itemId": "openstax-statistics-5.77",
+      "pass": "fuzzy",
+      "query": "arrives minutes subway during train every eight rush (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-statistics-5.86",
+      "pass": "exact",
+      "query": "\"Suppose that the length of phone calls, measured in minutes\"",
+      "results": 3
+    },
+    {
+      "itemId": "openstax-statistics-5.97",
+      "pass": "exact",
+      "query": "\"game in which a pitcher, or pitchers, doesn't give up\"",
+      "results": 8
+    },
+    {
+      "itemId": "openstax-statistics-5.101",
+      "pass": "exact",
+      "query": "\"an urgent care facility, patients arrive at an average rate\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-calculus-1.330",
+      "pass": "exact",
+      "query": "\"circular track with diameter of 1 mi. A trainer standing\"",
+      "results": 8
+    },
+    {
+      "itemId": "openstax-calculus-1.331",
+      "pass": "exact",
+      "query": "\"following problems, consider a restaurant owner who wants to sell\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-calculus-1.335",
+      "pass": "exact",
+      "query": "\"skeleton is expected to be 2000 years old, what percentage\"",
+      "results": 8
+    },
+    {
+      "itemId": "openstax-calculus-1.336",
+      "pass": "exact",
+      "query": "\"carbon-dating equation. What does it mean? If there is 25%\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-calculus-2.230",
+      "pass": "exact",
+      "query": "\"land on the ground sometime between 5 sec and 6\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-calculus-2.231",
+      "pass": "exact",
+      "query": "\"A particle moving along a line has a displacement according\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-calculus-4.549",
+      "pass": "exact",
+      "query": "\"The volume is decreasing at a rate of 22 m3/sec\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-calculus-4.549",
+      "pass": "fuzzy",
+      "query": "22 m3 rectangular decreasing compacted volume solid rate (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-calculus-4.550",
+      "pass": "exact",
+      "query": "\"A rocket is launched into space; its kinetic energy is given by\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-calculus-4.550",
+      "pass": "fuzzy",
+      "query": "launched kinetic rocket energy space given (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-calculus-4.551",
+      "pass": "exact",
+      "query": "\"Regiomontanus’ problem for angle maximization was proposed during the 15th\"",
+      "results": 5
+    },
+    {
+      "itemId": "openstax-calculus-4.552",
+      "pass": "exact",
+      "query": "\"An airline sells tickets from Tokyo to Detroit for $1200\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-calculus-5.460",
+      "pass": "exact",
+      "query": "\"The average cost per gigabyte of RAM can be approximated\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-calculus-5.460",
+      "pass": "fuzzy",
+      "query": "approximated gigabyte function average cost per ram (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-calculus-5.462",
+      "pass": "exact",
+      "query": "\"The velocity of a bullet from a rifle can be approximated by\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-1.6",
+      "pass": "exact",
+      "query": "\"Which of the following sciences is not considered a natural science?\"",
+      "results": 0,
+      "error": "Bright Data SERP returned non-JSON (209 bytes): This query recently failed and cannot be attempted at this time. Please try again later, after a minimum of 15 seconds. https://docs.brightdata.com/scraping-automation/serp-api/debugging#serp-api-erro"
+    },
+    {
+      "itemId": "openstax-biology-1.6",
+      "pass": "fuzzy",
+      "query": "considered following sciences natural science (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-biology-1.9",
+      "pass": "exact",
+      "query": "\"houseplants that are regularly exposed to music seem to grow\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-1.14",
+      "pass": "exact",
+      "query": "\"of the following sequences represents the hierarchy of biological organization\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-1.15",
+      "pass": "exact",
+      "query": "\"a phylogenetic tree would you expect to find the organism\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-2.4",
+      "pass": "exact",
+      "query": "\"54 and a mass number of 108, how many neutrons\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-2.6",
+      "pass": "exact",
+      "query": "\"Potassium has an atomic number of 19. What is its electron configuration?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-2.13",
+      "pass": "exact",
+      "query": "\"the following is not a functional group that can bond\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-3.5",
+      "pass": "exact",
+      "query": "\"During the breakdown of polymers, which of the following reactions takes place?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-3.11",
+      "pass": "exact",
+      "query": "\"Which of the following is not an extracellular matrix role of carbohydrates?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-3.14",
+      "pass": "exact",
+      "query": "\"Cholesterol is an integral part of plasma membranes. Based on\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-3.17",
+      "pass": "exact",
+      "query": "\"Mad cow disease is an infectious disease where one misfolded\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-3.20",
+      "pass": "exact",
+      "query": "\"double helix structure of DNA support its role in encoding\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-4.13",
+      "pass": "exact",
+      "query": "\"genetic disorder that results in the destruction of neurons due\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-4.14",
+      "pass": "exact",
+      "query": "\"Which of the following is not a component of the endomembrane system?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-4.15",
+      "pass": "exact",
+      "query": "\"The process by which a cell engulfs a foreign particle\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-4.16",
+      "pass": "exact",
+      "query": "\"likely to have the greatest concentration of smooth endoplasmic reticulum?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-4.18",
+      "pass": "exact",
+      "query": "\"Congenital disorders of glycosylation are a growing class of rare diseases\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-4.19",
+      "pass": "exact",
+      "query": "\"Which of the following have the ability to disassemble and reform quickly?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-4.19",
+      "pass": "fuzzy",
+      "query": "disassemble following ability quickly reform (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-biology-4.20",
+      "pass": "exact",
+      "query": "\"Which of the following do not play a role in intracellular movement?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-4.24",
+      "pass": "exact",
+      "query": "\"Diseased animal cells may produce molecules that activate death cascades\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-biology-4.24",
+      "pass": "fuzzy",
+      "query": "controlled molecules diseased activate cascades produce animal manner (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-microeconomics-1.10",
+      "pass": "exact",
+      "query": "\"the division of labor increases an economy’s level of production\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-1.16",
+      "pass": "exact",
+      "query": "\"households primarily buyers or sellers in the goods and services\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-1.16",
+      "pass": "fuzzy",
+      "query": "households primarily services sellers buyers market goods labor (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-microeconomics-1.17",
+      "pass": "exact",
+      "query": "\"firms primarily buyers or sellers in the goods and services\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-1.18",
+      "pass": "exact",
+      "query": "\"What are the three ways that societies can organize themselves economically?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-1.19",
+      "pass": "exact",
+      "query": "\"think it might have affected the economy over the past\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-2.9",
+      "pass": "exact",
+      "query": "\"budget constraint, rather than inside the budget constraint or outside\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-2.12",
+      "pass": "exact",
+      "query": "\"a production possibilities frontier typically drawn as a curve, rather\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-2.13",
+      "pass": "exact",
+      "query": "\"societies cannot make a choice above their production possibilities frontier\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-2.17",
+      "pass": "exact",
+      "query": "\"the economic model of decision-making intended as a literal description\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-2.18",
+      "pass": "exact",
+      "query": "\"four responses to the claim that people should not behave\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-3.13",
+      "pass": "exact",
+      "query": "\"downward-sloping demand curve mean about how buyers in a market\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-3.14",
+      "pass": "exact",
+      "query": "\"demand curves have the same exact shape in all markets?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-3.20",
+      "pass": "exact",
+      "query": "\"demand and the quantity demanded of a product, say milk?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-3.22",
+      "pass": "exact",
+      "query": "\"economists deal with the problem that many factors that affect\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-3.22",
+      "pass": "fuzzy",
+      "query": "economists analyzing changing problem factors market affect deal (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-microeconomics-3.23",
+      "pass": "exact",
+      "query": "\"in the demand curve in markets for goods and services\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-4.14",
+      "pass": "exact",
+      "query": "\"Are households demanders or suppliers in the goods market?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-4.15",
+      "pass": "exact",
+      "query": "\"cause a shift in the demand curve in labor markets\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-4.16",
+      "pass": "exact",
+      "query": "\"cause a shift in the supply curve in labor markets\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-4.18",
+      "pass": "exact",
+      "query": "\"What would be a sign of a shortage in financial markets?\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-microeconomics-4.19",
+      "pass": "exact",
+      "query": "\"laws help or hinder resolution of a shortage in financial\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-1.4",
+      "pass": "exact",
+      "query": "\"American football is played on a 100-yd-long field, excluding the\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-1.5",
+      "pass": "exact",
+      "query": "\"large soccer field is 115 m long and 85 m\"",
+      "results": 0,
+      "error": "Bright Data SERP returned non-JSON (0 bytes): "
+    },
+    {
+      "itemId": "openstax-physics-1.5",
+      "pass": "fuzzy",
+      "query": "115 85 soccer fields large field vary size (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-physics-1.9",
+      "pass": "exact",
+      "query": "\"Tectonic plates are large segments of the Earth’s crust that move slowly\"",
+      "results": 8
+    },
+    {
+      "itemId": "openstax-physics-1.9",
+      "pass": "fuzzy",
+      "query": "tectonic segments earth's plates slowly large crust move (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-1.16",
+      "pass": "exact",
+      "query": "\"375 mL of soda. How much is left after 308\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-1.30",
+      "pass": "exact",
+      "query": "\"Approximately how many generations have passed since the year 0\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-1.36",
+      "pass": "exact",
+      "query": "\"Assuming one nerve impulse must end before another can begin\"",
+      "results": 8
+    },
+    {
+      "itemId": "openstax-physics-1.36",
+      "pass": "fuzzy",
+      "query": "assuming impulses impulse another maximum firing second nerve (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-physics-2.7",
+      "pass": "exact",
+      "query": "\"The North American and European continents are moving apart at\"",
+      "results": 8
+    },
+    {
+      "itemId": "openstax-physics-2.7",
+      "pass": "fuzzy",
+      "query": "3 continents american european moving north apart rate (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-physics-2.8",
+      "pass": "exact",
+      "query": "\"Land west of the San Andreas fault in southern California\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-2.8",
+      "pass": "fuzzy",
+      "query": "6 california southern velocity andreas average moving fault (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-physics-2.12",
+      "pass": "exact",
+      "query": "\"potential (an electrical signal) in a nerve cell depends (inversely\"",
+      "results": 0,
+      "error": "Bright Data SERP returned non-JSON (0 bytes): "
+    },
+    {
+      "itemId": "openstax-physics-2.12",
+      "pass": "fuzzy",
+      "query": "propagation electrical potential inversely diameter depends action signal (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-2.14",
+      "pass": "exact",
+      "query": "\"football quarterback runs 15.0 m straight down the playing field\"",
+      "results": 8
+    },
+    {
+      "itemId": "openstax-physics-2.14",
+      "pass": "fuzzy",
+      "query": "15.0 2.50 quarterback football straight playing field runs (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-physics-2.19",
+      "pass": "exact",
+      "query": "\"rest to a suborbital speed of 6.50 km/s in 60.0\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-3.20",
+      "pass": "exact",
+      "query": "\"A new landowner has a triangular piece of flat land\"",
+      "results": 7
+    },
+    {
+      "itemId": "openstax-physics-3.20",
+      "pass": "fuzzy",
+      "query": "triangular landowner wishes piece fence flat land new (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-3.22",
+      "pass": "exact",
+      "query": "\"A farmer wants to fence off a four-sided plot of flat land\"",
+      "results": 8
+    },
+    {
+      "itemId": "openstax-physics-3.43",
+      "pass": "exact",
+      "query": "\"soccer ball into the opponent’s goal without the ball touching\"",
+      "results": 8
+    },
+    {
+      "itemId": "openstax-physics-3.43",
+      "pass": "fuzzy",
+      "query": "goalkeeper opponent's touching without soccer ground goal kick (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-3.61",
+      "pass": "exact",
+      "query": "\"15.0-m-high mast on a ship moving at 1.75 m/s due\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-4.3",
+      "pass": "exact",
+      "query": "\"cleaner pushes a 4.50-kg laundry cart in such a way\"",
+      "results": 7
+    },
+    {
+      "itemId": "openstax-physics-4.3",
+      "pass": "fuzzy",
+      "query": "4.50-kg 60.0 external cleaner laundry pushes force cart (site:quizlet.com OR site:chegg.com OR site:coursehero.com OR site:reddit.com OR site:brainly.com OR site:studocu.com OR site:numerade.com OR site:bartleby.com OR site:gauthmath.com OR site:vaia.com OR site:transtutors.com OR site:homeworklib.com OR site:studyx.ai)",
+      "results": 10
+    },
+    {
+      "itemId": "openstax-physics-4.9",
+      "pass": "exact",
+      "query": "\"Suppose two children push horizontally, but in exactly opposite directions\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-4.14",
+      "pass": "exact",
+      "query": "\"which astronauts take off from the Moon is 10,000 kg\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-4.26",
+      "pass": "exact",
+      "query": "\"spectacular somersault, a 40.0-kg gymnast decelerates by pushing straight down\"",
+      "results": 9
+    },
+    {
+      "itemId": "openstax-physics-4.44",
+      "pass": "exact",
+      "query": "\"70.0-kg sprinter exerts an average force of 650 N backward\"",
+      "results": 9
+    }
+  ]
+}
