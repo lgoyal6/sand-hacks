@@ -166,3 +166,10 @@ export async function buildTree(quizId: string, experiments: VariantExperiment[]
     source: { neonApi: !!branches, experiments: exps.length, appeals },
   };
 }
+
+/** Server-side entry for other pages (e.g. /professor): the quiz's experiments from Neon main + the tree. */
+export async function loadTree(quizId: string): Promise<TreeData> {
+  const { getStudioData } = await import("./data");
+  const data = await getStudioData(quizId);
+  return buildTree(quizId, data.experiments);
+}
