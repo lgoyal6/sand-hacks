@@ -157,14 +157,32 @@ Every claim below points at the code that does it. The overview comes first, the
 
 | Sponsor | What it does | Where to see it |
 |---|---|---|
-| Gemini | Every model call: rewrites, answer checks, the judge panel, think-aloud scores, the "what if" follow-up, the helper agents and the attacking browser agents | Studio rewrite cards, student chat, `/professor/students/<pseudonym>` |
-| Mastra | Three tool-using agents and the rewrite workflow, which pauses until the professor approves | Student chat (Tutor, Researcher), studio (Leak scout, rewrite runs) |
+| Gemini + Mastra | [8-agent team, Mastra + Gemini](#gemini--mastra-an-8-agent-team): Mastra orchestrates the agents and the rewrite workflow, and every agent reasons with Gemini | Student chat, the studio's Agents panel, `/professor/students/<pseudonym>` |
 | Neon | App data, a branch per rewrite candidate, time travel for appeals, sign-in | Studio branch tree and race cards, "Show what a student saw", `/signin` |
 | Bright Data | Finds questions already online, checks rewrites, captures evidence, watches homework sites | [`/check`](https://unprompted.courses/check), [`/study`](https://unprompted.courses/study), the leak radar |
 | ElevenLabs | The voice think-aloud with one "what if" follow-up, timed with Scribe | Student chat "Talk it through", `/professor/students/<pseudonym>` |
 | Tiger Data | Interaction telemetry turned into behavior signals, as evidence and never a verdict | `/professor` "Session patterns" |
 | Solana | A public notary on devnet for quiz versions, agent results and the open dataset | [`/study`](https://unprompted.courses/study), `GET /study/verify` |
 | Vultr + domain (Porkbun) | Hosting at unprompted.courses | [unprompted.courses](https://unprompted.courses) |
+
+#### Gemini + Mastra: an 8-agent team
+
+Gemini powers the browser benchmark, rewrite generation, question judges, and the what-if prompts. Mastra coordinates the transform stages, persists workflow state, and pauses verified candidates for instructor approval. The agent panel streams progress and check results into the studio.
+
+Eight agents do the work. Three are Mastra Agents with their own tools, four are agents in a Mastra workflow (the rewrite workflow's steps, each shown as an agent in the studio's Agents panel), and one is the ElevenLabs voice agent. Every one of them reasons with Gemini.
+
+| Agent | Built with | Gemini model | What it does | Where to see it |
+|---|---|---|---|---|
+| Tutor | Mastra Agent | `gemini-3.6-flash`, falling back to `gemini-3.5-flash-lite` | Starts quizzes, checks answers, explains results and serves today's practice through its tools | Student chat |
+| Researcher | Mastra Agent | `gemini-3.6-flash`, falling back to `gemini-3.5-flash-lite` | Finds and reads sources through the Bright Data MCP server | Student chat, when you ask for sources |
+| Leak scout | Mastra Agent | `gemini-3.6-flash`, falling back to `gemini-3.5-flash-lite` | Scans a quiz for questions already online and reports the evidence | Studio: "Is anything from my quiz online?" |
+| Quiz checker | Agent in a Mastra workflow | `gemini-3.8-flash` (browser-use and Stagehand browser agents) | Takes the quiz like a student in a sandbox, then retakes the new versions | Studio: "Attack my quiz" and the Agents panel |
+| Rewriter | Agent in a Mastra workflow | `gemini-3.6-flash` | Writes new versions of risky questions: same skill, same answer | Studio Agents panel and variant cards |
+| Answer checker | Agent in a Mastra workflow | `gemini-3.6-flash` with the code execution tool | Solves each version 3 times with code; it must reproduce the answer key every time | Studio Agents panel ("key reproduced 3/3") |
+| Judge panel | Agent in a Mastra workflow | `gemini-3.8-flash`, `gemini-3.6-flash` and `gemini-3.1-pro-preview`, voting | Checks that each version tests the same skill and is unambiguous | Studio Agents panel and variant cards ("n/3 agree") |
+| Explain coach | ElevenLabs agent | `gemini-3.5-flash-lite` writes its follow-up | Listens to the student's explanation, then asks one "what if" follow-up written by Gemini from what they said | Student chat: "Talk it through". `/professor/students/<pseudonym>`: "Follow-up by &lt;model&gt;" |
+
+The workflow pauses with `suspend()` until the professor approves or rejects each version, then continues with `resume()`. Its run state is stored in Mastra's `PostgresStore` on Neon, so a paused run survives a restart.
 
 #### Gemini: every model call in the product
 
@@ -174,13 +192,15 @@ Every claim below points at the code that does it. The overview comes first, the
 | Models and features | Rewriter: `gemini-3.6-flash` (`GEN_MODEL`). Answer checker: `gemini-3.6-flash` with the **code execution** tool, solving each rewrite 3 times. Judge panel: `gemini-3.8-flash`, `gemini-3.6-flash` and `gemini-3.1-pro-preview` (`PANEL_MODELS`), with structured JSON output. Think-aloud grading council: the same three models. Mastra agents: `gemini-3.6-flash`, falling back to `gemini-3.5-flash-lite`. Follow-up question: `gemini-3.5-flash-lite`, then `gemini-3.1-flash-lite`, then `gemini-flash-latest`. Attack agents: `gemini-3.8-flash` (CLI default `gemini-3.5-flash`). Course-site scan: `gemini-3.6-flash`. |
 | See it | Studio: rewrite cards with "n/3 agree" judge votes. Student chat: tutor replies and the follow-up question. `/professor/students/<pseudonym>`: the score and "Follow-up by &lt;model&gt;". |
 | Key files | [`services/workflows/src/context.ts`](services/workflows/src/context.ts), [`steps/adapters.ts`](services/workflows/src/steps/adapters.ts), [`steps/llm.ts`](services/workflows/src/steps/llm.ts), [`council/index.ts`](services/workflows/src/council/index.ts), [`agents/model.ts`](services/workflows/src/agents/model.ts), [`packages/probe-core/src/gemini.ts`](packages/probe-core/src/gemini.ts) |
+| Team | Every agent in the [8-agent team](#gemini--mastra-an-8-agent-team) reasons with Gemini. |
+| Routing | A shared policy ([`packages/shared/src/gemini-policy.ts`](packages/shared/src/gemini-policy.ts)) tracks each model separately. A 429, 503 or timeout on the direct key puts that model in a cooldown (60 s, or Google's retry delay, backing off up to 10 min), and its calls go to GMI until the cooldown ends. The direct key is also throttled per minute and by concurrency. |
 | Limits | GMI (`GMI_BASE_URL`) is only an OpenAI-compatible route to the same `google/gemini-*` models, used when the free-tier key is out of quota. It is not a sponsor and no other model family is called. The judge panel is three models from one family, and it is labelled that way. |
 
 #### Mastra: the helper agents and the rewrite workflow
 
 | | |
 |---|---|
-| What it does | Runs three tool-using agents and the rewrite workflow, which pauses until the professor approves each version. |
+| What it does | Orchestrates the [8-agent team](#gemini--mastra-an-8-agent-team): runs three tool-using agents and the rewrite workflow, whose four steps are the team's workflow agents, and pauses until the professor approves each version. |
 | Features | Agents (`Agent`, `createTool`): **Tutor** (`startQuiz`, `checkAnswer`, `explainResult`, `todaysPractice`, `checkPracticeAnswer`), **Researcher** (Bright Data tools over `@mastra/mcp` `MCPClient`) and **Leak scout** (`scanQuizForLeaks`, `leakReport`). Input processors (`FlattenToolHistory`, `AnswerBeforeLimit`). Workflow `createWorkflow` with steps `select-targets` → `transform` → `professor-approval`, which calls **`suspend()`** and continues on **`resume`** with the professor's decisions. Run state in `@mastra/pg` `PostgresStore` (Neon, schema `mastra`), so a paused run survives a restart. Streaming run events to the studio. |
 | See it | Student chat: free text goes to the Tutor, or to the Researcher when you ask for sources. Studio: "Is anything from my quiz online?" goes to the Leak scout. A rewrite run streams into the studio and waits on Approve or Reject in each variant card. |
 | Key files | [`services/workflows/src/mastra/index.ts`](services/workflows/src/mastra/index.ts), [`agents/`](services/workflows/src/agents), [`apps/web/app/studio/_lib/mastra.ts`](apps/web/app/studio/_lib/mastra.ts), [`apps/web/app/api/agents/[agent]/turn/route.ts`](apps/web/app/api/agents/[agent]/turn/route.ts), [`studio/api/variants/[id]/route.ts`](apps/web/app/studio/api/variants/[id]/route.ts) |
