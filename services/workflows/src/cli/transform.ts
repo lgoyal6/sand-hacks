@@ -64,7 +64,7 @@ if (!targets.length) {
   process.exit(1);
 }
 
-const eventsFile = values.events ? path.resolve(values.events) : path.join(FIX, "variants_events.jsonl");
+const eventsFile = values.events ? path.resolve(ROOT, values.events) : path.join(FIX, "variants_events.jsonl");
 await mkdir(FIX, { recursive: true });
 await mkdir(path.dirname(eventsFile), { recursive: true });
 await writeFile(eventsFile, "");

@@ -386,7 +386,7 @@ async function rateLimit(name) {
   nextSlot.set(name, at + gap);
   if (at > now) await new Promise((r) => setTimeout(r, at - now));
 }
-async function withRetry(fn, label, tries = 6) {
+async function withRetry(fn, label, tries = 6, opts = {}) {
   let last;
   for (let i = 0; i < tries; i++) {
     await rateLimit(label.replace(/ \(code\)$/, ""));
@@ -397,6 +397,7 @@ async function withRetry(fn, label, tries = 6) {
       const msg2 = String(e?.message ?? e);
       const quota = /\b429\b|RESOURCE_EXHAUSTED|rate.?limit/i.test(msg2);
       if (!quota && /\b(400|401|403|404)\b/.test(msg2)) break;
+      if (quota && opts.failFastOnQuota) break;
       const hinted = Number(msg2.match(/retryDelay"?\s*[:=]\s*"?(\d+(?:\.\d+)?)s/)?.[1] ?? NaN);
       const wait = quota ? Number.isFinite(hinted) ? hinted * 1e3 + 1e3 : 15e3 * (i + 1) : 1e3 * 2 ** i;
       if (i < tries - 1) await new Promise((r) => setTimeout(r, Math.min(wait, 9e4)));
@@ -447,7 +448,7 @@ class GeminiModel {
       const usedCode = parts.some((p) => p.executableCode || p.codeExecutionResult);
       const text = parts.map((p) => p.text ?? "").join("\n");
       return { text, usedCode };
-    }, `${this.name} (code)`));
+    }, `${this.name} (code)`, 6, { failFastOnQuota: opts.failFastOnQuota }));
   }
 }
 class OpenAICompatModel {
@@ -579,10 +580,12 @@ function normalizeCandidate(out, source) {
   };
 }
 class GeminiCodeSolver {
-  constructor(model) {
+  constructor(model, failFastOnQuota = false) {
     this.model = model;
+    this.failFastOnQuota = failFastOnQuota;
   }
   model;
+  failFastOnQuota;
   /** Same prompt, for a model without the code tool (fallback path). */
   static prompt(candidate, withCode) {
     return `Solve this quiz question.${withCode ? " Use Python code execution to compute or verify every quantitative step." : " Work every quantitative step carefully."}
@@ -595,7 +598,7 @@ where <answer> is the option letter${candidate.type === "multi" ? "s, comma-sepa
   }
   async solve(candidate, run = 0) {
     const prompt = GeminiCodeSolver.prompt(candidate, true);
-    const { text, usedCode } = await this.model.withCode(prompt, { temperature: 0.7, salt: `run${run}` });
+    const { text, usedCode } = await this.model.withCode(prompt, { temperature: 0.7, salt: `run${run}`, failFastOnQuota: this.failFastOnQuota });
     const answer = extractFinal(text);
     if (!answer) throw new Error("solver reply had no FINAL: line");
     return { answer, usedCode, model: this.model.name };
@@ -707,7 +710,8 @@ async function buildContext(opts = {}, env = process.env) {
   if (!generator) throw new Error("No Gemini access: set GMI_API_KEY or GEMINI_API_KEY in the repo-root .env.local. Refusing to fake variants.");
   const solverId = envVal("GEMINI_SOLVER_MODEL", env) ?? "gemini-3.6-flash";
   const direct = directGemini(solverId, env);
-  const solver = new FallbackSolver(direct ? new GeminiCodeSolver(direct) : null, gmiGemini(solverId, env));
+  const noCode = gmiGemini(solverId, env);
+  const solver = new FallbackSolver(direct ? new GeminiCodeSolver(direct, noCode != null) : null, noCode);
   const panelIds = (envVal("PANEL_MODELS", env) ?? "gemini-3.8-flash,gemini-3.6-flash,gemini-3.1-pro-preview").split(",").map((m) => m.trim());
   const seats = panelIds.map(pick).filter((m) => m != null);
   if (seats.length < 3) throw new Error("The judge panel needs 3 Gemini models (set GMI_API_KEY).");
@@ -995,7 +999,11 @@ async function runTransform(store, quiz, targets, deps, opts = {}) {
     if (rates) {
       for (const { row, target } of alive) {
         const next = rates.get(row.candidateItemId);
-        row.experiment.checks.newSolveRate = next?.solveRate;
+        if (!next || next.runs === 0) {
+          await leaveUnverified(row, "the agent retake produced no valid runs (provider errors), so agent resistance is unmeasured");
+          continue;
+        }
+        row.experiment.checks.newSolveRate = next.solveRate;
         const d = decide(target.solveRate, next, opts);
         if (!d.survives) {
           await reject(row, d.reason);
