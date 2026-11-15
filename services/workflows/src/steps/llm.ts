@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { GoogleGenAI } from "@google/genai";
+import { LLM_CACHE_DIR } from "../paths.js";
 import { z } from "zod";
 
 /** Read an env var; empty, whitespace-only or comment-only values count as unset. */
@@ -24,7 +25,7 @@ export class InfraError extends Error {}
  * LLM_CACHE=readwrite (default) | replay (cache only; a miss is an error, spends nothing) | off.
  * `salt` separates intentionally repeated calls (e.g. the solver's 3 independent runs).
  */
-const CACHE_DIR = path.resolve(import.meta.dirname, "../../.cache/llm");
+const CACHE_DIR = LLM_CACHE_DIR;
 export async function cached<T>(parts: unknown[], fn: () => Promise<T>): Promise<T> {
   const mode = envVal("LLM_CACHE") ?? "readwrite";
   if (mode === "off") return fn();

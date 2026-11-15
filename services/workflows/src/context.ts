@@ -1,12 +1,12 @@
 // Build the transform's live dependencies from env, once. Shared by the CLI and the Mastra workflow.
-import path from "node:path";
 import { openBranchStore } from "./db/index.js";
 import type { BranchStore } from "./db/types.js";
 import { buildPanel, CliAttacker, GeminiCodeSolver, GeminiGenerator } from "./steps/adapters.js";
 import { envVal, GeminiModel, modelsFromEnv } from "./steps/llm.js";
 import type { Attacker, TransformDeps } from "./steps/types.js";
 
-export const REPO_ROOT = path.resolve(import.meta.dirname, "../../..");
+import { REPO_ROOT } from "./paths.js";
+export { REPO_ROOT };
 
 export interface TransformContext {
   store: BranchStore;

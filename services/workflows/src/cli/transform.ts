@@ -9,6 +9,7 @@
 import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { REPO_ROOT } from "../paths.js";
 import type { LeakFinding, SolveRate, VariantExperiment, VariantStrategy } from "@unprompted/shared";
 import { loadQuiz, parseMarkdownQuiz, saveQuiz } from "../ingest/markdown.js";
 import { openBranchStore } from "../db/index.js";
@@ -18,7 +19,7 @@ import { envVal, GeminiModel, modelsFromEnv } from "../steps/llm.js";
 import { selectTargets } from "../steps/index.js";
 import type { Attacker, TransformEvent } from "../steps/types.js";
 
-const ROOT = path.resolve(import.meta.dirname, "../../../..");
+const ROOT = REPO_ROOT;
 const FIX = path.join(ROOT, "data/fixtures");
 
 const { values } = parseArgs({

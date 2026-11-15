@@ -3,10 +3,11 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import { REPO_ROOT } from "../paths.js";
 import { openBranchStore } from "../db/index.js";
 import { parseMarkdownQuiz, saveQuiz } from "../ingest/markdown.js";
 
-const ROOT = path.resolve(import.meta.dirname, "../../../..");
+const ROOT = REPO_ROOT;
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: { "quiz-id": { type: "string" }, "course-id": { type: "string", default: "sandbox-course" } },

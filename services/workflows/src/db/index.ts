@@ -1,5 +1,4 @@
 import { readFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
 import { NeonBranchStore } from "./neon-store.js";
 import { PGliteBranchStore } from "./pglite-store.js";
 import type { BranchStore } from "./types.js";
@@ -8,7 +7,7 @@ export * from "./types.js";
 export * from "./merge.js";
 export { NeonBranchStore, PGliteBranchStore };
 
-const SCHEMA_PATH = fileURLToPath(new URL("../../../../db/neon/schema.sql", import.meta.url));
+import { SCHEMA_PATH } from "../paths.js";
 
 export async function loadSchema(): Promise<string> {
   return readFile(SCHEMA_PATH, "utf8");
