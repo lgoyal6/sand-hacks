@@ -2,7 +2,8 @@
 // Studio as a conversation (owner: B), on D's chat shell. No LLM behind the composer: it maps
 // plain requests to actions (attack results, rewrite, replay, import), so it spends no quota.
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Download, FileUp, GitBranch, Globe, History, Link2, Target } from "lucide-react";
 import { CanvasCard } from "./canvas-card";
 import { CourseScanCard } from "./course-scan-card";
@@ -71,6 +72,13 @@ export function StudioChat({ data }: { data: StudioData }) {
   const [decideError, setDecideError] = useState<string | null>(null);
   const sourceRef = useRef<EventSource | null>(null);
   const router = useRouter();
+
+  // Cards that live in the URL (?view=tree | race&item= | appeal&attempt= | attack): opening such a URL renders
+  // the card (re-fetched, replay-aware), refresh and deep links work, and Back returns to the plain studio.
+  const sp = useSearchParams();
+  const view = sp.get("view");
+  const viewItem = sp.get("item");
+  const viewAttempt = sp.get("attempt");
 
   const quiz = data.quiz;
   const title = quiz ? displayTitle(quiz.title) : "Studio";
@@ -161,18 +169,20 @@ export function StudioChat({ data }: { data: StudioData }) {
     [data.recordings.length, replay, rewrite, say],
   );
 
-  const showAttack = useCallback(() => {
-    push({ id: nid(), role: "user", text: "Attack my quiz" });
-    push({ id: nid(), role: "assistant", agent: "Quiz checker", kind: "attack" });
-    if (solvable.length) {
-      say(
-        `Agents can answer ${solvable.length} of ${quiz?.items.length ?? 0} questions. I can write new versions that keep the same answer and skill and aren't already online, so copied answer keys stop working. In our tests agents still solve reasonable rewrites, so for these questions the think-aloud check is what shows real understanding.`,
-        {
-          actions: [{ label: "Write new versions", primary: true, run: () => offerRewrite(solvable.map((s) => s.itemId)) }],
-        },
-      );
-    }
-  }, [offerRewrite, push, quiz?.items.length, say, solvable]);
+  const viewHref = useCallback(
+    (v: "tree" | "race" | "appeal" | "attack", extra: Record<string, string> = {}) =>
+      `/studio?${new URLSearchParams({ ...(quiz ? { quiz: quiz.id } : {}), view: v, ...extra }).toString()}`,
+    [quiz],
+  );
+  const openView = useCallback(
+    (v: "tree" | "race" | "appeal" | "attack", extra: Record<string, string> = {}) => router.push(viewHref(v, extra), { scroll: false }),
+    [router, viewHref],
+  );
+  const showAttack = useCallback(() => openView("attack"), [openView]);
+  // Shown under the attack card (part of the URL card, so Back removes it too).
+  const attackNote = solvable.length
+    ? `Agents can answer ${solvable.length} of ${quiz?.items.length ?? 0} questions. I can write new versions that keep the same answer and skill and aren't already online, so copied answer keys stop working. In our tests agents still solve reasonable rewrites, so for these questions the think-aloud check is what shows real understanding.`
+    : null;
 
   // After any import: open the imported quiz and scan it for leaks right away.
   const openAndScan = useCallback((quizId: string) => router.push(`/studio?quiz=${encodeURIComponent(quizId)}&check=online`), [router]);
@@ -345,11 +355,11 @@ export function StudioChat({ data }: { data: StudioData }) {
       push({ id: nid(), role: "user", text: t });
       if (/replay|recorded/i.test(t)) return replay();
       if (/leak|online|published|posted|quizlet|chegg|reddit/i.test(t)) return void checkLeaks();
-      if (/what .*saw|appeal|time.?travel/i.test(t)) return push({ id: nid(), role: "assistant", kind: "appeal" });
+      if (/what .*saw|appeal|time.?travel/i.test(t)) return openView("appeal");
       if (/course\s*(web)?\s*site|scan my course/i.test(t)) return push({ id: nid(), role: "assistant", agent: "Leak scout", kind: "coursescan" });
       if (/connect\s+canvas|import.*canvas|canvas.*course/i.test(t)) return push({ id: nid(), role: "assistant", kind: "canvas" });
       if (/export|canvas/i.test(t)) return void exportCanvas();
-      if (/tree|branch|neon/i.test(t)) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "tree" });
+      if (/tree|branch|neon/i.test(t)) return openView("tree");
       if (/saved|past|previous/i.test(t) && data.experiments.length) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "saved" });
       const qs = [...t.matchAll(/\bq(\d+)\b/gi)].map((m) => `${quiz?.id}-q${m[1]}`).filter((id) => quiz?.items.some((i) => i.id === id));
       if (/rewrite|transform|variant|fix|harden/i.test(t)) return offerRewrite(qs.length ? qs : solvable.map((s) => s.itemId));
@@ -357,7 +367,7 @@ export function StudioChat({ data }: { data: StudioData }) {
         actions: [{ label: "Attack my quiz", primary: true, run: showAttack }],
       });
     },
-    [checkLeaks, data.experiments.length, exportCanvas, importQuiz, offerRewrite, push, quiz, replay, say, showAttack, solvable],
+    [checkLeaks, data.experiments.length, exportCanvas, importQuiz, offerRewrite, openView, push, quiz, replay, say, showAttack, solvable],
   );
 
   const decide = useCallback(
@@ -462,6 +472,69 @@ export function StudioChat({ data }: { data: StudioData }) {
     const i = msgs.indexOf(m);
     return i > 0 && speakers[i - 1] === m.agent ? undefined : m.agent;
   };
+
+  // The card named by the URL (?view=...), rendered after the thread. Not stored in msgs, so Back removes it.
+  const plainHref = `/studio?quiz=${encodeURIComponent(quiz.id)}`;
+  const closeLink = (
+    <Link href={plainHref} scroll={false} className="mt-3 inline-block text-xs text-muted-foreground underline-offset-2 hover:underline">
+      Close
+    </Link>
+  );
+  const raceItem = viewItem && quiz.items.some((i) => i.id === viewItem) ? viewItem : null;
+  const urlCard =
+    view === "attack" ? (
+      <Message key="view-attack" role="assistant" agentName="Quiz checker">
+        <AttackSummary data={data} />
+        {attackNote ? (
+          <>
+            <p className="mt-3">{attackNote}</p>
+            <Actions actions={[{ label: "Write new versions", primary: true, run: () => offerRewrite(solvable.map((x) => x.itemId)) }]} />
+          </>
+        ) : null}
+        {closeLink}
+      </Message>
+    ) : view === "tree" ? (
+      <Message key="view-tree" role="assistant" agentName="Rewriter">
+        <p>Here is every rewrite tried on this quiz, as branches of the quiz database:</p>
+        <div className="mt-3">
+          <TreeLoader quizId={quiz.id} />
+        </div>
+        {data.experiments.length ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Open a race:{" "}
+            {[...new Set(data.experiments.map((e) => e.itemId))].map((id, i) => (
+              <span key={id}>
+                {i ? ", " : ""}
+                <Link href={viewHref("race", { item: id })} scroll={false} className="underline underline-offset-2">
+                  Q{qNum(id)}
+                </Link>
+              </span>
+            ))}
+          </p>
+        ) : null}
+        {closeLink}
+      </Message>
+    ) : view === "race" ? (
+      <Message key={`view-race-${viewItem}`} role="assistant" agentName="Rewriter">
+        {raceItem ? (
+          <>
+            <p>The branch race for Q{qNum(raceItem)}:</p>
+            <SavedRaces itemIds={[raceItem]} onMerge={(id) => decide(id, "approve")} />
+          </>
+        ) : (
+          <p className="text-muted-foreground">That question isn&apos;t in this quiz.</p>
+        )}
+        {closeLink}
+      </Message>
+    ) : view === "appeal" ? (
+      <Message key="view-appeal" role="assistant">
+        <p>Pick an attempt. I&apos;ll branch the database at the moment it started and show the quiz exactly as that student saw it.</p>
+        <div className="mt-3">
+          <AppealPicker quizId={quiz.id} attemptId={viewAttempt} onOpen={(attemptId) => openView("appeal", { attempt: attemptId })} />
+        </div>
+        {closeLink}
+      </Message>
+    ) : null;
 
   function renderMsg(m: Msg) {
     if (m.role === "user") {
@@ -623,7 +696,7 @@ export function StudioChat({ data }: { data: StudioData }) {
       sidebar={sidebar}
       agents={agents}
       panelFooter={<NeonStatus />}
-      empty={msgs.length === 0}
+      empty={msgs.length === 0 && !urlCard}
       title={title}
       home={{
         greeting: "Which quiz should we test?",
@@ -637,11 +710,11 @@ export function StudioChat({ data }: { data: StudioData }) {
               Is any of this online?
             </Chip>
             {data.experiments.length ? (
-              <Chip icon={<GitBranch />} onClick={() => handle("show me the experiment tree")}>
+              <Chip icon={<GitBranch />} onClick={() => openView("tree")}>
                 Experiment tree
               </Chip>
             ) : null}
-            <Chip icon={<History />} onClick={() => handle("show what a student saw")}>
+            <Chip icon={<History />} onClick={() => openView("appeal")}>
               Show what a student saw
             </Chip>
             <Chip icon={<Download />} onClick={() => void exportCanvas()}>
@@ -661,6 +734,7 @@ export function StudioChat({ data }: { data: StudioData }) {
     >
       <Thread>
         {msgs.map(renderMsg)}
+        {urlCard}
         {decideError ? <p className="text-sm text-rejected">{decideError}</p> : null}
       </Thread>
     </ChatLayout>
