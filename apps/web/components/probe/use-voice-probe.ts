@@ -113,7 +113,10 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
       if (!message?.trim()) return;
       const r: VoiceLine["role"] = (role ?? source) === "user" ? "user" : "agent";
       if (r === "agent") agentSpoke.current = true;
-      linesRef.current = [...linesRef.current, { role: r, text: message.trim() }];
+      // Expressive-mode audio tags like "[happy]" are voice direction, not words: drop them from the text.
+      const text = message.replace(/\[[a-z ]{2,20}\]\s*/gi, "").trim();
+      if (!text) return;
+      linesRef.current = [...linesRef.current, { role: r, text }];
       setLines(linesRef.current);
     },
     onModeChange: ({ mode }) => {

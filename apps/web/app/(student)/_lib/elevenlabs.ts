@@ -65,6 +65,8 @@ export async function deleteConversation(id: string) {
 export function formatTranscript(turns: TranscriptTurn[]) {
   return turns
     .filter((t) => t.message && t.message.trim())
-    .map((t) => `[${t.time_in_call_secs.toFixed(0).padStart(3, " ")}s] ${t.role === "agent" ? "Unprompted" : "Student (voice)"}: ${t.message!.trim()}`)
+    .map((t) => ({ ...t, message: t.message!.replace(/\[[a-z ]{2,20}\]\s*/gi, "").trim() }))
+    .filter((t) => t.message)
+    .map((t) => `[${t.time_in_call_secs.toFixed(0).padStart(3, " ")}s] ${t.role === "agent" ? "Unprompted" : "Student (voice)"}: ${t.message}`)
     .join("\n");
 }
