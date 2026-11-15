@@ -2,7 +2,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { AppShell, STUDENT_COURSE_NAV } from "@/components/ui/app-shell";
-import { QuizRunner } from "@/components/quiz/quiz-runner";
+import { ChatQuiz } from "@/components/quiz/chat-quiz";
 import { getQuiz, toPublic } from "../_lib/quizzes";
 import { COURSE } from "../../_lib/course";
 
@@ -19,7 +19,7 @@ async function QuizBody({ params, searchParams }: { params: Promise<{ id: string
     >
       <h1 id="quiz-title" className="sr-only">{pub.title}</h1>
       <div className="max-w-3xl">
-        <QuizRunner quiz={pub} suggestedMode={sp.mode === "graded" ? "graded" : "practice"} student={typeof sp.student === "string" && /^[\w-]{1,64}$/.test(sp.student) ? sp.student : undefined} />
+        <ChatQuiz quiz={pub} suggestedMode={sp.mode === "graded" ? "graded" : "practice"} student={typeof sp.student === "string" && /^[\w-]{1,64}$/.test(sp.student) ? sp.student : undefined} />
       </div>
     </AppShell>
   );
