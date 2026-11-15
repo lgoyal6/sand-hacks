@@ -6,7 +6,7 @@ export function ConfidenceScale({ name, value, onChange, legend }: { name: strin
       <legend className="font-medium">{legend}</legend>
       <div className="flex flex-wrap gap-2" role="radiogroup">
         {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-          <label key={n} htmlFor={`${name}-${n}`} className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-md border has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground">
+          <label key={n} htmlFor={`${name}-${n}`} className="relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground">
             <input className="sr-only" type="radio" id={`${name}-${n}`} name={name} value={n} checked={value === n} onChange={() => onChange(n)} />
             {n}
           </label>

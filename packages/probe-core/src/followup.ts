@@ -36,7 +36,7 @@ export function describeAnswer(item: Pick<Item, "choices">, answer: string | str
   if (answer === undefined) return "(no answer recorded)";
   const ids = Array.isArray(answer) ? answer : [answer];
   if (!item.choices) return String(answer);
-  return ids.map((id) => `${id}) ${item.choices!.find((c) => c.id === id)?.text ?? "?"}`).join("; ");
+  return ids.map((id) => `${id.toUpperCase()}) ${item.choices!.find((c) => c.id === id)?.text ?? "?"}`).join("; ");
 }
 
 // The opening prompt quotes the student's own answer back, without saying whether it was right.
