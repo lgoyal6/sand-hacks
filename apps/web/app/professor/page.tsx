@@ -8,7 +8,6 @@ import { AnchorBadge } from "@/components/dashboard/anchor-badge";
 import { loadAnchors } from "@/lib/notary/registry";
 import { TreeCard } from "@/app/studio/_components/tree-card";
 import { loadTree } from "@/app/studio/_lib/tree";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Kpi, Panel, PanelEmpty, SourceNote } from "@/components/dashboard/panel";
 import { SolveRateHeatmap } from "@/components/dashboard/solve-rate-heatmap";
 import { LeakRadar } from "@/components/dashboard/leak-radar";
@@ -16,6 +15,7 @@ import { buildLeakRadar, onlineCount } from "@/components/dashboard/leak-radar-d
 import { ExplainGapGrid, QuadrantSummary, quadrantOf } from "@/components/dashboard/explain-gap";
 import { SessionTable } from "@/components/dashboard/session-table";
 import { sessionSignals, whoFromPseudonym, type SessionRow } from "@/components/dashboard/session-signals";
+import { PanelLoader } from "@/components/ui/page-loader";
 import {
   itemLabels,
   loadAgentRuns,
@@ -36,25 +36,25 @@ export default function Page() {
   return (
     <AppShell wide title="Insights" subtitle="Intro Statistics · Quiz 1. What agents can do with this quiz, what's online, and who can explain their answers.">
       <div className="space-y-6">
-        <Suspense fallback={<KpiSkeleton />}>
+        <Suspense fallback={<PanelLoader title="Loading the numbers" />}>
           <KpiRow />
         </Suspense>
-        <Suspense fallback={<PanelSkeleton />}>
+        <Suspense fallback={<PanelLoader title="Loading agent results" />}>
           <AgentAttackPanel />
         </Suspense>
-        <Suspense fallback={<PanelSkeleton />}>
+        <Suspense fallback={<PanelLoader title="Checking what is online" />}>
           <LeakPanel />
         </Suspense>
-        <Suspense fallback={<PanelSkeleton />}>
+        <Suspense fallback={<PanelLoader title="Loading the experiment tree" />}>
           <TreePanel />
         </Suspense>
-        <Suspense fallback={<PanelSkeleton />}>
+        <Suspense fallback={<PanelLoader title="Loading explain gaps" />}>
           <ExplainGapPanel />
         </Suspense>
-        <Suspense fallback={<PanelSkeleton />}>
+        <Suspense fallback={<PanelLoader title="Loading think-alouds" />}>
           <ExplanationsPanel />
         </Suspense>
-        <Suspense fallback={<PanelSkeleton />}>
+        <Suspense fallback={<PanelLoader title="Loading sessions" />}>
           <SessionsPanel />
         </Suspense>
       </div>
@@ -62,19 +62,6 @@ export default function Page() {
   );
 }
 
-function KpiSkeleton() {
-  return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {[0, 1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-[88px] rounded-lg" />
-      ))}
-    </div>
-  );
-}
-
-function PanelSkeleton() {
-  return <Skeleton className="h-64 rounded-lg" />;
-}
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 

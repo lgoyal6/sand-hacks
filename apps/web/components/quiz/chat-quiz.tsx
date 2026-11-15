@@ -23,6 +23,7 @@ import { useVoiceProbe, type ProbePhase, type VoiceResult } from "@/components/p
 import { ItemView, type ItemResult } from "./item-view";
 import type { Answer, Mode, PublicItem, PublicQuiz } from "./types";
 import { markAnswered, rememberSession, useSessionGroups } from "./sessions";
+import Loader from "@/components/ui/loader";
 
 type Phase =
   | "home"
@@ -999,7 +1000,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                     </p>
                   )}
                   <div id="probe-feedback" data-state={feedback?.state ?? "none"} className="text-sm">
-                    {feedback?.state === "waiting" && <Thinking label="Reading your explanation" />}
+                    {feedback?.state === "waiting" && <Loader size="sm" title="Reading your explanation" subtitle="The judge panel is scoring it" className="items-start p-2" />}
                     {feedback?.state === "later" && <p className="text-muted-foreground">Your teacher will see feedback on your explanation soon.</p>}
                     {feedback?.state === "ready" && (
                       <p>

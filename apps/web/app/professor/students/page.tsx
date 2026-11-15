@@ -4,14 +4,14 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { AppShell } from "@/components/ui/app-shell";
 import { Kpi, Panel, PanelEmpty } from "@/components/dashboard/panel";
-import { Skeleton } from "@/components/ui/skeleton";
 import { loadRoster } from "./_lib";
 import { RosterTable } from "./roster-table";
+import { PageLoader } from "@/components/ui/page-loader";
 
 export default function Page() {
   return (
     <AppShell wide title="Students" subtitle="Who has taken the quiz, how their explanations went, and what to talk about next.">
-      <Suspense fallback={<Skeleton className="h-96 w-full" />}>
+      <Suspense fallback={<PageLoader title="Loading the roster" subtitle="Gathering attempts and think-alouds" />}>
         <Roster />
       </Suspense>
     </AppShell>
