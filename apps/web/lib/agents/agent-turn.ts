@@ -13,13 +13,26 @@ export interface TurnHistory {
   content: string;
 }
 
+export interface Source {
+  url: string;
+  verified: boolean;
+}
+export interface TurnResult {
+  text: string;
+  servedBy?: string;
+  error?: string;
+  /** Researcher only. `verified` = the URL appeared in that turn's Bright Data results. */
+  sources?: Source[];
+}
+
 export async function agentTurn(
   agent: "tutor" | "researcher" | "explain-coach",
   body: { attemptId: string | null; input: string; history?: TurnHistory[] },
   onDelta: (textSoFar: string) => void,
-): Promise<{ text: string; servedBy?: string; error?: string }> {
+  onEvent?: (e: AgentEvent) => void,
+): Promise<TurnResult> {
   let text = "";
-  let final: { text: string; servedBy?: string; error?: string } | null = null;
+  let final: TurnResult | null = null;
   const res = await fetch(`/api/agents/${agent}/turn`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -42,11 +55,12 @@ export async function agentTurn(
     }
     if ("agentId" in m) {
       window.dispatchEvent(new CustomEvent<AgentEvent>(AGENT_STATUS_EVENT, { detail: m as unknown as AgentEvent }));
+      onEvent?.(m as unknown as AgentEvent);
     } else if (m.type === "delta") {
       text += String(m.text ?? "");
       onDelta(text);
     } else if (m.type === "message") {
-      final = { text: String(m.text ?? text), servedBy: m.servedBy as string | undefined };
+      final = { text: String(m.text ?? text), servedBy: m.servedBy as string | undefined, sources: Array.isArray(m.sources) ? (m.sources as Source[]) : undefined };
     } else if (m.type === "error") {
       final = { text, error: String(m.message ?? "Something went wrong.") };
     }

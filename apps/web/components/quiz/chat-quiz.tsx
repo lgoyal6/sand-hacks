@@ -15,7 +15,7 @@ import { ConversationProvider } from "@elevenlabs/react";
 import { ChatLayout, Chip, Composer, Message, PillButton, QuestionCard, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
 import { useTelemetry } from "@/lib/telemetry/use-telemetry";
 import { emitAgentStatus } from "@/lib/telemetry/agent-status";
-import { agentTurn } from "@/lib/agents/agent-turn";
+import { agentTurn, type Source } from "@/lib/agents/agent-turn";
 import { ConfidencePicker, ExplainBox, ThinkAloudScene, type ThinkAloudStep } from "@/components/ui/quiz";
 import { useVoiceProbe, type ProbePhase, type VoiceResult } from "@/components/probe/use-voice-probe";
 import { ItemView, type ItemResult } from "./item-view";
@@ -41,7 +41,7 @@ type Phase =
   | "done";
 
 type Entry =
-  | { id: number; who: "tutor" | "student"; text: string; agent?: string }
+  | { id: number; who: "tutor" | "student"; text: string; agent?: string; sources?: Source[] }
   // An answered question, kept in the thread (locked, no ids) so the student sees what they chose.
   | { id: number; who: "card"; itemId: string; index: number; answer: Answer; mode: Mode; result?: ItemResult };
 
@@ -116,6 +116,7 @@ interface ChatQuizProps {
 const AGENTS: AgentInfo[] = [
   { id: "tutor", name: "Tutor", status: "ready when you are", state: "idle" },
   { id: "explain-coach", name: "Explain coach", status: "joins for think-alouds", state: "idle" },
+  { id: "researcher", name: "Researcher", status: "finds sources when you ask", state: "idle" },
   { id: "judge-panel", name: "Judge panel", status: "reviews explanations later", state: "idle" },
 ];
 
@@ -151,7 +152,9 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const [entries, setEntries] = useState<Entry[]>([]);
   const [lastCorrect, setLastCorrect] = useState<boolean | null>(null);
   const [lastKey, setLastKey] = useState<string[] | null>(null);
-  const [tutorLive, setTutorLive] = useState<string | null>(null); // streaming Tutor reply
+  const [tutorLive, setTutorLive] = useState<string | null>(null); // streaming agent reply
+  const [liveAgent, setLiveAgent] = useState<"tutor" | "researcher">("tutor");
+  const [liveStep, setLiveStep] = useState<string | null>(null); // e.g. "Searching the web (Bright Data)"
   const [lastCardId, setLastCardId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -181,7 +184,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const isLast = index === quiz.items.length - 1;
   const telemetry = useTelemetry(attemptId, item?.id, phase !== "home" && phase !== "intro" && phase !== "done");
 
-  const say = useCallback((who: "tutor" | "student", text: string, extra: { agent?: string } = {}) => {
+  const say = useCallback((who: "tutor" | "student", text: string, extra: { agent?: string; sources?: Source[] } = {}) => {
     setEntries((e) => [...e, { id: nextId.current++, who, text, ...extra }]);
   }, []);
 
@@ -469,17 +472,28 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   }
 
   // Free text outside a probe step: the tutor's open chat arrives with B's agent API. Until then, steer to the quiz.
-  // Free text goes to the Tutor agent (B's Mastra agent behind /api/agents/tutor/turn).
+// Free text goes to an agent behind /api/agents/<agent>/turn (B's Mastra agents). Requests for sources,
+  // examples or real-world data go to the Researcher (Bright Data web search, cited); everything else to the Tutor.
+  const RESEARCH = /\b(sources?|cite|citation|look (it )?up|search|real[- ]world|examples? (of|from)|news|article|research|data on)\b/i;
   const askTutor = async (text: string, fallback?: () => void) => {
+    const agent: "tutor" | "researcher" = RESEARCH.test(text) ? "researcher" : "tutor";
     const history = entries
       .filter((e): e is Extract<Entry, { who: "tutor" | "student" }> => e.who !== "card")
       .slice(-8)
       .map((e) => ({ role: e.who === "student" ? ("user" as const) : ("assistant" as const), content: e.text }));
+    setLiveAgent(agent);
+    setLiveStep(null);
     setTutorLive("");
-    const r = await agentTurn("tutor", { attemptId, input: text, history }, (soFar) => setTutorLive(soFar));
+    const r = await agentTurn(agent, { attemptId, input: text, history }, (soFar) => setTutorLive(soFar), (ev) => {
+      if (ev.toolCall && !ev.toolCall.result) setLiveStep(ev.label);
+    });
     setTutorLive(null);
-    if (r.text) say("tutor", r.text);
-    else if (fallback) fallback();
+    setLiveStep(null);
+    if (r.text) {
+      // The Researcher appends its own "Sources:" list; we render citations from `sources` instead.
+      const body = agent === "researcher" ? r.text.replace(/\n+\s*sources?:\s*\n[\s\S]*$/i, "").trim() : r.text;
+      say("tutor", body, { agent: agent === "researcher" ? "Researcher" : undefined, sources: r.sources?.filter((x) => x.verified) });
+    } else if (fallback) fallback();
     else say("tutor", "I can't answer right now. Let's keep going, and ask me again in a moment.");
   };
 
@@ -694,6 +708,18 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                 <p>
                   <RichText text={e.text} />
                 </p>
+                {e.sources && e.sources.length > 0 && (
+                  <ol className="mt-3 space-y-1 text-sm" aria-label="Sources">
+                    {e.sources.map((src, i) => (
+                      <li key={src.url} className="flex gap-2">
+                        <span className="text-muted-foreground tabular-nums">{i + 1}.</span>
+                        <a href={src.url} target="_blank" rel="noopener noreferrer" className="truncate text-brand underline-offset-2 hover:underline">
+                          {src.url.replace(/^https?:\/\/(www\.)?/, "").slice(0, 80)}
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
+                )}
               </Message>
             ) : e.who === "card" ? (
               <AnsweredCard key={e.id} entry={e} quiz={quiz} />
@@ -806,13 +832,13 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
 
           {tutorLive !== null &&
             (tutorLive ? (
-              <Message role="tutor">
+              <Message role="tutor" agentName={liveAgent === "researcher" ? "Researcher" : undefined}>
                 <p id="tutor-live">
                   <RichText text={tutorLive} />
                 </p>
               </Message>
             ) : (
-              <Thinking label="Tutor is thinking" />
+              <Thinking label={liveAgent === "researcher" ? (liveStep ?? "Researcher is looking for sources") + " (can take about 30 seconds)" : "Tutor is thinking"} />
             ))}
 
           {error && (
