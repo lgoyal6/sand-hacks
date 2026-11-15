@@ -1,0 +1,61 @@
+{
+  "sample-stats": {
+    "quizId": "sample-stats",
+    "itemRuns": 5,
+    "itemCorrect": 5,
+    "accuracy": 1.0,
+    "accuracyCI95": [
+      0.5655,
+      1.0
+    ],
+    "attempts": 1,
+    "attemptsCompleted": 1,
+    "meanAttemptScore": 1.0,
+    "byAgentModel": {
+      "browser-use|gmi:google/gemini-3.8-flash": {
+        "itemRuns": 5,
+        "accuracy": 1.0
+      }
+    },
+    "didNotSubmit": 0,
+    "wrongQuiz": 0,
+    "excludedByModel": {},
+    "infraErrors": 0,
+    "infraReasons": {},
+    "runs": [
+      {
+        "runId": "run-104ed80b8b",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 61,
+        "seconds": 254.53,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "sample-stats-q1": null,
+          "sample-stats-q2": null,
+          "sample-stats-q3": null,
+          "sample-stats-q4": null,
+          "sample-stats-q5": null
+        },
+        "target": "runtime",
+        "probesTriggered": [
+          "sample-stats-q3",
+          "sample-stats-q4"
+        ],
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      }
+    ],
+    "isolated": true
+  }
+}
