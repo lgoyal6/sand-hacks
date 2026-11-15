@@ -2,6 +2,8 @@
 
 export interface SessionRow {
   attemptId: string;
+  /** Who produced the session: an A agent run, a scripted test, or a person (Dat is the only human reference). */
+  who: "agent run" | "scripted test" | "human" | "unlabelled";
   answers: number;
   keys: number;
   clicks: number;
@@ -25,3 +27,11 @@ export function sessionSignals(r: Omit<SessionRow, "signals">): string[] {
   return s;
 }
 
+
+/** Label from the attempt's studentPseudonym: "agent-<runId>" = agent run, "script-…"/"test-…" = scripted test. */
+export function whoFromPseudonym(p: string | undefined): SessionRow["who"] {
+  if (!p) return "unlabelled";
+  if (p.startsWith("agent-")) return "agent run";
+  if (/^(script|test|qa)-/.test(p)) return "scripted test";
+  return "human";
+}

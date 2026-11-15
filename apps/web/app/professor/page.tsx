@@ -10,7 +10,7 @@ import { SolveRateHeatmap } from "@/components/dashboard/solve-rate-heatmap";
 import { LeakTable, type LeakRow } from "@/components/dashboard/leak-table";
 import { ExplainGapGrid, QuadrantSummary, quadrantOf } from "@/components/dashboard/explain-gap";
 import { SessionTable } from "@/components/dashboard/session-table";
-import { sessionSignals, type SessionRow } from "@/components/dashboard/session-signals";
+import { sessionSignals, whoFromPseudonym, type SessionRow } from "@/components/dashboard/session-signals";
 import {
   itemLabels,
   loadAgentRuns,
@@ -210,10 +210,12 @@ async function ExplainGapPanel() {
 
 async function SessionsPanel() {
   await connection();
-  const sessions = await loadSessions();
+  const [sessions, attempts] = await Promise.all([loadSessions(), loadAttempts()]);
+  const pseudo = new Map(attempts.data.map((a) => [a.id, a.studentPseudonym]));
   const rows: SessionRow[] = sessions.data.map((s) => {
     const base = {
       attemptId: s.attempt_id,
+      who: whoFromPseudonym(pseudo.get(s.attempt_id)),
       answers: s.answers,
       keys: s.keys,
       clicks: s.clicks,
@@ -229,7 +231,7 @@ async function SessionsPanel() {
   return (
     <Panel
       title="Session patterns"
-      description="How each session was used: typing, clicks, time away. Unusual patterns are a reason for a conversation, never a verdict."
+      description="Evidence, not a classifier: behaviour signals per session, next to real agent runs and scripted tests. The only human reference is the instructor's own practice sessions, so n is too small for accuracy claims."
       meta={<SourceNote origin={sessions.origin} updatedAt={sessions.updatedAt} />}
     >
       {rows.length ? <SessionTable rows={rows} /> : <PanelEmpty>No sessions recorded yet. They appear here as students take the quiz.</PanelEmpty>}
