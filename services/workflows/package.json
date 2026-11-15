@@ -6,7 +6,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "killtest:neon": "tsx --env-file-if-exists=../../.env.local scripts/neon-killtest.ts",
-    "ingest": "tsx --env-file-if-exists=../../.env.local src/cli/ingest.ts"
+    "ingest": "tsx --env-file-if-exists=../../.env.local src/cli/ingest.ts",
+    "transform": "tsx --env-file-if-exists=../../.env.local src/cli/transform.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",

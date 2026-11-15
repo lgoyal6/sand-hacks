@@ -60,6 +60,17 @@ export async function runTransform(
     emit({ type: "rejected", experiment: structuredClone(row.experiment) });
   };
 
+  // A check that couldn't run (quota, timeout) is not evidence against the question:
+  // keep it "proposed", say why, and never show it as a rejection.
+  const leaveUnverified = async (row: ExperimentRow, reason: string) => {
+    row.experiment.reasons.push(`not verified: ${reason}`);
+    const branch = await store.branch(row.experiment.neonBranch);
+    await saveExperiment(branch.db, row);
+    await mergeSurvivor(store, row.experiment.neonBranch, row.experiment.id, false);
+    if (prune) await store.deleteBranch(row.experiment.neonBranch);
+    emit({ type: "error", experimentId: row.experiment.id, message: `not verified: ${reason}` });
+  };
+
   // Reserve variant numbers up front (sequentially) so parallel work never collides.
   const plan: { target: TransformTarget; k: number; strategy: VariantStrategy }[] = [];
   for (const target of targets) {
@@ -91,11 +102,13 @@ export async function runTransform(
       emit({ type: "proposed", experiment: structuredClone(row.experiment), rationale: gen.rationale });
 
       const solve = await solveWithInterpreter(deps.solver, gen.candidate, opts.solveRepeats ?? 3);
+      if (solve.incomplete) return leaveUnverified(row, solve.detail);
       row.experiment.checks.answerKeyConsistent = solve.passed;
       emit({ type: "check", experimentId: id, check: "answerKeyConsistent", passed: solve.passed, detail: solve.detail });
       if (!solve.passed) return reject(row, solve.detail);
 
       const panel = await objectivePanel(deps.judges, source, gen.candidate);
+      if (panel.incomplete) return leaveUnverified(row, panel.detail);
       row.experiment.checks.objectivePreserved = panel.objectivePreserved;
       row.experiment.checks.unambiguous = panel.unambiguous;
       emit({ type: "check", experimentId: id, check: "objectivePreserved", passed: panel.objectivePreserved, detail: panel.detail });
@@ -108,9 +121,9 @@ export async function runTransform(
     } catch (e) {
       const msg = String((e as Error).message ?? e).slice(0, 300);
       emit({ type: "error", experimentId: id, message: msg });
-      // Best effort: record the failure as a rejection if the branch exists.
+      // Best effort: record it as unverified (not rejected) if the branch exists.
       try {
-        await reject(row, `pipeline error: ${msg}`);
+        await leaveUnverified(row, `pipeline error: ${msg}`);
       } catch {
         /* branch never got created */
       }

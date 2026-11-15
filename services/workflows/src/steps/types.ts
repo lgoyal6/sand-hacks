@@ -21,7 +21,8 @@ export interface SolveResult {
 
 /** Solves a candidate independently of the generator (code interpreter allowed). */
 export interface Solver {
-  solve(candidate: Candidate): Promise<SolveResult>;
+  /** `run` (0-based) distinguishes the independent repeats, so each gets its own cache entry. */
+  solve(candidate: Candidate, run?: number): Promise<SolveResult>;
 }
 
 export interface PanelVote {

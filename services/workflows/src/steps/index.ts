@@ -15,6 +15,8 @@ export function generateCandidates(generator: Generator, source: Item, strategy:
 
 export interface SolveCheck {
   passed: boolean;
+  /** Some runs failed (quota, timeout, no FINAL line): no verdict either way. */
+  incomplete: boolean;
   answers: SolveResult[];
   errors: string[];
   detail: string;
@@ -25,43 +27,46 @@ export interface SolveCheck {
  * Passes only if every run finishes, all runs agree, and they agree with the generator's key.
  */
 export async function solveWithInterpreter(solver: Solver, candidate: Candidate, repeats = 3): Promise<SolveCheck> {
-  const settled = await Promise.allSettled(Array.from({ length: repeats }, () => solver.solve(candidate)));
+  const settled = await Promise.allSettled(Array.from({ length: repeats }, (_, i) => solver.solve(candidate, i)));
   const answers = settled.flatMap((s) => (s.status === "fulfilled" ? [s.value] : []));
   const errors = settled.flatMap((s) => (s.status === "rejected" ? [String((s.reason as Error)?.message ?? s.reason)] : []));
   const key = answerText(candidate.answerKey);
   const agreeKey = answers.filter((a) => sameAnswer(candidate.type, a.answer, key)).length;
-  const passed = errors.length === 0 && agreeKey === repeats;
+  const incomplete = errors.length > 0;
+  const passed = !incomplete && agreeKey === repeats;
   const got = answers.map((a) => a.answer).join(", ") || "none";
   const detail = passed
     ? `solver matched key "${key}" ${repeats}/${repeats}${answers.every((a) => a.usedCode) ? " (ran code each time)" : ""}`
-    : errors.length
-      ? `solver failed ${errors.length}/${repeats} runs: ${errors[0]!.slice(0, 160)}`
+    : incomplete
+      ? `solver did not finish ${errors.length}/${repeats} runs: ${errors[0]!.slice(0, 160)}`
       : `answer key "${key}" not reproduced: solver gave ${got}`;
-  return { passed, answers, errors, detail };
+  return { passed, incomplete, answers, errors, detail };
 }
 
 export interface PanelCheck {
+  /** A seat failed to vote (quota, timeout): no verdict either way. */
+  incomplete: boolean;
   objectivePreserved: boolean;
   unambiguous: boolean;
   votes: PanelVote[];
   detail: string;
 }
 
-/** 3. Three-seat panel; each property must be unanimous (a failed seat counts as a "no"). */
+/** 3. Three-seat panel; each property must be unanimous. A seat that fails to vote makes the check incomplete, not a "no". */
 export async function objectivePanel(judges: Judge[], source: Item, candidate: Candidate): Promise<PanelCheck> {
   const settled = await Promise.allSettled(judges.map((j) => j.vote(source, candidate)));
-  const votes = settled.map((s, i) =>
-    s.status === "fulfilled"
-      ? s.value
-      : { judge: judges[i]!.name, objectivePreserved: false, unambiguous: false, reason: `judge error: ${String((s.reason as Error)?.message ?? s.reason).slice(0, 120)}` },
-  );
+  const failed = settled.flatMap((s, i) => (s.status === "rejected" ? [`${judges[i]!.name}: ${String((s.reason as Error)?.message ?? s.reason).slice(0, 160)}`] : []));
+  const votes = settled.flatMap((s) => (s.status === "fulfilled" ? [s.value] : []));
+  if (failed.length) {
+    return { incomplete: true, objectivePreserved: false, unambiguous: false, votes, detail: `panel incomplete (${failed.length}/${judges.length} seats failed): ${failed[0]}` };
+  }
   const objectivePreserved = votes.every((v) => v.objectivePreserved);
   const unambiguous = votes.every((v) => v.unambiguous);
   const dissent = votes.filter((v) => !v.objectivePreserved || !v.unambiguous);
   const detail = dissent.length
     ? dissent.map((v) => `${v.judge}: ${v.reason}`).join(" | ")
     : `panel ${votes.length}/${votes.length}: same objective, unambiguous`;
-  return { objectivePreserved, unambiguous, votes, detail };
+  return { incomplete: false, objectivePreserved, unambiguous, votes, detail };
 }
 
 /**

@@ -104,7 +104,7 @@ export function normalizeCandidate(out: z.infer<typeof CandidateSchema>, source:
 export class GeminiCodeSolver implements Solver {
   constructor(private model: GeminiModel) {}
 
-  async solve(candidate: Candidate): Promise<SolveResult> {
+  async solve(candidate: Candidate, run = 0): Promise<SolveResult> {
     const prompt = `Solve this quiz question. Use Python code execution to compute or verify every quantitative step.
 
 ${renderItem(candidate)}
@@ -112,7 +112,7 @@ ${renderItem(candidate)}
 End your reply with one line exactly like:
 FINAL: <answer>
 where <answer> is the option letter${candidate.type === "multi" ? "s, comma-separated" : ""}${candidate.type === "numeric" ? " or, for numeric questions, the number" : ""}.`;
-    const { text, usedCode } = await this.model.withCode(prompt, { temperature: 0.7 });
+    const { text, usedCode } = await this.model.withCode(prompt, { temperature: 0.7, salt: `run${run}` });
     const answer = extractFinal(text);
     if (!answer) throw new Error("solver reply had no FINAL: line");
     return { answer, usedCode, model: this.model.name };

@@ -104,6 +104,24 @@ describe("transform runner (fake models, PGlite branches)", () => {
     await store.close();
   }, 60_000);
 
+  it("a check that fails to run (quota) leaves the candidate unverified, never rejected", async () => {
+    const store = await PGliteBranchStore.create(await loadSchema());
+    const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
+    await saveQuiz((await store.main()).db, quiz);
+    const quota: Judge = { name: "jq", vote: async () => Promise.reject(new Error("429 RESOURCE_EXHAUSTED")) };
+    const flaky: Solver = { solve: async () => Promise.reject(new Error("429 RESOURCE_EXHAUSTED")) };
+    const deps = { generator, solver, judges: [judge("j1"), judge("j2"), quota], attacker };
+    const a = await runTransform(store, quiz, [{ item: quiz.items[0]! , solveRate: 1 }], deps, { candidatesPerItem: 1, strategies: ["isomorphic"] });
+    expect(a.experiments[0]!.status).toBe("proposed");
+    expect(a.experiments[0]!.reasons[0]).toMatch(/^not verified: panel incomplete \(1\/3 seats failed\)/);
+    const b = await runTransform(store, quiz, [{ item: quiz.items[1]!, solveRate: 1 }], { ...deps, solver: flaky }, { candidatesPerItem: 1, strategies: ["isomorphic"] });
+    expect(b.experiments[0]!.status).toBe("proposed");
+    expect(b.experiments[0]!.reasons[0]).toMatch(/^not verified: solver did not finish 3\/3/);
+    const onMain = await loadExperiments((await store.main()).db, "sample-stats");
+    expect(onMain.every((e) => e.status === "proposed")).toBe(true);
+    await store.close();
+  }, 60_000);
+
   it("decide() applies both halves of the survival rule", () => {
     const r = (correct: number, runs = 10): SolveRate => ({ itemId: "x", runs, correct, solveRate: correct / runs, agentSolvable: false });
     expect(decide(1, r(3)).survives).toBe(true);
