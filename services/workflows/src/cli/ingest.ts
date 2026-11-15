@@ -8,9 +8,10 @@ import { openBranchStore } from "../db/index.js";
 import { parseMarkdownQuiz, saveQuiz } from "../ingest/markdown.js";
 
 const ROOT = REPO_ROOT;
+const CURATED = new Set(["sample-stats", "stats-inference", "calc-derivatives", "python-basics", "bio-cells", "econ-micro"]);
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { "quiz-id": { type: "string" }, "course-id": { type: "string", default: "sandbox-course" } },
+  options: { publish: { type: "boolean", default: false }, "quiz-id": { type: "string" }, "course-id": { type: "string", default: "sandbox-course" } },
 });
 const file = positionals[0] ?? "data/quizzes/sample-stats.md";
 const quizId = values["quiz-id"] ?? path.basename(file, ".md");
@@ -20,8 +21,9 @@ const store = await openBranchStore();
 try {
   const db = (await store.main()).db;
   await saveQuiz(db, quiz);
-  // The curated course quizzes (data/quizzes/*.md) are what students see; studio imports start unpublished.
-  if (path.resolve(ROOT, file).startsWith(path.join(REPO_ROOT, "data/quizzes") + path.sep)) await db.query("update quiz set published = true where id = $1", [quiz.id]);
+  // The curated course quizzes are what students see; studio imports (also saved under data/quizzes) start
+  // unpublished until the professor publishes them. --publish publishes explicitly.
+  if (values.publish || CURATED.has(quiz.id)) await db.query("update quiz set published = true where id = $1", [quiz.id]);
 } finally {
   await store.close();
 }

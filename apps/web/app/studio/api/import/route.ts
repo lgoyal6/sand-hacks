@@ -6,6 +6,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { DATA_DIR } from "@/lib/db/fixtures";
 import { spawnWorkflow } from "@/lib/workflows";
+import { autoScan } from "../../_lib/autoscan";
 
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "quiz";
@@ -35,5 +36,6 @@ export async function POST(req: Request) {
     const reason = out.split("\n").map((l) => l.trim()).find((l) => /^Error: /.test(l))?.slice(7) ?? "unrecognized format";
     return Response.json({ error: `Couldn't read that quiz: ${reason}` }, { status: 422 });
   }
+  autoScan(slug, "markdown import");
   return Response.json({ quizId: slug, message: out.trim().split("\n").filter((l) => l.startsWith("Imported")).at(-1) });
 }

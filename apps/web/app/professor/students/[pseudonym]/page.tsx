@@ -10,13 +10,13 @@ import { Kpi, Panel } from "@/components/dashboard/panel";
 import { loadStudent, type AttemptDetail } from "../_lib";
 import { CalibrationText } from "../roster-table";
 import { ApproveButton } from "./approve-button";
-import { PageLoader } from "@/components/ui/page-loader";
+import { LoadingShell } from "@/components/ui/page-loader";
 
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "");
 
 export default function Page({ params }: PageProps<"/professor/students/[pseudonym]">) {
   return (
-    <Suspense fallback={<AppShell wide title="Student"><PageLoader title="Loading this student" subtitle="Gathering each question as they saw it" /></AppShell>}>
+    <Suspense fallback={<LoadingShell title="Loading this student" subtitle="Gathering each question as they saw it" />}>
       <Student params={params} />
     </Suspense>
   );

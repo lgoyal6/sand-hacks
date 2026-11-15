@@ -41,7 +41,7 @@ export function ChatLayout({ sidebar, agents, activeAgentId, children, empty, ho
 
       <LayoutGroup>
         <main className="relative flex min-w-0 flex-1 flex-col">
-          <div className="flex h-14 shrink-0 items-center justify-between px-4">
+          <div className="flex h-14 shrink-0 items-center justify-between pl-14 pr-4 md:px-4">
             <div className="min-w-0 truncate text-sm text-muted-foreground">{title}</div>
             {agents && !agentsOpen && (
               <button

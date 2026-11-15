@@ -3,11 +3,11 @@
 import { Suspense } from "react";
 import { getStudioData } from "./_lib/data";
 import { StudioChat } from "./_components/studio-chat";
-import { PageLoader } from "@/components/ui/page-loader";
+import { LoadingShell } from "@/components/ui/page-loader";
 
 export default function Page({ searchParams }: PageProps<"/studio">) {
   return (
-    <Suspense fallback={<PageLoader title="Opening the studio" subtitle="Loading your quiz and the agents" />}>
+    <Suspense fallback={<LoadingShell title="Opening the studio" subtitle="Getting your quizzes ready" />}>
       <Studio searchParams={searchParams} />
     </Suspense>
   );

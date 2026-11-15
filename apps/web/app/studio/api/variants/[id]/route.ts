@@ -5,6 +5,13 @@ import type { VariantExperiment } from "@unprompted/shared";
 import { FIXTURES_DIR, readJson, updateJson } from "@/lib/db/fixtures";
 import { neonMain } from "../../../_lib/data";
 import { mastraAvailable, resumeTransform } from "../../../_lib/mastra";
+import { autoScan } from "../../../_lib/autoscan";
+
+/** An approved rewrite is now what students see: scan it (stale-only, so at most once a day). */
+function scanDelivered(variantId: string) {
+  const quizId = variantId.match(/^(.*)-q\d+-v\d+$/)?.[1];
+  if (quizId) autoScan(quizId, `rewrite ${variantId} delivered`);
+}
 
 const PAST = { approve: "approved", reject: "rejected", unapprove: "unapproved" } as const;
 
@@ -21,6 +28,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     try {
       const res = await resumeTransform(body.runId, [{ id, approve: action === "approve", note: body.note }]);
       const decided = res.result?.decided ?? [];
+      if (action === "approve" && decided.includes(id)) scanDelivered(id);
       return Response.json({ id, status: decided.includes(id) ? (action === "approve" ? "approved" : "rejected") : "unchanged", source: "mastra", workflowStatus: res.status });
     } catch (e) {
       return Response.json({ error: (e as Error).message }, { status: 502 });
@@ -38,7 +46,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
        where id = $2 and status = $3 returning id`,
       [to, id, from],
     );
-    if (r.rowCount === 1) return Response.json({ id, status: to, source: "neon" });
+    if (r.rowCount === 1) {
+      if (to === "approved") scanDelivered(id);
+      return Response.json({ id, status: to, source: "neon" });
+    }
     const exists = await db.query<{ status: string }>("select status from variant_experiment where id = $1", [id]);
     if (exists.rows[0]) return Response.json({ error: `variant is ${exists.rows[0].status}; only ${from} variants can be ${PAST[action]}` }, { status: 409 });
   }

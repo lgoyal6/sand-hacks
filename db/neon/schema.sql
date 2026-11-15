@@ -79,3 +79,10 @@ alter table attempt add column if not exists quiz_version_sha256 text;
 alter table attempt add column if not exists quiz_version_anchor jsonb;
 -- B (for C): only published quizzes appear on the student home; studio imports (Canvas, course site) start unpublished.
 alter table quiz add column if not exists published boolean not null default false;
+-- B: automatic leak watch. Each finding keeps when we first saw it and when a professor saw the alert
+-- (seen_at null = unseen = "new"); each item records its last scan, so a question is searched at most once a day.
+alter table leak_finding add column if not exists first_seen_at timestamptz default now();
+alter table leak_finding add column if not exists seen_at timestamptz;
+alter table item add column if not exists leak_scanned_at timestamptz;
+-- D's Archive watch (daily): candidate pages per question. Candidates, never confirmed leaks.
+create table if not exists leak_archive_watch (item_id text, run_at timestamptz, candidates int, error text, primary key (item_id, run_at));
