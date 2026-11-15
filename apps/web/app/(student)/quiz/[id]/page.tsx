@@ -19,7 +19,7 @@ async function QuizBody({ params, searchParams }: { params: Promise<{ id: string
     >
       <h1 id="quiz-title" className="sr-only">{pub.title}</h1>
       <div className="max-w-3xl">
-        <QuizRunner quiz={pub} suggestedMode={sp.mode === "graded" ? "graded" : "practice"} />
+        <QuizRunner quiz={pub} suggestedMode={sp.mode === "graded" ? "graded" : "practice"} student={typeof sp.student === "string" && /^[\w-]{1,64}$/.test(sp.student) ? sp.student : undefined} />
       </div>
     </AppShell>
   );

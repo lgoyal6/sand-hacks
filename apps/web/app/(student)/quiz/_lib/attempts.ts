@@ -74,3 +74,7 @@ export async function updateAttempt(attemptId: string, patch: Partial<Pick<Attem
   );
   return out as AttemptRecord | null;
 }
+
+export async function listAttempts() {
+  return readJson<AttemptRecord[]>(FILE, []);
+}

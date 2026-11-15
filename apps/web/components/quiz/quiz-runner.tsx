@@ -15,7 +15,7 @@ function isEmpty(a: Answer) {
   return Array.isArray(a) ? a.length === 0 : a.trim() === "";
 }
 
-export function QuizRunner({ quiz, suggestedMode = "practice" }: { quiz: PublicQuiz; suggestedMode?: Mode }) {
+export function QuizRunner({ quiz, suggestedMode = "practice", student }: { quiz: PublicQuiz; suggestedMode?: Mode; student?: string }) {
   const [phase, setPhase] = useState<Phase>("start");
   const [mode, setMode] = useState<Mode>("practice");
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -47,7 +47,7 @@ export function QuizRunner({ quiz, suggestedMode = "practice" }: { quiz: PublicQ
         const res = await fetch("/api/attempts", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ quizId: quiz.id, mode: m }),
+          body: JSON.stringify({ quizId: quiz.id, mode: m, studentPseudonym: student }),
         });
         if (!res.ok) throw new Error("Could not start the quiz.");
         const data = await res.json();
@@ -63,7 +63,7 @@ export function QuizRunner({ quiz, suggestedMode = "practice" }: { quiz: PublicQ
         setBusy(false);
       }
     },
-    [quiz.id],
+    [quiz.id, student],
   );
 
   const finish = useCallback(async () => {
