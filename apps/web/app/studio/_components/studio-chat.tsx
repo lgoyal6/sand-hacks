@@ -2,7 +2,7 @@
 // Studio as a conversation (owner: B), on D's chat shell. No LLM behind the composer: it maps
 // plain requests to actions (attack results, rewrite, replay, import), so it spends no quota.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileUp, GitBranch, Globe, History, PlayCircle, Target, Wand2 } from "lucide-react";
+import { Download, FileUp, GitBranch, Globe, History, PlayCircle, Target, Wand2 } from "lucide-react";
 import { TreeCard } from "./tree-card";
 import type { TreeData } from "../_lib/tree";
 import type { LeakFinding } from "@unprompted/shared";
@@ -195,6 +195,42 @@ export function StudioChat({ data }: { data: StudioData }) {
     }
   }, [push, quiz]);
 
+  // Canvas QTI round trip: import an export zip, export the delivered quiz (approved variants in place).
+  const fileRef = useRef<HTMLInputElement>(null);
+  const importCanvas = useCallback(
+    async (file: File) => {
+      push({ id: nid(), role: "user", text: `Imported ${file.name} from Canvas` });
+      const body = new FormData();
+      body.append("file", file);
+      const res = await fetch("/studio/api/qti/import", { method: "POST", body });
+      const r = (await res.json().catch(() => ({}))) as { quizId?: string; title?: string; items?: number; skipped?: { title: string; type: string }[]; error?: string };
+      if (!res.ok) return say(r.error ?? "Import failed.");
+      const skipped = r.skipped?.length ? ` Skipped ${r.skipped.length} question${r.skipped.length === 1 ? "" : "s"} of a type we don't support yet (${[...new Set(r.skipped.map((x) => x.type.replace(/_question$/, "").replace(/_/g, " ")))].join(", ")}).` : "";
+      say(`Imported "${r.title}" from Canvas: ${r.items} question${r.items === 1 ? "" : "s"}, saved as ${r.quizId}.${skipped}`);
+    },
+    [push, say],
+  );
+  const exportCanvas = useCallback(async () => {
+    if (!quiz) return;
+    push({ id: nid(), role: "user", text: "Export this quiz for Canvas" });
+    const res = await fetch(`/studio/api/qti/export?quiz=${encodeURIComponent(quiz.id)}`);
+    if (!res.ok) {
+      const r = (await res.json().catch(() => ({}))) as { error?: string };
+      return say(r.error ?? "Export failed.");
+    }
+    const summary = JSON.parse(res.headers.get("X-Export-Summary") ?? "{}") as { exported?: number; variants?: string[] };
+    const url = URL.createObjectURL(await res.blob());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${quiz.id}-canvas-qti.zip`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    const n = summary.variants?.length ?? 0;
+    say(
+      `Downloaded ${quiz.id}-canvas-qti.zip with ${summary.exported ?? "the"} questions${n ? `, including ${n} approved rewrite${n === 1 ? "" : "s"}` : " (no approved rewrites yet, so these are the originals)"}. In Canvas: Settings, Import Course Content, "QTI .zip file".`,
+    );
+  }, [push, quiz, say]);
+
   const handle = useCallback(
     (text: string) => {
       const t = text.trim();
@@ -204,6 +240,7 @@ export function StudioChat({ data }: { data: StudioData }) {
       push({ id: nid(), role: "user", text: t });
       if (/replay|recorded/i.test(t)) return replay();
       if (/leak|online|published|posted|quizlet|chegg|reddit/i.test(t)) return void checkLeaks();
+      if (/export|canvas/i.test(t)) return void exportCanvas();
       if (/tree|branch|neon/i.test(t)) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "tree" });
       if (/saved|past|previous/i.test(t) && data.experiments.length) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "saved" });
       const qs = [...t.matchAll(/\bq(\d+)\b/gi)].map((m) => `${quiz?.id}-q${m[1]}`).filter((id) => quiz?.items.some((i) => i.id === id));
@@ -212,7 +249,7 @@ export function StudioChat({ data }: { data: StudioData }) {
         actions: [{ label: "Attack my quiz", primary: true, run: showAttack }],
       });
     },
-    [checkLeaks, data.experiments.length, importQuiz, offerRewrite, push, quiz, replay, say, showAttack, solvable],
+    [checkLeaks, data.experiments.length, exportCanvas, importQuiz, offerRewrite, push, quiz, replay, say, showAttack, solvable],
   );
 
   const decide = useCallback(
@@ -260,7 +297,23 @@ export function StudioChat({ data }: { data: StudioData }) {
     links: APP_LINKS,
     user: { name: "Professor", detail: title },
   };
-  const composer = <Composer textareaId="studio-composer" submitId="studio-send" placeholder="Ask the agents, or paste a quiz in Markdown" onSubmit={handle} />;
+  const composer = (
+    <>
+      <Composer textareaId="studio-composer" submitId="studio-send" placeholder="Ask the agents, paste a quiz in Markdown, or attach a Canvas export" onSubmit={handle} onAttach={() => fileRef.current?.click()} />
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".zip,application/zip"
+        className="hidden"
+        aria-label="Canvas quiz export (.zip)"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (f) void importCanvas(f);
+        }}
+      />
+    </>
+  );
   const sourceNote =
     data.quizSource === "neon" && data.solveRatesMeasured
       ? `Agent results: ${data.attack?.itemRuns ?? 0} real answers.`
@@ -396,6 +449,9 @@ export function StudioChat({ data }: { data: StudioData }) {
                 Replay a recorded run
               </Chip>
             ) : null}
+            <Chip icon={<Download />} onClick={() => void exportCanvas()}>
+              Export to Canvas
+            </Chip>
             <Chip icon={<Globe />} onClick={() => void checkLeaks()}>
               Is any of this online?
             </Chip>
