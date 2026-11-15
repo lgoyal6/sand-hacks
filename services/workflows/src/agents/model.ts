@@ -17,3 +17,21 @@ export function gemini(model = envVal("AGENT_MODEL") ?? "gemini-3.5-flash-lite")
   if (direct && !process.env.GOOGLE_GENERATIVE_AI_API_KEY) process.env.GOOGLE_GENERATIVE_AI_API_KEY = direct;
   return `google/${model}`;
 }
+
+/**
+ * Fallback list for tool-using agents: Gemini 3.6 Flash through GMI first (the FlattenToolHistory
+ * processor makes multi-step tools work there), then the direct key (native thought signatures,
+ * free-tier capped), then gemini-3.5-flash-lite via GMI.
+ */
+export function agentModels(primary = envVal("AGENT_PRIMARY_MODEL") ?? "gemini-3.6-flash") {
+  const list: { model: AgentModel; maxRetries: number }[] = [];
+  if (envVal("GMI_API_KEY")) list.push({ model: gemini(primary), maxRetries: 1 });
+  const direct = envVal("GEMINI_API_KEY");
+  if (direct) {
+    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) process.env.GOOGLE_GENERATIVE_AI_API_KEY = direct;
+    list.push({ model: `google/${primary}`, maxRetries: 0 });
+  }
+  if (envVal("GMI_API_KEY")) list.push({ model: gemini("gemini-3.5-flash-lite"), maxRetries: 1 });
+  if (!list.length) throw new Error("No Gemini access for agents: set GEMINI_API_KEY or GMI_API_KEY.");
+  return list;
+}

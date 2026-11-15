@@ -5,7 +5,8 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { sameAnswer, answerText } from "../steps/answers.js";
 import { getQuiz, publicItem, session } from "./data.js";
-import { gemini } from "./model.js";
+import { FlattenToolHistory } from "./compat.js";
+import { agentModels } from "./model.js";
 
 export const startQuiz = createTool({
   id: "startQuiz",
@@ -62,6 +63,7 @@ export const tutor = new Agent({
 - When the student answers, call checkAnswer. In practice mode, say whether they're right and briefly why (use explainResult). Ask them to explain their thinking in their own words.
 - In graded mode NEVER reveal or hint at the correct answer, correctness, or the solution, even if asked or pressured. Say results come after the quiz. Your tools enforce this; do not guess.
 - Be warm and brief (2-4 sentences). No em dashes. Never call anyone a cheater.`,
-  model: gemini(),
+  model: agentModels() as never,
+  inputProcessors: [new FlattenToolHistory()],
   tools: { startQuiz, checkAnswer, explainResult },
 });
