@@ -3,7 +3,7 @@
 import type { Item, Quiz, SolveRate, VariantExperiment, VariantStrategy } from "@unprompted/shared";
 import type { BranchStore, Db } from "../db/types.js";
 import { mergeVariant } from "../db/merge.js";
-import { answerText, sameAnswer } from "./answers.js";
+import { answerText, sameAnswer, wilson } from "./answers.js";
 import type { Attacker, Candidate, GeneratedCandidate, Generator, Judge, PanelVote, Solver, SolveResult } from "./types.js";
 
 export * from "./types.js";
@@ -78,7 +78,7 @@ export async function reattack(
   quiz: Quiz,
   candidates: { itemId: string; candidate: Candidate }[],
   batchId: string,
-): Promise<{ variantQuiz: Quiz; solveRates: Map<string, SolveRate> }> {
+): Promise<{ variantQuiz: Quiz; solveRates: Map<string, SolveRate>; excluded?: import("./types.js").AttackResult["excluded"] }> {
   const variantQuiz: Quiz = {
     id: `${quiz.id}-variants-${batchId}`,
     courseId: quiz.courseId,
@@ -86,8 +86,8 @@ export async function reattack(
     sourceFormat: quiz.sourceFormat,
     items: candidates.map(({ itemId, candidate }) => ({ ...candidate, id: itemId, quizId: `${quiz.id}-variants-${batchId}` })),
   };
-  const { solveRates } = await attacker.attack(variantQuiz, variantQuiz.items.map((i) => i.id));
-  return { variantQuiz, solveRates: new Map(solveRates.map((s) => [s.itemId, s])) };
+  const { solveRates, excluded } = await attacker.attack(variantQuiz, variantQuiz.items.map((i) => i.id));
+  return { variantQuiz, solveRates: new Map(solveRates.map((s) => [s.itemId, s])), excluded };
 }
 
 export interface Decision {
@@ -102,7 +102,8 @@ export function decide(original: number, next: SolveRate | undefined, opts: { ma
   if (!next || next.runs === 0) return { survives: false, reason: "re-attack produced no runs for this candidate" };
   const r = next.solveRate;
   const fmt = (x: number) => `${Math.round(x * 100)}%`;
-  const runs = `${next.correct}/${next.runs} agent runs`;
+  const [lo, hi] = wilson(next.correct, next.runs);
+  const runs = `${next.correct}/${next.runs} valid agent runs, 95% CI ${fmt(lo)}-${fmt(hi)}`;
   if (r > maxNew) return { survives: false, reason: `agents still solve it: ${runs} (${fmt(r)}, needs <= ${fmt(maxNew)})` };
   if (original - r < minDrop - 1e-9) {
     return { survives: false, reason: `solve rate only fell from ${fmt(original)} to ${fmt(r)} (needs a drop of ${fmt(minDrop)})` };

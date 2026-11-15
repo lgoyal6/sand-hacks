@@ -31,9 +31,9 @@ Every flag is evidence for a conversation, never a verdict.
 flowchart TB
     subgraph UI["Interface"]
         direction LR
-        S["💬 Student chat<br/><small>quiz cards · voice think-aloud</small>"]
-        P["🧑‍🏫 Professor studio<br/><small>attack · approve · insights</small>"]
-        AP["👀 Agents panel<br/><small>live AgentEvent stream</small>"]
+        S["Student chat<br/><small>quiz cards · voice think-aloud</small>"]
+        P["Professor studio<br/><small>attack · approve · insights</small>"]
+        AP["Agents panel<br/><small>live AgentEvent stream</small>"]
     end
 
     APP["apps/web · Next.js 16<br/><small>attempts · probes · telemetry API</small>"]
@@ -52,7 +52,7 @@ flowchart TB
 
     subgraph ENG["Engines"]
         direction LR
-        WF["Transform workflow<br/><small>generate → solve → 3 judges → re-attack<br/>⏸ professor approval</small>"]
+        WF["Transform workflow<br/><small>generate → solve → 3 judges → re-attack<br/>pauses for professor approval</small>"]
         ATK["Agent Attack<br/><small>browser-use · Stagehand → sandbox</small>"]
         LS["Leak scan & watch"]
     end
@@ -110,7 +110,7 @@ sequenceDiagram
         Ag-->>WF: new solve rate
         WF->>Neon: keep if ≤ 0.3 and ≥ 0.4 below original, else record reason
     end
-    WF-->>Prof: ⏸ suspended for approval
+    WF-->>Prof: suspended for approval
     Prof->>WF: approve → resume → merge survivors into main
 ```
 
@@ -137,15 +137,15 @@ sequenceDiagram
 
 ## Sponsors: how each one is used
 
-| | Sponsor | What it does in Unprompted |
-|---|---|---|
-| 🧠 | **Gemini** | Every model call: browser-agent attackers, variant generation, the 3-judge panel, follow-up questions. Direct key, or GMI as a quota-free route to the same Gemini models |
-| 🤖 | **Mastra** | An 8-agent team (Supervisor, Tutor, Explain coach, Researcher, Quiz checker, Rewriter, Judge panel, Leak scout), each with real tools, and the transform workflow with human-in-the-loop `suspend()` / `resume()` for professor approval |
-| 🌿 | **Neon** | App data, **one copy-on-write branch per question experiment** (only survivors merge), attempt audit trail |
-| 🐯 | **Tiger Data** | Telemetry hypertables, continuous aggregates, `state_agg` / `heartbeat_agg` features that separate agents from humans by behavior |
-| 🌐 | **Bright Data** | Leak scan (SERP), evidence screenshots (Browser API), daily leak watch (Web Archive), cited sources for the Researcher |
-| 🎙️ | **ElevenLabs** | The voice think-aloud agent with client tools, and Scribe word timestamps for counterfactual latency |
-| ☁️ | **Vultr** | The only deploy target (not deployed yet) |
+| Sponsor | What it does in Unprompted |
+|---|---|
+| **Gemini** | Every model call: browser-agent attackers, variant generation, the 3-judge panel, follow-up questions. Direct key, or GMI as a quota-free route to the same Gemini models |
+| **Mastra** | An 8-agent team (Supervisor, Tutor, Explain coach, Researcher, Quiz checker, Rewriter, Judge panel, Leak scout), each with real tools, and the transform workflow with human-in-the-loop `suspend()` / `resume()` for professor approval |
+| **Neon** | App data, **one copy-on-write branch per question experiment** (only survivors merge), attempt audit trail |
+| **Tiger Data** | Telemetry hypertables, continuous aggregates, `state_agg` / `heartbeat_agg` features that separate agents from humans by behavior |
+| **Bright Data** | Leak scan (SERP), evidence screenshots (Browser API), daily leak watch (Web Archive), cited sources for the Researcher |
+| **ElevenLabs** | The voice think-aloud agent with client tools, and Scribe word timestamps for counterfactual latency |
+| **Vultr** | The only deploy target (not deployed yet) |
 
 ## Results so far (real data, Nov 14 2026)
 

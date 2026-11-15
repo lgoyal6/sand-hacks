@@ -26,7 +26,7 @@ async function shoot(wss: string, findings: LeakFinding[], cache: Map<string, Sh
       }
       cache.set(f.url, r);
     }
-    if (r.ok) f.screenshotUrl = `/api/leaks/screens/${f.id}.png`;
+    if (r.ok) f.screenshotUrl = `/professor/screens/${f.id}.png`;
     console.log(`${f.itemId} ${r.ok ? "screenshot" : r.reason} ${f.url}`);
   }
 }

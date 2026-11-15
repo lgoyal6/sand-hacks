@@ -2,11 +2,13 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ChatQuiz } from "@/components/quiz/chat-quiz";
+import { getViewer } from "@/lib/auth/server";
 import { listQuizzes, toPublic } from "../_lib/quizzes";
 
 async function QuizBody({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
-  const all = (await listQuizzes()).map(toPublic);
+  const [raw, viewer] = await Promise.all([listQuizzes(), getViewer()]);
+  const all = raw.map(toPublic);
   const found = all.find((q) => q.id === id);
   if (!found) notFound();
   // "Practice this" from /progress: a short session on just those items.
@@ -18,7 +20,7 @@ async function QuizBody({ params, searchParams }: { params: Promise<{ id: string
   return (
     <>
       <h1 id="quiz-title" className="sr-only">{pub.title}</h1>
-      <ChatQuiz quizzes={quizzes} initialQuizId={pub.id} suggestedMode={sp.mode === "graded" ? "graded" : "practice"} student={student} />
+      <ChatQuiz quizzes={quizzes} initialQuizId={pub.id} viewer={viewer ? { name: viewer.name, role: viewer.role } : null} suggestedMode={sp.mode === "graded" ? "graded" : "practice"} student={student} />
     </>
   );
 }

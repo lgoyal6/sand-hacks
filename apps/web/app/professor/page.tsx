@@ -7,13 +7,15 @@ import { AppShell } from "@/components/ui/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Kpi, Panel, PanelEmpty, SourceNote } from "@/components/dashboard/panel";
 import { SolveRateHeatmap } from "@/components/dashboard/solve-rate-heatmap";
-import { LeakTable, type LeakRow } from "@/components/dashboard/leak-table";
+import { LeakRadar } from "@/components/dashboard/leak-radar";
+import { buildLeakRadar, onlineCount } from "@/components/dashboard/leak-radar-data";
 import { ExplainGapGrid, QuadrantSummary, quadrantOf } from "@/components/dashboard/explain-gap";
 import { SessionTable } from "@/components/dashboard/session-table";
 import { sessionSignals, whoFromPseudonym, type SessionRow } from "@/components/dashboard/session-signals";
 import {
   itemLabels,
   loadAgentRuns,
+  loadArchiveWatch,
   loadAttackSummary,
   loadAttempts,
   loadLeaks,
@@ -81,7 +83,9 @@ async function KpiRow() {
   const quizItems = new Set(quiz.data?.items.map((i) => i.id) ?? []);
   const solveHere = quizItems.size ? solve.data.filter((r) => quizItems.has(r.itemId)) : solve.data;
   const solvable = solveHere.filter((r) => r.agentSolvable).length;
-  const leakedItems = new Set(leaks.data.map((l) => l.itemId)).size;
+  const radar = quiz.data ? buildLeakRadar(quiz.data, leaks.data) : null;
+  const leakedItems = radar ? onlineCount(radar) : 0;
+  const partialItems = radar ? radar.items.filter((i) => i.hits.length && i.hits.every((h) => h.partial)).length : 0;
   const verified = variants.data.filter((v) => v.status === "verified" || v.status === "approved").length;
   const cells = buildCells(attempts.data, probes.data);
   const gaps = cells.filter((c) => c.quadrant === "explain_gap").length;
@@ -91,11 +95,17 @@ async function KpiRow() {
       <Kpi
         label="Agent accuracy on this quiz"
         value={s ? pct(s.accuracy) : "-"}
-        sub={s ? `${s.itemCorrect}/${s.itemRuns} answers · 95% CI ${pct(s.accuracyCI95[0])}-${pct(s.accuracyCI95[1])}` : "No agent runs yet"}
+        sub={
+          s
+            ? `${s.itemCorrect}/${s.itemRuns} answers · 95% CI ${pct(s.accuracyCI95[0])}-${pct(s.accuracyCI95[1])}${
+                s.isolated === true ? " · sandboxed agents" : s.isolated === false ? " · pre-isolation run" : ""
+              }`
+            : "No agent runs yet"
+        }
         tone="agent"
       />
       <Kpi label="Questions agents can solve" value={solveHere.length ? `${solvable}/${items}` : "-"} sub="Solve rate 60% or more" />
-      <Kpi label="Questions found online" value={leaks.origin === "none" ? "-" : `${leakedItems}/${items}`} sub="Exact-phrase web search" tone="leak" />
+      <Kpi label="Questions found online" value={leaks.origin === "none" ? "-" : `${leakedItems}/${items}`} sub={partialItems ? `plus ${partialItems} partial match${partialItems > 1 ? "es" : ""} to check` : "Exact-phrase web search"} tone="leak" />
       <Kpi
         label="Explain gaps"
         value={cells.length ? gaps : "-"}
@@ -139,23 +149,23 @@ async function AgentAttackPanel() {
 
 async function LeakPanel() {
   await connection();
-  const [leaks, quiz] = await Promise.all([loadLeaks(), loadQuiz()]);
-  const labels = itemLabels(quiz.data);
-  const rows: LeakRow[] = leaks.data.map((l) => {
-    let host = "";
-    try {
-      host = new URL(l.url).hostname.replace(/^www\./, "");
-    } catch {}
-    return { ...l, host, itemLabel: labels.get(l.itemId)?.label ?? l.itemId };
-  });
+  const [leaks, quiz, archive] = await Promise.all([loadLeaks(), loadQuiz(), loadArchiveWatch()]);
+  if (leaks.origin === "none" || !quiz.data) {
+    return (
+      <Panel title="Found online" description="Search results whose text matches a question.">
+        <PanelEmpty>No leak scan has run for this quiz yet.</PanelEmpty>
+      </Panel>
+    );
+  }
+  const radar = buildLeakRadar(quiz.data, leaks.data, { archive: archive.data ?? undefined });
   return (
-    <Panel
-      title="Found online"
-      description="Search results whose text matches a question. A match is evidence to look at, not proof it is the same question."
-      meta={<SourceNote origin={leaks.origin} updatedAt={leaks.updatedAt} />}
-    >
-      {leaks.origin === "none" ? <PanelEmpty>No leak scan has run for this quiz yet.</PanelEmpty> : <LeakTable rows={rows} />}
-    </Panel>
+    <div className="space-y-2">
+      <div className="flex items-center gap-2 px-1">
+        <h2 className="text-[15px] font-semibold">Found online</h2>
+        <SourceNote origin={leaks.origin} updatedAt={leaks.updatedAt} />
+      </div>
+      <LeakRadar data={radar} />
+    </div>
   );
 }
 

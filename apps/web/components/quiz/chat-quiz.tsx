@@ -11,11 +11,13 @@
 //   #confidence-after-N #probe-finish #probe-done #probe-continue #probe-voice-done #probe-switch-typing
 // Only the ACTIVE step renders these ids; finished steps become plain text, so ids stay unique.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { BarChart3, FlaskConical, LogOut } from "lucide-react";
 import { ConversationProvider } from "@elevenlabs/react";
 import { ChatLayout, Chip, Composer, Message, PillButton, QuestionCard, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
 import { useTelemetry } from "@/lib/telemetry/use-telemetry";
 import { emitAgentStatus } from "@/lib/telemetry/agent-status";
-import { ConfidenceScale } from "@/components/probe/confidence-scale";
+import { agentTurn, type Source } from "@/lib/agents/agent-turn";
+import { ConfidencePicker, ExplainBox, ThinkAloudScene, type ThinkAloudStep } from "@/components/ui/quiz";
 import { useVoiceProbe, type ProbePhase, type VoiceResult } from "@/components/probe/use-voice-probe";
 import { ItemView, type ItemResult } from "./item-view";
 import type { Answer, Mode, PublicItem, PublicQuiz } from "./types";
@@ -40,7 +42,7 @@ type Phase =
   | "done";
 
 type Entry =
-  | { id: number; who: "tutor" | "student"; text: string; agent?: string }
+  | { id: number; who: "tutor" | "student"; text: string; agent?: string; sources?: Source[] }
   // An answered question, kept in the thread (locked, no ids) so the student sees what they chose.
   | { id: number; who: "card"; itemId: string; index: number; answer: Answer; mode: Mode; result?: ItemResult };
 
@@ -50,6 +52,33 @@ const now = () => performance.now();
 function isEmpty(a: Answer) {
   return Array.isArray(a) ? a.length === 0 : a.trim() === "";
 }
+// Minimal inline Markdown for agent replies: **bold**, `code`, and line breaks. No single-* italics:
+// math like n*x^(n-1) must stay intact. No HTML injection.
+function RichText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*\n]+\*\*|`[^`\n]+`|\n)/g);
+  return (
+    <>
+      {parts.map((p, i) =>
+        p === "\n" ? (
+          <br key={i} />
+        ) : p.startsWith("**") && p.endsWith("**") && p.length > 4 ? (
+          <strong key={i}>{p.slice(2, -2)}</strong>
+        ) : p.startsWith("`") && p.endsWith("`") && p.length > 2 ? (
+          <code key={i} className="rounded bg-muted px-1 text-[0.9em]">{p.slice(1, -1)}</code>
+        ) : (
+          p
+        ),
+      )}
+    </>
+  );
+}
+
+function choiceText(item: PublicItem, a: Answer) {
+  const ids = Array.isArray(a) ? a : [a];
+  if (!item.choices) return String(a);
+  return ids.map((id) => { const i = item.choices!.findIndex((c) => c.id === id); return `${"ABCDEFGH"[i] ?? id} · ${item.choices![i]?.text ?? ""}`; }).join(", ");
+}
+
 // Calm practice feedback: what the answer is and what the question was about. Not color-only.
 function feedbackText(item: PublicItem, correct: boolean, key: string[] | null) {
   const why = item.objective ? ` The skill here: ${item.objective.replace(/\.$/, "")}.` : "";
@@ -83,11 +112,14 @@ interface ChatQuizProps {
   student?: string;
   /** Home page: start in the empty state (greeting, centered composer, chips). */
   startEmpty?: boolean;
+  /** Signed-in viewer (name and role only; never the email). */
+  viewer?: { name: string; role: "student" | "professor" } | null;
 }
 
 const AGENTS: AgentInfo[] = [
   { id: "tutor", name: "Tutor", status: "ready when you are", state: "idle" },
   { id: "explain-coach", name: "Explain coach", status: "joins for think-alouds", state: "idle" },
+  { id: "researcher", name: "Researcher", status: "finds sources when you ask", state: "idle" },
   { id: "judge-panel", name: "Judge panel", status: "reviews explanations later", state: "idle" },
 ];
 
@@ -111,7 +143,7 @@ function matchQuiz(quizzes: PublicQuiz[], text: string): PublicQuiz | null {
   return best?.q ?? null;
 }
 
-function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", student, startEmpty = false }: ChatQuizProps) {
+function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", student, startEmpty = false, viewer }: ChatQuizProps) {
   const [phase, setPhase] = useState<Phase>(startEmpty ? "home" : "intro");
   const [quizId, setQuizId] = useState(initialQuizId ?? quizzes[0]?.id);
   const quiz = quizzes.find((q) => q.id === quizId) ?? quizzes[0];
@@ -123,6 +155,9 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const [entries, setEntries] = useState<Entry[]>([]);
   const [lastCorrect, setLastCorrect] = useState<boolean | null>(null);
   const [lastKey, setLastKey] = useState<string[] | null>(null);
+  const [tutorLive, setTutorLive] = useState<string | null>(null); // streaming agent reply
+  const [liveAgent, setLiveAgent] = useState<"tutor" | "researcher">("tutor");
+  const [liveStep, setLiveStep] = useState<string | null>(null); // e.g. "Searching the web (Bright Data)"
   const [lastCardId, setLastCardId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -152,7 +187,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const isLast = index === quiz.items.length - 1;
   const telemetry = useTelemetry(attemptId, item?.id, phase !== "home" && phase !== "intro" && phase !== "done");
 
-  const say = useCallback((who: "tutor" | "student", text: string, extra: { agent?: string } = {}) => {
+  const say = useCallback((who: "tutor" | "student", text: string, extra: { agent?: string; sources?: Source[] } = {}) => {
     setEntries((e) => [...e, { id: nextId.current++, who, text, ...extra }]);
   }, []);
 
@@ -424,16 +459,6 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   };
 
   // ---- composer (UI: swap for D's Composer; keep the ids) ----
-  const composer =
-    phase === "probe_explain"
-      ? { textareaId: "probe-explanation", submitId: "probe-submit-explanation", placeholder: "Explain it in your own words..." }
-      : phase === "probe_cf"
-        ? { textareaId: "probe-cf-answer", submitId: "probe-submit-cf", placeholder: "What changes, and why?" }
-        : null;
-  const composerSubmit = () => {
-    if (phase === "probe_explain") submitExplanation();
-    else if (phase === "probe_cf") submitCounterfactual();
-  };
   const composerFirstKey = () => {
     if (phase === "probe_explain") mark("speech_start");
     else if (phase === "probe_cf") mark("cf_speech_start");
@@ -450,16 +475,44 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   }
 
   // Free text outside a probe step: the tutor's open chat arrives with B's agent API. Until then, steer to the quiz.
+// Free text goes to an agent behind /api/agents/<agent>/turn (B's Mastra agents). Requests for sources,
+  // examples or real-world data go to the Researcher (Bright Data web search, cited); everything else to the Tutor.
+  const RESEARCH = /\b(sources?|cite|citation|look (it )?up|search|real[- ]world|examples? (of|from)|news|article|research|data on)\b/i;
+  const askTutor = async (text: string, fallback?: () => void) => {
+    const agent: "tutor" | "researcher" = RESEARCH.test(text) ? "researcher" : "tutor";
+    const history = entries
+      .filter((e): e is Extract<Entry, { who: "tutor" | "student" }> => e.who !== "card")
+      .slice(-8)
+      .map((e) => ({ role: e.who === "student" ? ("user" as const) : ("assistant" as const), content: e.text }));
+    setLiveAgent(agent);
+    setLiveStep(null);
+    setTutorLive("");
+    const r = await agentTurn(agent, { attemptId, input: text, history }, (soFar) => setTutorLive(soFar), (ev) => {
+      if (ev.toolCall && !ev.toolCall.result) setLiveStep(ev.label);
+    });
+    setTutorLive(null);
+    setLiveStep(null);
+    if (r.text) {
+      // The Researcher appends its own "Sources:" list; we render citations from `sources` instead.
+      const body = agent === "researcher" ? r.text.replace(/\n+\s*sources?:\s*\n[\s\S]*$/i, "").trim() : r.text;
+      say("tutor", body, { agent: agent === "researcher" ? "Researcher" : undefined, sources: r.sources?.filter((x) => x.verified) });
+    } else if (fallback) fallback();
+    else say("tutor", "I can't answer right now. Let's keep going, and ask me again in a moment.");
+  };
+
   const freeText = (text: string) => {
     say("student", text);
-    const match = matchQuiz(quizzes, text);
+    const match = attemptId ? null : matchQuiz(quizzes, text);
     if (match) {
       setQuizId(match.id);
       say("tutor", `Let's work on ${match.title}: ${match.items.length} questions. Practice run, or the graded quiz?`, { agent: "Tutor" });
       setPhase("intro");
-    } else {
+    } else if (text === "I'm not sure what to study.") {
       say("tutor", "Happy to help. Which topic are we working on? Pick one and I'll quiz you, with a short think-aloud along the way.", { agent: "Tutor" });
       setPhase("pick");
+    } else {
+      if (phase === "home") setPhase("pick");
+      askTutor(text, () => say("tutor", "Which topic are we working on? Pick one and I'll quiz you, with a short think-aloud along the way."));
     }
   };
 
@@ -468,45 +521,171 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     { label: "Topics", items: quizzes.map((q) => ({ id: `topic-${q.id}`, title: q.title, href: `/quiz/${q.id}`, subtitle: `${q.items.length} questions` })) },
   ];
 
-  const composerProps = composer
-    ? { textareaId: composer.textareaId, submitId: composer.submitId, placeholder: composer.placeholder, disabled: false }
-    : phase === "home" || phase === "intro" || phase === "pick"
+  const composerProps = phase === "home" || phase === "intro" || phase === "pick"
       ? { textareaId: "composer-input", submitId: "composer-send", placeholder: "Tell me what you're studying, or say \"quiz me\"...", disabled: false }
-      : { textareaId: "composer-input", submitId: "composer-send", placeholder: phase === "done" ? "Nice work. Start a new session from the sidebar." : "Answer the question above", disabled: true };
+      : {
+          textareaId: "composer-input",
+          submitId: "composer-send",
+          placeholder: phase === "done" ? "Ask the tutor about your results..." : "Ask the tutor about this question...",
+          disabled: tutorLive !== null || phase === "checking" || phase.startsWith("probe_"),
+        };
 
   const composerEl = (
     <Composer
       key="composer"
       {...composerProps}
       value={draft}
-      onChange={(v) => {
-        if (v && composer) composerFirstKey();
-        setDraft(v);
-      }}
+      onChange={(v) => setDraft(v)}
       onSubmit={(v) => {
-        if (composer) composerSubmit();
-        else if (v.trim()) {
+        if (v.trim()) {
           setDraft("");
           freeText(v.trim());
         }
       }}
-      voice={
-        phase === "probe_voice"
-          ? {
-              state: voice.orb,
-              agent: "explain-coach",
-              transcript: voice.error ? `Voice hit a problem (${voice.error}). Type instead, no penalty.` : voice.lines.at(-1)?.text,
-              onStop: voice.stop,
-              onSwitchToTyping: switchToTyping,
-            }
-          : null
-      }
+      voice={null}
     />
   );
 
+  // ---- the think-aloud as a focused scene (D's ThinkAloudScene); ids unchanged for A's agents ----
+  const sceneStep: ThinkAloudStep | null =
+    phase === "probe_choice" || phase === "probe_consent" || phase === "probe_before"
+      ? 1
+      : phase === "probe_explain" || phase === "probe_voice"
+        ? 2
+        : phase === "probe_cf_loading" || phase === "probe_cf"
+          ? 3
+          : phase === "probe_after"
+            ? 4
+            : null;
+  const chosenText = item ? choiceText(item, answer) : "";
+  const scene =
+    sceneStep && item ? (
+      <div id="probe" data-step={probeStep} data-probe-id={probeId ?? ""}>
+        <ThinkAloudScene
+          step={sceneStep}
+          question={{ label: `Q${index + 1}`, stem: item.stem, chosen: chosenText }}
+          agent="explain-coach"
+          orb={phase === "probe_voice" ? voice.orb : phase === "probe_cf_loading" ? "thinking" : null}
+          prompt={
+            phase === "probe_choice"
+              ? "Quick think-aloud before I tell you how that went. Talk or type, whichever you like."
+              : phase === "probe_consent"
+                ? "Talking it through records your voice so it can be transcribed. The audio is deleted after grading."
+                : phase === "probe_before"
+                  ? "Before you explain: how sure are you that you understand why your answer is right?"
+                  : phase === "probe_explain"
+                    ? <span id="probe-opening">{opening}</span>
+                    : phase === "probe_voice"
+                      ? voice.lines.filter((l) => l.role === "agent").at(-1)?.text ?? "Connecting..."
+                      : phase === "probe_cf_loading"
+                        ? "Thinking of a follow-up..."
+                        : phase === "probe_cf"
+                          ? <span id="probe-counterfactual">{cfPrompt}</span>
+                          : "Now that you've explained it, how sure are you?"
+          }
+          transcript={
+            phase === "probe_voice"
+              ? voice.error
+                ? `Voice hit a problem (${voice.error}). Type instead, no penalty.`
+                : voice.lines.filter((l) => l.role === "user").at(-1)?.text
+              : undefined
+          }
+          footer={
+            phase === "probe_after" && before !== null
+              ? `Before you explained, you said ${before} of 7 sure.`
+              : "Graded on your reasoning, never on wording or accent."
+          }
+          actions={
+            phase === "probe_choice" ? (
+              <>
+                <PillButton id="probe-type" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>Type it</PillButton>
+                <PillButton id="probe-voice" variant="secondary" disabled={!voiceAvailable} title={voiceAvailable ? undefined : "Voice isn't set up yet"} onClick={() => { setChannel("voice"); setPhase("probe_consent"); }}>
+                  Talk it through
+                </PillButton>
+                {mode === "practice" && (
+                  <PillButton id="probe-skip" variant="ghost" onClick={() => { if (lastCardId !== null && lastCorrect !== null) revealResult(lastCardId, lastCorrect, lastKey ?? undefined); setPhase("feedback"); }}>
+                    Skip this time
+                  </PillButton>
+                )}
+              </>
+            ) : phase === "probe_consent" ? (
+              <>
+                <PillButton id="probe-consent-continue" onClick={() => setPhase("probe_before")} disabled={!consent}>Continue</PillButton>
+                <PillButton id="probe-consent-type" variant="ghost" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>Type instead</PillButton>
+              </>
+            ) : phase === "probe_before" ? (
+              <PillButton id="probe-begin" onClick={beginProbe} disabled={before === null || busy}>Continue</PillButton>
+            ) : phase === "probe_explain" ? (
+              <>
+                <PillButton id="probe-submit-explanation" onClick={submitExplanation} disabled={!draft.trim()}>Done explaining</PillButton>
+                {!retried && <PillButton id="probe-start-over" variant="ghost" onClick={startOver}>Start over</PillButton>}
+              </>
+            ) : phase === "probe_voice" ? (
+              <>
+                <PillButton id="probe-switch-typing" variant="secondary" onClick={switchToTyping}>Type instead</PillButton>
+                <PillButton id="probe-voice-done" onClick={voice.stop}>Done explaining</PillButton>
+              </>
+            ) : phase === "probe_cf" ? (
+              <PillButton id="probe-submit-cf" onClick={submitCounterfactual} disabled={!draft.trim()}>Continue</PillButton>
+            ) : phase === "probe_after" ? (
+              <PillButton id="probe-finish" onClick={finishProbe} disabled={after === null || busy}>Finish</PillButton>
+            ) : null
+          }
+        >
+          {phase === "probe_consent" && (
+            <label htmlFor="probe-consent-check" className="flex items-start gap-2 text-sm">
+              <input id="probe-consent-check" type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+              I agree to have this short conversation recorded. I can switch to typing any time.
+            </label>
+          )}
+          {phase === "probe_before" && <ConfidencePicker name="confidence-before" legend="How sure are you?" value={before} onChange={setBefore} />}
+          {phase === "probe_explain" && (
+            <ExplainBox
+              id="probe-explanation"
+              aria-label="Your explanation"
+              placeholder="In your own words..."
+              value={draft}
+              autoFocus
+              onChange={(e) => {
+                if (e.target.value) composerFirstKey();
+                setDraft(e.target.value);
+              }}
+            />
+          )}
+          {phase === "probe_cf" && (
+            <ExplainBox
+              id="probe-cf-answer"
+              aria-label="Your answer to the follow-up"
+              placeholder="What changes, and why?"
+              rows={3}
+              value={draft}
+              autoFocus
+              onChange={(e) => {
+                if (e.target.value) composerFirstKey();
+                setDraft(e.target.value);
+              }}
+            />
+          )}
+          {phase === "probe_after" && <ConfidencePicker name="confidence-after" legend="How sure are you now?" value={after} onChange={setAfter} />}
+          {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+        </ThinkAloudScene>
+      </div>
+    ) : null;
+
   return (
     <ChatLayout
-      sidebar={{ groups: sidebarGroups, newHref: "/", newLabel: "New session", user: { name: student ?? "Student", detail: "Student" } }}
+      scene={scene}
+      sidebar={{
+        groups: sidebarGroups,
+        newHref: "/",
+        newLabel: "New session",
+        links: [
+          { label: "Your progress", href: "/progress", icon: <BarChart3 /> },
+          ...(viewer?.role === "professor" ? [{ label: "Professor studio", href: "/studio", icon: <FlaskConical /> }] : []),
+          ...(viewer ? [{ label: "Sign out", href: "/signout", icon: <LogOut /> }] : []),
+        ],
+        user: { name: viewer?.name ?? student ?? "Student", detail: viewer?.role === "professor" ? "Professor" : "Student" },
+      }}
       agents={AGENTS}
       empty={phase === "home"}
       home={{
@@ -539,7 +718,21 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           {entries.map((e) =>
             e.who === "tutor" ? (
               <Message key={e.id} role="tutor" agentName={e.agent && e.agent !== "Tutor" ? e.agent : undefined}>
-                <p>{e.text}</p>
+                <p>
+                  <RichText text={e.text} />
+                </p>
+                {e.sources && e.sources.length > 0 && (
+                  <ol className="mt-3 space-y-1 text-sm" aria-label="Sources">
+                    {e.sources.map((src, i) => (
+                      <li key={src.url} className="flex gap-2">
+                        <span className="text-muted-foreground tabular-nums">{i + 1}.</span>
+                        <a href={src.url} target="_blank" rel="noopener noreferrer" className="truncate text-brand underline-offset-2 hover:underline">
+                          {src.url.replace(/^https?:\/\/(www\.)?/, "").slice(0, 80)}
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
+                )}
               </Message>
             ) : e.who === "card" ? (
               <AnsweredCard key={e.id} entry={e} quiz={quiz} />
@@ -620,112 +813,16 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
             </Message>
           )}
 
-          {probeStep && (
-            <div id="probe" data-step={probeStep} data-probe-id={probeId ?? ""} className="space-y-6">
-              {phase === "probe_choice" && (
-                <Message role="tutor" agentName="Explain coach">
-                  <p>Rate how sure you are, explain your thinking, then answer one short &quot;what if&quot;. About a minute. Talk or type, whichever you like.</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <PillButton id="probe-type" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>
-                      Type it
-                    </PillButton>
-                    <PillButton id="probe-voice" variant="secondary" disabled={!voiceAvailable} title={voiceAvailable ? undefined : "Voice isn't set up yet"} onClick={() => { setChannel("voice"); setPhase("probe_consent"); }}>
-                      Talk it through
-                    </PillButton>
-                    {mode === "practice" && (
-                      <PillButton id="probe-skip" variant="ghost" onClick={() => { if (lastCardId !== null && lastCorrect !== null) revealResult(lastCardId, lastCorrect, lastKey ?? undefined); setPhase("feedback"); }}>
-                        Skip this time
-                      </PillButton>
-                    )}
-                  </div>
-                </Message>
-              )}
-
-              {phase === "probe_consent" && (
-                <Message role="tutor" agentName="Explain coach">
-                  <div id="probe-consent" className="space-y-3">
-                    <p>Talking it through records your voice so it can be transcribed. The audio is deleted after grading. You can switch to typing at any time.</p>
-                    <label htmlFor="probe-consent-check" className="flex items-start gap-2 text-sm">
-                      <input id="probe-consent-check" type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-                      I agree to have this short conversation recorded.
-                    </label>
-                    <div className="flex gap-2">
-                      <PillButton id="probe-consent-continue" onClick={() => setPhase("probe_before")} disabled={!consent}>
-                        Continue
-                      </PillButton>
-                      <PillButton id="probe-consent-type" variant="ghost" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>
-                        Type instead
-                      </PillButton>
-                    </div>
-                  </div>
-                </Message>
-              )}
-
-              {phase === "probe_before" && (
-                <Message role="tutor" agentName="Explain coach">
-                  <ConfidenceScale name="confidence-before" legend="How sure are you that you understand why your answer is right?" value={before} onChange={setBefore} />
-                  <div className="mt-3">
-                    <PillButton id="probe-begin" onClick={beginProbe} disabled={before === null || busy}>
-                      Continue
-                    </PillButton>
-                  </div>
-                </Message>
-              )}
-
-              {phase === "probe_explain" && (
-                <Message role="tutor" agentName="Explain coach">
-                  <p id="probe-opening">{opening}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Type below. Just your own words, no need to be polished.</p>
-                  {!retried && (
-                    <PillButton id="probe-start-over" variant="ghost" className="mt-2" onClick={startOver}>
-                      Start over
-                    </PillButton>
-                  )}
-                </Message>
-              )}
-
-              {phase === "probe_cf_loading" && <Thinking label="Explain coach is preparing a follow-up" />}
-
-              {phase === "probe_cf" && (
-                <Message role="tutor" agentName="Explain coach">
-                  <p id="probe-counterfactual">{cfPrompt}</p>
-                </Message>
-              )}
-
-              {phase === "probe_voice" &&
-                voice.lines.map((l, i) =>
-                  l.role === "agent" ? (
-                    <Message key={`v${i}`} role="tutor" agentName="Explain coach">
-                      <p>{l.text}</p>
-                    </Message>
-                  ) : (
-                    <Message key={`v${i}`} role="student">
-                      {l.text}
-                    </Message>
-                  ),
-                )}
-
-              {phase === "probe_after" && (
-                <Message role="tutor" agentName="Explain coach">
-                  <ConfidenceScale name="confidence-after" legend="How sure are you now?" value={after} onChange={setAfter} />
-                  <div className="mt-3">
-                    <PillButton id="probe-finish" onClick={finishProbe} disabled={after === null || busy}>
-                      Finish
-                    </PillButton>
-                  </div>
-                </Message>
-              )}
-
-              {phase === "probe_done" && (
-                <Message role="tutor" agentName="Explain coach">
-                  <p id="probe-done">Got it, thank you.</p>
-                  <div className="mt-3">
-                    <PillButton id="probe-continue" onClick={probeContinue}>
-                      {mode === "practice" ? "See how I did" : "Back to the quiz"}
-                    </PillButton>
-                  </div>
-                </Message>
-              )}
+          {phase === "probe_done" && (
+            <div id="probe" data-step="done" data-probe-id={probeId ?? ""}>
+              <Message role="tutor" agentName="Explain coach">
+                <p id="probe-done">Got it, thank you.</p>
+                <div className="mt-3">
+                  <PillButton id="probe-continue" onClick={probeContinue}>
+                    {mode === "practice" ? "See how I did" : "Back to the quiz"}
+                  </PillButton>
+                </div>
+              </Message>
             </div>
           )}
 
@@ -745,6 +842,17 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
               </div>
             </Message>
           )}
+
+          {tutorLive !== null &&
+            (tutorLive ? (
+              <Message role="tutor" agentName={liveAgent === "researcher" ? "Researcher" : undefined}>
+                <p id="tutor-live">
+                  <RichText text={tutorLive} />
+                </p>
+              </Message>
+            ) : (
+              <Thinking label={liveAgent === "researcher" ? (liveStep ?? "Researcher is looking for sources") + " (can take about 30 seconds)" : "Tutor is thinking"} />
+            ))}
 
           {error && (
             <p role="alert" className="text-sm text-destructive">

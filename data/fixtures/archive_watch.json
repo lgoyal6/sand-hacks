@@ -1,0 +1,63 @@
+{
+  "quizId": "sample-stats",
+  "runAt": "2026-11-15T01:40:46.616Z",
+  "window": "24h",
+  "sites": [
+    "chegg.com",
+    "coursehero.com",
+    "studocu.com",
+    "transtutors.com",
+    "vaia.com",
+    "numerade.com",
+    "bartleby.com",
+    "homeworklib.com"
+  ],
+  "items": [
+    {
+      "itemId": "sample-stats-q1",
+      "patterns": [
+        ".*sample.*25.*mean.*40.*",
+        ".*25.*40.*standard.*deviation.*"
+      ],
+      "candidates": 0,
+      "searchId": "ucd_mwh63kmjvn6m1irnv"
+    },
+    {
+      "itemId": "sample-stats-q2",
+      "patterns": [
+        ".*sample.*size.*quadruples.*nothing.*",
+        ".*quadruples.*nothing.*changes.*95.*"
+      ],
+      "candidates": 0,
+      "searchId": "ucd_mwh63pod20d9dnjwh6"
+    },
+    {
+      "itemId": "sample-stats-q3",
+      "patterns": [
+        ".*fair.*rolled.*twice.*probability.*",
+        ".*probability.*7.*fraction.*"
+      ],
+      "candidates": 0,
+      "searchId": "ucd_mwh63upu26r03bx7r4"
+    },
+    {
+      "itemId": "sample-stats-q4",
+      "patterns": [
+        ".*study.*finds.*value.*003.*",
+        ".*003.*005.*statement.*correct.*"
+      ],
+      "candidates": 0,
+      "searchId": "ucd_mwh63zq11o4za65kc"
+    },
+    {
+      "itemId": "sample-stats-q5",
+      "patterns": [
+        ".*change.*reduces.*probability.*type.*",
+        ".*reduces.*probability.*holding.*"
+      ],
+      "candidates": 0,
+      "searchId": "ucd_mwh644rvgbn76w7qp"
+    }
+  ],
+  "note": "Counts are archive pages from the last 24h whose URL contains the question's distinctive words. Candidates, not confirmed leaks."
+}

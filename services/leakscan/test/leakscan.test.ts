@@ -90,3 +90,13 @@ describe("noise filtering", () => {
     expect(isOrigin("https://quizlet.com/1/")).toBe(false);
   });
 });
+
+describe("archive url patterns", () => {
+  it("builds whole-path regexes from distinctive words, digits kept", async () => {
+    const { urlPatterns } = await import("../src/archive.js");
+    const p = urlPatterns("The average height of young adult males has a normal distribution with standard deviation of 2.5 inches.");
+    expect(p[0]).toBe(".*average.*height.*young.*adult.*");
+    expect(p.every((x) => x.startsWith(".*") && x.endsWith(".*"))).toBe(true);
+    expect(urlPatterns("What is it?")).toEqual([]);
+  });
+});

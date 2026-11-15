@@ -8,7 +8,9 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "scan": "tsx --env-file-if-exists=../../.env.local src/cli.ts",
-    "rescreen": "tsx --env-file-if-exists=../../.env.local src/rescreen.ts"
+    "rescreen": "tsx --env-file-if-exists=../../.env.local src/rescreen.ts",
+    "study": "tsx --env-file-if-exists=../../.env.local src/study.ts",
+    "archive-watch": "tsx --env-file-if-exists=../../.env.local src/archive-watch.ts"
   },
   "dependencies": {
     "@unprompted/shared": "workspace:*",

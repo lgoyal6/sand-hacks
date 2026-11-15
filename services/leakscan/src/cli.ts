@@ -63,7 +63,7 @@ async function main() {
         const out = resolve(dir, `${f.id}.png`);
         try {
           const r = await screenshot(cfg.browserWss, f.url, out, { captchaOffAtZone: flag("captcha-off-at-zone") });
-          if (r.ok) f.screenshotUrl = `/api/leaks/screens/${f.id}.png`;
+          if (r.ok) f.screenshotUrl = `/professor/screens/${f.id}.png`;
           else console.warn(`screenshot skipped for ${f.url}: ${r.reason}`);
         } catch (e) {
           console.warn(`screenshot failed for ${f.url}: ${(e as Error).message}`);

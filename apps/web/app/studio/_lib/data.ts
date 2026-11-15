@@ -3,20 +3,14 @@
 import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { Pool } from "pg";
+import type { Pool } from "pg";
+import { neon } from "@/lib/db/neon";
 import type { Item, ItemType, Quiz, SolveRate, VariantExperiment } from "@unprompted/shared";
 import { FIXTURES_DIR, readJson, REPO_ROOT } from "@/lib/db/fixtures";
 
-let pool: Pool | null | undefined;
-
-/** Neon main (pooled). Null when DATABASE_URL is unset, blank or a stray comment. */
+/** Neon main through C's shared client (lib/db/neon: libpq-compatible SSL, one pool for the app). */
 export function neonMain(): Pool | null {
-  if (pool !== undefined) return pool;
-  const url = process.env.DATABASE_URL?.trim();
-  if (!url || url.startsWith("#")) return (pool = null);
-  pool = new Pool({ connectionString: url, max: 3 });
-  pool.on("error", (err) => console.error("[studio/neon] idle client error:", err.message));
-  return pool;
+  return neon();
 }
 
 export type Source = "neon" | "fixtures";

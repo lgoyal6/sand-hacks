@@ -75,5 +75,173 @@
     "correct": 7,
     "solveRate": 1.0,
     "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q1",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q2",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q3",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q4",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q5",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q6",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q1",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q2",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q3",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q4",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q5",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q6",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "bio-cells-q1",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "bio-cells-q2",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "bio-cells-q3",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "bio-cells-q4",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "bio-cells-q5",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "bio-cells-q6",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q1",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q2",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q3",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q4",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q5",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "econ-micro-q6",
+    "runs": 1,
+    "correct": 1,
+    "solveRate": 1.0,
+    "agentSolvable": true
   }
 ]

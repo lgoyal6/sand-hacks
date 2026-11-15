@@ -2,10 +2,18 @@ import { NextResponse } from "next/server";
 import { createAttempt, listAttempts, type AttemptMode } from "../../quiz/_lib/attempts";
 import { getQuiz } from "../../quiz/_lib/quizzes";
 import { planProbes } from "../../_lib/policy";
+import { getViewer } from "@/lib/auth/server";
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { quizId?: string; mode?: AttemptMode; studentPseudonym?: string; consentAudio?: boolean; itemIds?: string[] };
   if (body.studentPseudonym !== undefined && !/^[\w-]{1,64}$/.test(body.studentPseudonym)) body.studentPseudonym = undefined;
+  // Signed in: the pseudonym comes from the user id, never from the browser. The demo student may tag
+  // runs (agent-/e2e-/test-) so the red-team runner and QA can label their sessions.
+  const viewer = await getViewer();
+  if (viewer) {
+    const tag = body.studentPseudonym && /^(agent|e2e|test)-/.test(body.studentPseudonym) && viewer.demo ? body.studentPseudonym : null;
+    body.studentPseudonym = tag ?? viewer.pseudonym;
+  }
   const quiz = body.quizId ? await getQuiz(body.quizId) : null;
   if (!quiz) return NextResponse.json({ error: "quiz not found" }, { status: 404 });
   const mode: AttemptMode = body.mode === "graded" ? "graded" : "practice";

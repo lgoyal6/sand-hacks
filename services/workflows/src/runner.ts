@@ -149,7 +149,7 @@ export async function runTransform(
     try {
       const res = await reattack(deps.attacker, quiz, alive.map((a) => ({ itemId: a.row.candidateItemId, candidate: a.row.experiment.candidate })), batchId);
       rates = res.solveRates;
-      emit({ type: "attack_done", quizId: res.variantQuiz.id, solveRates: [...rates.values()] });
+      emit({ type: "attack_done", quizId: res.variantQuiz.id, solveRates: [...rates.values()], ...(res.excluded ? { excluded: res.excluded } : {}) });
     } catch (e) {
       // Without a re-attack we can't claim agent resistance: leave them proposed, say why.
       const msg = `re-attack failed, candidates left unverified: ${String((e as Error).message ?? e).slice(0, 300)}`;

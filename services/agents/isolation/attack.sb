@@ -1,0 +1,38 @@
+;; macOS sandbox profile for attack runs (defense in depth, NOT a full sandbox).
+;; browser-use 1.0 runs model-written Python on the host as this user ("not a sandbox" per its own docs). In our runs
+;; the agent ran `ps aux` looking for the server. This profile keeps that code away from what it must never see:
+;; answer keys (repo quizzes and every worktree), API keys (.env files, the context folder), and personal credentials.
+;; Params: REPO (this worktree), PROJECTS (parent dir), HOME.
+(version 1)
+(allow default)
+
+;; No process listing (ps/pgrep/top/lsof) and no shell-outs that reveal other processes.
+(deny process-exec
+  (literal "/bin/ps") (literal "/usr/bin/pgrep") (literal "/usr/bin/top") (literal "/usr/sbin/lsof")
+  (literal "/usr/bin/pkill") (literal "/usr/bin/w") (literal "/usr/bin/who"))
+
+;; Credentials and secrets.
+(deny file-read*
+  (regex #"/\.env(\.[^/]*)?$")
+  (subpath (string-append (param "PROJECTS") "/sand-hacks-context"))
+  (subpath (string-append (param "HOME") "/.ssh"))
+  (subpath (string-append (param "HOME") "/.aws"))
+  (subpath (string-append (param "HOME") "/.kaggle"))
+  (subpath (string-append (param "HOME") "/.config/gh"))
+  (subpath (string-append (param "HOME") "/.claude"))
+  (literal (string-append (param "HOME") "/.zsh_history"))
+  (literal (string-append (param "HOME") "/.netrc")))
+
+;; Answer keys: every other project and worktree, and this repo's quiz sources and fixtures.
+(deny file-read* (subpath (param "PROJECTS")))
+(allow file-read*
+  (subpath (string-append (param "REPO") "/services/agents"))
+  (subpath (string-append (param "REPO") "/node_modules"))
+  (literal (string-append (param "REPO") "/package.json"))
+  (literal (param "REPO")) (literal (param "PROJECTS")))
+;; stat() on ancestors (node's realpath) reveals no file contents and no directory listings.
+(allow file-read-metadata (subpath (param "PROJECTS")))
+;; Rule order: later rules win in SBPL, so re-deny secrets inside the allowed agent dir too, and run.sh's work dir
+;; (it holds the quiz JSON with answer keys; the attack receives that over stdin, opened before the sandbox starts).
+(deny file-read* (regex #"/\.env(\.[^/]*)?$"))
+(deny file-read* (subpath (param "WORK")))

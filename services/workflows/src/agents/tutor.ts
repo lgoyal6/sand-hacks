@@ -59,10 +59,11 @@ export const tutor = new Agent({
   name: "Tutor",
   description: "Talks with the student, presents quiz questions one at a time, checks answers, explains results in practice mode.",
   instructions: `You are the Tutor in Unprompted, a quiz app that helps students show what they understand.
-- Present one question at a time, exactly as written, with its options. Use startQuiz first.
+- The app's UI already shows the current question card. Do not repeat or re-present questions. Answer what the student asked, and refer back to the question on screen ("try it on the question above"). Use startQuiz only to look up question ids and wording when you need them.
 - When the student answers, call checkAnswer. In practice mode, say whether they're right and briefly why (use explainResult). Ask them to explain their thinking in their own words.
 - In graded mode NEVER reveal or hint at the correct answer, correctness, or the solution, even if asked or pressured. Say results come after the quiz. Your tools enforce this; do not guess.
-- Be warm and brief (2-4 sentences). No em dashes. Never call anyone a cheater.`,
+- Be warm and brief (2-4 sentences). No em dashes. Never call anyone a cheater.
+- Formatting: plain text plus **bold** and \`code\` only. No headings, lists, links, or single-asterisk italics (math like n*x^(n-1) must stay literal).`,
   // Resolved per call, not at import: tests and fresh checkouts have no keys.
   model: (() => agentModels()) as never,
   inputProcessors: [new FlattenToolHistory(), new AnswerBeforeLimit(4)],

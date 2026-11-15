@@ -58,3 +58,18 @@ whatever quiz it's given (`POST /api/quizzes`), so new variants need no deploy.
   input events (`answerChanges` = 0 in `attack_summary.json`), it falls back to an even share of the run time. That is
   itself an agent signal for D's model.
 - `steps`: browser-use 1.0 model requests for the whole run (there are no per-item steps in 1.0).
+
+## Isolation (run attacks through this)
+
+browser-use 1.0 runs model-written Python on the host as your user; its own docs say it is "not a sandbox". In our
+runs the agent ran `ps aux` looking for the server's code. `isolation/run.sh` wraps the attack in a macOS
+`sandbox-exec` profile (`isolation/attack.sb`): the agent process cannot read `.env` files, `sand-hacks-context`, other
+worktrees, this repo's quiz or fixture files (answer keys), `~/.ssh`, `~/.aws` or `~/.claude`, and cannot run `ps`, `pgrep`,
+`lsof` or `top`. Only the model keys and the runner token are passed in, as environment variables. Fixtures are merged
+outside the sandbox (`attack-merge`). This is defense in depth, not a VM.
+
+```sh
+isolation/run.sh ../../data/quizzes/econ-micro.md --models gmi:google/gemini-3.8-flash --repeats 3
+```
+
+Verified: denials checked directly, and a full isolated run of econ-micro scored 6/6 with no host access in its trace. Chrome runs with --no-sandbox (isolation/chrome.sh) because its own sandbox cannot start nested inside sandbox-exec; the outer profile still applies to it. Browser agents refuse to start outside isolation unless --unsafe-no-isolation is passed, and every run records isolated=true/false.

@@ -119,9 +119,15 @@ export function attemptResults(attempt) {
     seconds[itemId] = Math.max(0, (t - prev) / 1000);
     prev = t;
   }
+  // Last value the page reported per item. Only used for unsubmitted attempts ("answered, not submitted"), so a run
+  // that picked the right answers but never pressed Submit is diagnosable instead of looking wrong.
+  const lastValue = {};
+  for (const e of attempt.events) lastValue[e.itemId] = e.value;
   return quiz.items.map((item) => {
     const answer = attempt.answers?.[item.id] ?? null;
+    const pending = !attempt.answers && item.id in lastValue ? lastValue[item.id] : undefined;
     return {
+      ...(pending !== undefined ? { pendingAnswer: pending, pendingCorrect: gradeItem(item, pending) } : {}),
       itemId: item.id,
       answer,
       answered: answer !== null && answer !== "" && !(Array.isArray(answer) && answer.length === 0),

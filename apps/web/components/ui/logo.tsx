@@ -19,7 +19,6 @@ export function FaceMark({
   const tiny = size <= 20;
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" role="img" aria-label={title} className={cn("shrink-0", className)}>
-      <title>{title}</title>
       {tiny ? (
         <>
           <circle cx="24" cy="24" r="22.5" fill={body} />

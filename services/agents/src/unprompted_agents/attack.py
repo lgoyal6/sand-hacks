@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .runners import RUNNERS, RunOutcome, save_trace
+from .runners import RUNNERS, RunOutcome, isolated, save_trace
 from .sandbox import Sandbox
 from .stats import solve_rates, summary
 
@@ -46,7 +46,9 @@ def _now() -> str:
 
 def to_agent_runs(quiz: dict, outcome: RunOutcome, attempts: list[dict], item_ids: list[str]) -> tuple[list[dict], dict]:
     """One AgentRun per item for this run, graded by the sandbox. Uses the first submitted attempt, like a quiz
-    that counts the first try; if the agent never submitted, every item is incorrect."""
+    that counts the first try. If the agent never submitted, the caller drops these AgentRuns (outcome
+    "did_not_submit" is reported separately, never as wrong answers); meta.answeredNotSubmitted keeps whatever the
+    agent had selected, graded, for diagnosis."""
     submitted = [a for a in attempts if a.get("submittedAt")]
     attempt = submitted[0] if submitted else (attempts[0] if attempts else None)
     by_item = {i["itemId"]: i for i in (attempt["items"] if attempt else [])}
@@ -71,6 +73,12 @@ def to_agent_runs(quiz: dict, outcome: RunOutcome, attempts: list[dict], item_id
                 "runAt": _now(),
             }
         )
+    pending = {}
+    if attempt and not attempt.get("submittedAt"):
+        for item_id, r in by_item.items():
+            if r.get("pendingAnswer") is not None or r.get("answered"):
+                pending[item_id] = {"answer": r.get("pendingAnswer", r.get("answer")),
+                                    "correct": r.get("pendingCorrect", r.get("correct"))}
     meta = {
         "runId": outcome.run_id,
         "agent": outcome.agent,
@@ -81,6 +89,7 @@ def to_agent_runs(quiz: dict, outcome: RunOutcome, attempts: list[dict], item_id
         "seconds": round(outcome.seconds, 2),
         "costUsd": outcome.cost_usd,
         "submitted": bool(submitted),
+        "answeredNotSubmitted": pending or None,
         "attemptsStarted": len(attempts),
         "score": (sum(r["correct"] for r in runs) / n) if n else None,
         "answerChanges": {k: v.get("answerChanges") for k, v in by_item.items()},
@@ -140,13 +149,18 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
             f"steps={meta['steps']} {meta['seconds']}s" + (f" error={meta['error']}" if meta["error"] else ""))
         meta["infraReason"] = infra_reason(meta["status"], meta["error"], meta["submitted"])
         meta["infraError"] = meta["infraReason"] is not None
+        meta["isolated"] = isolated()
+        meta["outcome"] = "submitted" if meta["submitted"] else ("infra" if meta["infraError"] else "did_not_submit")
         n_ok = sum(r["correct"] for r in runs)
         emit("running", f"Run {i}/{len(plan)}: excluded ({meta['infraReason']})" if meta["infraError"]
+             else f"Run {i}/{len(plan)}: {short} did not submit ({meta['status']}), not scored" if not meta["submitted"]
              else f"Run {i}/{len(plan)}: {short} got {n_ok}/{len(item_ids)} right in {meta['seconds']:.0f}s",
              {"name": "attack.run", "args": {"runId": run_id}, "result": {"correct": n_ok, "total": len(item_ids),
               "submitted": meta["submitted"], "providerError": meta["infraError"]}})
         if meta["infraError"]:
             log(f"[attack]   excluded from solve rates: {meta['infraReason']}")
+        elif not meta["submitted"]:
+            log(f"[attack]   did not submit ({meta['status']}): not scored; selected={meta['answeredNotSubmitted']}")
         else:
             all_runs += runs
         metas.append(meta)
@@ -156,7 +170,8 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
         "solveRates": solve_rates(all_runs, item_ids),
         "summary": {
             "quizId": quiz["id"],
-            **summary(all_runs, [m for m in metas if not m["infraError"]]),
+            **summary(all_runs, [m for m in metas if m["outcome"] == "submitted"]),
+            "didNotSubmit": sum(m["outcome"] == "did_not_submit" for m in metas),
             "infraErrors": sum(m["infraError"] for m in metas),
             "infraReasons": {r: sum(m.get("infraReason") == r for m in metas) for r in {m.get("infraReason") for m in metas} if r},
         },

@@ -40,7 +40,14 @@ export interface Judge {
 
 /** Workstream A's attack(): runs real browser agents against a quiz in our sandbox. */
 export interface Attacker {
-  attack(quiz: Quiz, itemIds: string[]): Promise<{ solveRates: SolveRate[] }>;
+  attack(quiz: Quiz, itemIds: string[]): Promise<AttackResult>;
+}
+
+export interface AttackResult {
+  /** Solve rates over VALID runs only: the agent submitted, and no provider error. */
+  solveRates: SolveRate[];
+  /** Runs left out, so nobody mistakes "didn't finish" or "provider failed" for "couldn't solve". */
+  excluded?: { unsubmitted: number; providerErrors: number; unisolated?: number; total: number };
 }
 
 export interface TransformDeps {
@@ -89,7 +96,7 @@ export type TransformEvent =
   | { type: "rejected"; experiment: VariantExperiment }
   | { type: "verified"; experiment: VariantExperiment }
   | { type: "attack_started"; quizId: string; itemIds: string[] }
-  | { type: "attack_done"; quizId: string; solveRates: SolveRate[] }
+  | { type: "attack_done"; quizId: string; solveRates: SolveRate[]; excluded?: AttackResult["excluded"] }
   | { type: "error"; experimentId?: string; message: string };
 
 export interface TransformResult {

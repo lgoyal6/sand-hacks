@@ -1,4 +1,5 @@
 import type { ExplainGapCell } from "@unprompted/shared";
+import { Check, CircleDashed, Minus, RotateCcw, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type Quadrant = ExplainGapCell["quadrant"];
@@ -11,11 +12,11 @@ export function quadrantOf(correct: boolean, understanding: number | null): Quad
   return explained ? "near_miss" : "wrong_unexplained";
 }
 
-export const QUADRANTS: { id: Quadrant; title: string; hint: string; glyph: string; cls: string }[] = [
-  { id: "correct_explained", title: "Correct and explained", hint: "Understanding shows", glyph: "✓", cls: "bg-understood-soft text-understood" },
-  { id: "explain_gap", title: "Correct, not explained", hint: "The explain gap: suggest a follow-up chat", glyph: "◐", cls: "bg-gap-soft text-gap" },
-  { id: "near_miss", title: "Wrong, but explained", hint: "Near miss: the reasoning is there", glyph: "↺", cls: "bg-near-miss-soft text-near-miss" },
-  { id: "wrong_unexplained", title: "Wrong, not explained", hint: "Review the topic", glyph: "·", cls: "bg-unexplained-soft text-unexplained" },
+export const QUADRANTS: { id: Quadrant; title: string; hint: string; Icon: LucideIcon; cls: string }[] = [
+  { id: "correct_explained", title: "Correct and explained", hint: "Understanding shows", Icon: Check, cls: "bg-understood-soft text-understood" },
+  { id: "explain_gap", title: "Correct, not explained", hint: "The explain gap: suggest a follow-up chat", Icon: CircleDashed, cls: "bg-gap-soft text-gap" },
+  { id: "near_miss", title: "Wrong, but explained", hint: "Near miss: the reasoning is there", Icon: RotateCcw, cls: "bg-near-miss-soft text-near-miss" },
+  { id: "wrong_unexplained", title: "Wrong, not explained", hint: "Review the topic", Icon: Minus, cls: "bg-unexplained-soft text-unexplained" },
 ];
 
 export function QuadrantSummary({ cells }: { cells: ExplainGapCell[] }) {
@@ -36,7 +37,7 @@ export function QuadrantSummary({ cells }: { cells: ExplainGapCell[] }) {
   );
 }
 
-/** Student x question grid. Each cell carries a glyph as well as a color. */
+/** Student x question grid. Each cell carries an icon as well as a color. */
 export function ExplainGapGrid({
   students,
   items,
@@ -74,7 +75,7 @@ export function ExplainGapGrid({
                   const q = meta.get(c.quadrant)!;
                   return (
                     <td key={it.id} className={cn("h-9 w-12 rounded-md text-center font-semibold", q.cls)} title={`${q.title} · explanation ${c.understanding}/4`}>
-                      {q.glyph}
+                      <q.Icon className="mx-auto size-4" aria-hidden />
                     </td>
                   );
                 }

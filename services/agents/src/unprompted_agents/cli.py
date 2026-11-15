@@ -40,6 +40,14 @@ def write_fixtures(out: Path, quiz_id: str, result: dict, runtime: bool = False)
     quiz is measured the same way.
     """
     summary = {**result["summary"], "quizId": quiz_id, "runs": result["runs"]}
+    summary["isolated"] = bool(result["runs"]) and all(m.get("isolated") is True for m in result["runs"])
+    if not summary["isolated"]:
+        # Headline numbers come only from sandboxed agents. Anything else is kept, labelled, in the history file.
+        hist = _load(out / "attack_history_unisolated.json", {})
+        hist.setdefault(quiz_id, []).append({**summary, "agentRuns": result["agentRuns"]})
+        _dump(out / "attack_history_unisolated.json", hist)
+        print(f"[fixtures] {quiz_id}: runs were not isolated; saved to attack_history_unisolated.json, headline untouched")
+        return
     prefix = "runtime_" if runtime else ""
     runs = [r for r in _load(out / f"{prefix}agent_runs.json", []) if r["quizId"] != quiz_id]
     _dump(out / f"{prefix}agent_runs.json", runs + [{**r, "quizId": quiz_id} for r in result["agentRuns"]])
@@ -56,7 +64,10 @@ def write_fixtures(out: Path, quiz_id: str, result: dict, runtime: bool = False)
 
 
 def main(argv: list[str] | None = None) -> int:
-    load_dotenv(REPO / ".env.local")
+    try:
+        load_dotenv(REPO / ".env.local")
+    except PermissionError:
+        pass  # isolated run (isolation/run.sh): keys arrive via the environment instead
     os.environ.setdefault("ANONYMIZED_TELEMETRY", "false")
 
     ap = argparse.ArgumentParser(prog="attack", description="Run real browser agents on a sandbox quiz.")
@@ -70,14 +81,21 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--models", default="gemini:gemini-3.5-flash",
                     help="comma-separated; gemini:<id>, gmi:<id> (GMI Cloud, OpenAI-compatible)")
     ap.add_argument("--repeats", type=int, default=3)
+    ap.add_argument("--max-steps", type=int, default=60,
+                    help="browser-use step limit per run (variant pages can need more than the original's 10-30)")
     ap.add_argument("--out-dir", default=str(REPO / "data" / "fixtures"))
     ap.add_argument("--traces-dir", default=str(REPO / "traces"))
     ap.add_argument("--json", action="store_true", help="print result JSON to stdout, don't write fixtures")
+    ap.add_argument("--unsafe-no-isolation", action="store_true",
+                    help="allow browser agents outside isolation/attack.sb (recorded as isolated=false on every run)")
     ap.add_argument("--events", action="store_true",
                     help="stream NDJSON agent events to stdout (shared agent-event shape, agentId quiz-checker); "
                          "the last line is status 'done' with the full result. Implies --json; logs go to stderr")
     a = ap.parse_args(argv)
 
+    os.environ["ATTACK_MAX_STEPS"] = str(a.max_steps)
+    if a.unsafe_no_isolation:
+        os.environ["UNPROMPTED_UNSAFE_NO_ISOLATION"] = "1"
     if a.quiz.endswith(".md"):
         from .quiz_md import parse_quiz_md
 
@@ -144,6 +162,25 @@ def _report(a, quiz, result) -> int:
     for r in result["solveRates"]:
         print(f"  {r['itemId']:<16} {r['correct']}/{r['runs']}  solvable={r['agentSolvable']}")
     print(f"updated fixtures in {out} for quiz {quiz['id']} ({a.target})")
+    return 0
+
+
+def merge_main(argv: list[str] | None = None) -> int:
+    """Outside the sandbox: merge a sandboxed `attack --json` result into the fixtures."""
+    ap = argparse.ArgumentParser(prog="attack-merge")
+    ap.add_argument("result")
+    ap.add_argument("--quiz-id", required=True)
+    ap.add_argument("--target", choices=["sandbox", "runtime"], default="sandbox")
+    ap.add_argument("--out-dir", default=str(REPO / "data" / "fixtures"))
+    a = ap.parse_args(argv)
+    result = json.loads(Path(a.result).read_text())
+    s = result["summary"]
+    if s["accuracy"] is None:
+        print(f"No usable runs ({s['infraErrors']} infra, {s.get('didNotSubmit', 0)} did not submit); fixtures unchanged.")
+        return 1
+    write_fixtures(Path(a.out_dir), a.quiz_id, result, runtime=a.target == "runtime")
+    print(f"{a.quiz_id}: {s['itemCorrect']}/{s['itemRuns']} ({s['accuracy']:.0%}, 95% CI {s['accuracyCI95'][0]:.0%}-"
+          f"{s['accuracyCI95'][1]:.0%}); {s['infraErrors']} infra, {s.get('didNotSubmit', 0)} did not submit; fixtures updated")
     return 0
 
 

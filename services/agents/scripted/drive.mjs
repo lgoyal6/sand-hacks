@@ -97,6 +97,10 @@ async function session(browser, label, seed) {
   const t0 = Date.now();
   let probesSkipped = 0;
   try {
+    // Neon Auth: pages need a session. Sign-in happens before the attempt exists, so it adds no attempt telemetry.
+    await page.goto(`${BASE}/signin`);
+    await page.locator("#demo-student").click();
+    await page.waitForURL((u) => !u.pathname.startsWith("/signin"), { timeout: 30000 });
     await page.goto(`${BASE}/quiz/${QUIZ}?mode=practice&student=${label}`);
     await io.click("#start-practice");
     for (const [i, item] of quiz.items.entries()) {

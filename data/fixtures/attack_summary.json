@@ -39,7 +39,8 @@
       "probesTriggered": null,
       "stuckAtProbe": false,
       "infraError": true,
-      "infraReason": "provider content filter"
+      "infraReason": "provider content filter",
+      "outcome": "infra"
     },
     {
       "runId": "run-49bc9c2d39",
@@ -58,7 +59,8 @@
       "probesTriggered": null,
       "stuckAtProbe": false,
       "infraError": true,
-      "infraReason": "provider content filter"
+      "infraReason": "provider content filter",
+      "outcome": "infra"
     },
     {
       "runId": "run-b5c57f67e6",
@@ -77,7 +79,8 @@
       "probesTriggered": null,
       "stuckAtProbe": false,
       "infraError": true,
-      "infraReason": "provider content filter"
+      "infraReason": "provider content filter",
+      "outcome": "infra"
     },
     {
       "runId": "run-a2fc3b9d8f",
@@ -96,7 +99,8 @@
       "probesTriggered": null,
       "stuckAtProbe": false,
       "infraError": true,
-      "infraReason": "provider rejected request"
+      "infraReason": "provider rejected request",
+      "outcome": "infra"
     },
     {
       "runId": "run-0f3f93b66f",
@@ -121,7 +125,8 @@
       "probesTriggered": null,
       "stuckAtProbe": false,
       "infraError": true,
-      "infraReason": "provider rejected request"
+      "infraReason": "provider rejected request",
+      "outcome": "infra"
     },
     {
       "runId": "run-ee6fdd9ccf",
@@ -146,7 +151,8 @@
       "probesTriggered": null,
       "stuckAtProbe": false,
       "infraError": false,
-      "infraReason": null
+      "infraReason": null,
+      "outcome": "submitted"
     },
     {
       "runId": "run-722a610db6",
@@ -171,7 +177,8 @@
       "probesTriggered": null,
       "stuckAtProbe": false,
       "infraError": false,
-      "infraReason": null
+      "infraReason": null,
+      "outcome": "submitted"
     },
     {
       "runId": "run-429d7babcc",
@@ -196,7 +203,8 @@
       "probesTriggered": null,
       "stuckAtProbe": false,
       "infraError": false,
-      "infraReason": null
+      "infraReason": null,
+      "outcome": "submitted"
     },
     {
       "runId": "run-2320081cff",
@@ -221,7 +229,8 @@
       "probesTriggered": null,
       "stuckAtProbe": false,
       "infraError": false,
-      "infraReason": null
+      "infraReason": null,
+      "outcome": "submitted"
     },
     {
       "runId": "run-a9493bc193",
@@ -240,12 +249,15 @@
       "probesTriggered": null,
       "stuckAtProbe": false,
       "infraError": true,
-      "infraReason": "local browser failed to start"
+      "infraReason": "local browser failed to start",
+      "outcome": "infra"
     }
   ],
   "infraReasons": {
     "provider content filter": 3,
     "provider rejected request": 2,
     "local browser failed to start": 1
-  }
+  },
+  "didNotSubmit": 0,
+  "isolated": false
 }
