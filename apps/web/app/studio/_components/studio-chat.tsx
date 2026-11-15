@@ -10,6 +10,7 @@ import {
   AGENT_ORDER,
   AGENT_IDS,
   AGENT_ROLE,
+  cardToExperiment,
   cardsFromExperiments,
   initialRun,
   reduceRun,
@@ -18,6 +19,8 @@ import {
   type VariantCard as Card,
 } from "../_lib/agents";
 import { VariantCard, type Decision } from "./variant-card";
+import { RaceCard } from "./race-card";
+import { buildRace, type RaceData } from "../_lib/race";
 
 type Action = { label: string; run: () => void; primary?: boolean };
 type Msg =
@@ -262,12 +265,16 @@ export function StudioChat({ data }: { data: StudioData }) {
     if (m.kind === "saved") {
       return (
         <Message key={m.id} role="assistant" agentName={nameFor(m)}>
-          <p>Saved variants for this quiz:</p>
-          <div className="mt-3 space-y-2">
-            {cardsFromExperiments(data.experiments).map((c) => (
-              <VariantCard key={c.id} card={withDecision(c)} onDecide={(id, d) => decide(id, d)} />
-            ))}
-          </div>
+          <p>Every rewrite tried so far, one race per question:</p>
+          <SavedRaces itemIds={[...new Set(data.experiments.map((e) => e.itemId))]} onMerge={(id) => decide(id, "approve")} />
+          <details className="mt-2 text-sm">
+            <summary className="cursor-pointer text-xs text-muted-foreground">Show the versions</summary>
+            <div className="mt-2 space-y-2">
+              {cardsFromExperiments(data.experiments).map((c) => (
+                <VariantCard key={c.id} card={withDecision(c)} onDecide={(id, d) => decide(id, d)} />
+              ))}
+            </div>
+          </details>
         </Message>
       );
     }
@@ -385,13 +392,25 @@ function AttackSummary({ data }: { data: StudioData }) {
 
 function RunResult({ run, withDecision, onDecide }: { run: RunState; withDecision: (c: Card) => Card; onDecide: (id: string, d: Decision, runId?: string) => Promise<void> }) {
   const cards = run.order.map((id) => withDecision(run.cards[id]!));
+  const exps = cards.map(cardToExperiment).filter((e): e is NonNullable<typeof e> => e != null);
+  const items = [...new Set(exps.map((e) => e.itemId))];
   const count = (...s: Card["status"][]) => cards.filter((c) => s.includes(c.status)).length;
   const busy = AGENT_ORDER.map((n) => run.agents[n]).find((a) => a.status === "working" || a.status === "thinking");
   return (
     <>
       {run.label ? <p className="text-sm text-muted-foreground">{run.label}</p> : null}
+      {items.map((itemId) => (
+        <div key={itemId} className="mt-3">
+          <RaceCard
+            data={buildRace(itemId, exps, null, null)}
+            onMerge={run.mode === "replay" ? undefined : (id) => onDecide(id, "approve", run.awaiting?.includes(id) ? run.runId : undefined)}
+          />
+        </div>
+      ))}
       {cards.length ? (
-        <div className="mt-3 space-y-2">
+        <details className="mt-2 text-sm">
+          <summary className="cursor-pointer text-xs text-muted-foreground">Show the versions</summary>
+          <div className="mt-2 space-y-2">
           {cards.map((c) => (
             <VariantCard
               key={c.id}
@@ -400,7 +419,8 @@ function RunResult({ run, withDecision, onDecide }: { run: RunState; withDecisio
               onDecide={run.mode === "replay" ? undefined : (id, d) => onDecide(id, d, run.awaiting?.includes(id) ? run.runId : undefined)}
             />
           ))}
-        </div>
+          </div>
+        </details>
       ) : null}
       {run.running ? (
         <div className="mt-3">
@@ -413,5 +433,29 @@ function RunResult({ run, withDecision, onDecide }: { run: RunState; withDecisio
         </p>
       ) : null}
     </>
+  );
+}
+
+/** Race cards from the server (live Neon branch list + same-model baseline). */
+function SavedRaces({ itemIds, onMerge }: { itemIds: string[]; onMerge: (id: string) => Promise<void> }) {
+  const [races, setRaces] = useState<RaceData[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    Promise.all(itemIds.map((id) => fetch(`/studio/api/race?item=${encodeURIComponent(id)}`).then((r) => (r.ok ? (r.json() as Promise<RaceData>) : Promise.reject(new Error(String(r.status)))))))
+      .then((rs) => live && setRaces(rs))
+      .catch(() => live && setError("Couldn't load the races."));
+    return () => {
+      live = false;
+    };
+  }, [itemIds.join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (error) return <p className="mt-2 text-sm text-muted-foreground">{error}</p>;
+  if (!races) return <div className="mt-3"><Thinking label="Loading the races from Neon" /></div>;
+  return (
+    <div className="mt-3 space-y-3">
+      {races.map((r) => (
+        <RaceCard key={r.itemId} data={r} onMerge={onMerge} />
+      ))}
+    </div>
   );
 }

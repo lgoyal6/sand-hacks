@@ -57,7 +57,7 @@ export interface VariantCard {
   status: CardStatus;
   experiment?: VariantExperiment;
   rationale?: string;
-  checks: { label: string; passed: boolean; detail: string }[];
+  checks: { key?: string; label: string; passed: boolean; detail: string }[];
   reason?: string;
 }
 
@@ -176,7 +176,7 @@ export function reduceRun(prev: RunState, e: StudioEvent): RunState {
     case "check": {
       const c = s.cards[e.experimentId];
       if (!c) return s;
-      c.checks.push({ label: CHECK_LABEL[e.check] ?? e.check, passed: e.passed, detail: e.detail });
+      c.checks.push({ key: e.check, label: CHECK_LABEL[e.check] ?? e.check, passed: e.passed, detail: e.detail });
       if (e.check === "answerKeyConsistent") {
         set("Answer checker", e.passed ? "complete" : "complete", `${short(e.experimentId)}: ${e.passed ? "key reproduced 3/3" : "key not reproduced"}`);
       } else {
@@ -237,4 +237,15 @@ export function cardsFromExperiments(experiments: VariantExperiment[]): VariantC
       .filter(([k, v]) => v !== undefined && k !== "newSolveRate")
       .map(([k, v]) => ({ label: CHECK_LABEL[k] ?? k, passed: Boolean(v), detail: "" })),
   }));
+}
+
+/** A card as a VariantExperiment (status and checks as known so far), for the race card. */
+export function cardToExperiment(c: VariantCard): VariantExperiment | null {
+  if (!c.experiment) return null;
+  const status: VariantExperiment["status"] =
+    c.status === "approved" ? "approved" : c.status === "verified" ? "verified" : c.status === "rejected" ? "rejected" : "proposed";
+  const checks = { ...c.experiment.checks };
+  for (const ck of c.checks) if (ck.key && ck.key !== "newSolveRate") (checks as Record<string, unknown>)[ck.key] = ck.passed;
+  const reasons = c.experiment.reasons.length ? c.experiment.reasons : c.reason ? [c.reason] : [];
+  return { ...c.experiment, status, checks, reasons: c.status === "unverified" && c.reason ? [...reasons.filter((r) => r !== c.reason), `not verified: ${c.reason}`] : reasons };
 }

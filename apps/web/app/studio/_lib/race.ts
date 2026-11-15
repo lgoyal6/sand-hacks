@@ -78,8 +78,10 @@ export function buildRace(itemId: string, experiments: VariantExperiment[], bran
           e.status,
           failedAt === "skill" ? last : undefined,
         ),
+        // Only a decided version has an agent verdict. A "proposed" one (including a retake with no
+        // valid runs, which may still carry newSolveRate 0 of 0) is unmeasured, never "failed".
         agentsFail:
-          r === undefined
+          r === undefined || e.status === "proposed"
             ? { state: e.status === "proposed" ? "pending" : "skipped", detail: e.status === "proposed" ? last?.replace(/^not verified: /, "") : undefined }
             : {
                 state: e.status === "verified" || e.status === "approved" ? "passed" : "failed",
