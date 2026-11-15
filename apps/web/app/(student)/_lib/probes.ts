@@ -14,7 +14,7 @@ const geminiAvailable = () => Boolean(process.env.GEMINI_API_KEY?.trim() || proc
 // Probe plus runtime fields that don't belong in the shared contract.
 export type ProbeRecord = Probe & {
   quizId: string;
-  mode: "voice" | "typed";
+  mode: "voice" | "typed" | "accommodation";
   createdAt: string;
   completedAt?: string;
   explanation?: string;
@@ -47,7 +47,7 @@ type ProbeRow = {
   council_scores_json: Probe["councilScores"] | null;
   final_score: number | null;
   professor_approved: boolean | null;
-  mode: "voice" | "typed" | null;
+  mode: "voice" | "typed" | "accommodation" | null;
   created_at: Date | null;
   completed_at: Date | null;
   explanation: string | null;
@@ -232,4 +232,20 @@ export async function counterfactualFor(item: Item, answer: string | string[] | 
   if (f.source !== "gemini") return { prompt: f.question, source: "template" as const };
   await updateJson<CfCache>(CF_CACHE, {}, (c) => ({ ...c, [exactKey]: { prompt: f.question, model: f.model, itemAnswer, at: new Date().toISOString() } }));
   return { prompt: f.question, source: "gemini" as const, model: f.model };
+}
+
+// Typed-input signals per textarea, stored separately so a missing column never blocks the main probe update.
+export async function saveExplainSignals(id: string, signals: Record<string, unknown>) {
+  const db = neon();
+  if (db && (await neonGetProbe(id))) {
+    try {
+      await db.query("update probe set explain_signals_json = $2::jsonb where id = $1", [id, JSON.stringify(signals)]);
+      return "neon";
+    } catch (err) {
+      console.warn("[probes] explain_signals_json not stored yet:", (err as Error).message);
+      return "none";
+    }
+  }
+  await updateJson<ProbeRecord[]>(FILE, [], (all) => all.map((p) => (p.id === id ? { ...p, explainSignals: signals } : p)));
+  return "file";
 }
