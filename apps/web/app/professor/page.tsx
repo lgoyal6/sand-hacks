@@ -200,15 +200,6 @@ async function TreePanel() {
   );
 }
 
-const EVIDENCE_CLASS: Record<string, string> = {
-  "typed by hand": "text-foreground",
-  voice: "text-foreground",
-  pasted: "text-gap",
-  "appeared without typing": "text-gap",
-  "no text": "text-muted-foreground",
-  "excluded (accommodation)": "text-muted-foreground",
-};
-
 async function ExplanationsPanel() {
   await connection();
   const [ev, quiz] = await Promise.all([loadProbeEvidence(), loadQuiz()]);
@@ -243,13 +234,23 @@ async function ExplanationsPanel() {
                   </td>
                   <td className="num py-2 pr-3 text-right">{r.score == null ? <span className="text-xs text-muted-foreground">not graded</span> : `${r.score}/4`}</td>
                   <td className="py-2 text-xs">
-                    <span className={EVIDENCE_CLASS[r.evidence]}>{r.evidence === "appeared without typing" ? "Text appeared without typing" : r.evidence.charAt(0).toUpperCase() + r.evidence.slice(1)}</span>
-                    {r.mode === "typed" && r.chars > 0 && (
-                      <span className="num ml-2 text-muted-foreground">
-                        {r.keys} keys for {r.chars} characters{r.pastes ? `, ${r.pastes} paste${r.pastes > 1 ? "s" : ""}` : ""}
+                    {r.mode !== "typed" ? (
+                      <span className="text-muted-foreground">{r.mode === "voice" ? "Spoken" : "Excluded (accommodation)"}</span>
+                    ) : r.evidence === "no text" ? (
+                      <span className="text-muted-foreground">No text</span>
+                    ) : r.notes.length ? (
+                      <>
+                        <span className="text-gap">{r.notes.join(" · ")}</span>
+                        <span className="mt-0.5 block text-muted-foreground">Suggest a voice follow-up.</span>
+                      </>
+                    ) : (
+                      <span>
+                        Typed by hand{" "}
+                        <span className="num text-muted-foreground">
+                          {r.keys} keys for {r.chars} characters{r.medianKeyMs != null ? `, ${r.medianKeyMs} ms between keys` : ""}
+                        </span>
                       </span>
                     )}
-                    {r.evidence === "appeared without typing" && <span className="mt-0.5 block text-muted-foreground">Suggest a voice follow-up.</span>}
                   </td>
                 </tr>
               ))}
