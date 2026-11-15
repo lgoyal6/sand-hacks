@@ -156,6 +156,16 @@ async function handle(req, res) {
   // ---------- runner API (not linked from the UI) ----------
   if (p === "/api/health") return json(res, 200, { ok: true, quizzes: [...quizzes.keys()], figures: true });
 
+  // Public test course site for "Scan my course website" (no login, our own content).
+  let cm;
+  if ((cm = p.match(/^\/course-site\/([\w-]*\.html)?$/))) {
+    try {
+      return send(res, 200, readFileSync(path.join(here, "course-site", cm[1] || "index.html")));
+    } catch {
+      return send(res, 404, page("Not found", "<h1>Not found</h1>"));
+    }
+  }
+
   let fm;
   if ((fm = p.match(/^\/figures\/([\w.-]+\.(png|jpe?g|gif|webp|svg))$/))) {
     try {
