@@ -4,7 +4,7 @@ import type { Item, Quiz, SolveRate, VariantStrategy } from "@unprompted/shared"
 import { z } from "zod";
 import { answerText, extractFinal } from "./answers.js";
 import { InfraError, type GeminiModel, type JsonModel } from "./llm.js";
-import type { Attacker, Candidate, GeneratedCandidate, Generator, Judge, PanelVote, Solver, SolveResult } from "./types.js";
+import type { AttackResult, Attacker, Candidate, GeneratedCandidate, Generator, Judge, PanelVote, Solver, SolveResult } from "./types.js";
 
 // ---------- shared prompt helpers ----------
 
@@ -202,7 +202,7 @@ export class CliAttacker implements Attacker {
     private opts: { repoRoot: string; repeats?: number; models?: string; agents?: string; timeoutMs?: number; log?: (s: string) => void },
   ) {}
 
-  attack(quiz: Quiz, itemIds: string[]): Promise<{ solveRates: SolveRate[] }> {
+  attack(quiz: Quiz, itemIds: string[]): Promise<AttackResult> {
     const args = ["run", "--directory", path.join(this.opts.repoRoot, "services/agents"), "attack", "--quiz", "-", "--json"];
     args.push("--items", itemIds.join(","), "--repeats", String(this.opts.repeats ?? 3));
     if (this.opts.models) args.push("--models", this.opts.models);
@@ -228,8 +228,7 @@ export class CliAttacker implements Attacker {
         clearTimeout(timer);
         if (code !== 0) return reject(new Error(`attack exited ${code}: ${err.slice(-800)}`));
         try {
-          const res = JSON.parse(out) as { solveRates: SolveRate[] };
-          resolve({ solveRates: res.solveRates });
+          resolve(validSolveRates(JSON.parse(out) as AttackJson, itemIds));
         } catch (e) {
           reject(new Error(`attack output was not JSON: ${out.slice(0, 300)}`));
         }
@@ -237,4 +236,34 @@ export class CliAttacker implements Attacker {
       child.stdin.end(JSON.stringify(quiz));
     });
   }
+}
+
+interface AttackJson {
+  agentRuns: { id: string; itemId: string; correct: boolean }[];
+  runs?: { runId: string; submitted?: boolean; infraError?: boolean }[];
+  solveRates?: SolveRate[];
+}
+
+/**
+ * A's runner scores a run that never submitted as wrong on every item ("the agent failing"), which is
+ * right for a baseline. To VERIFY a variant we need evidence the agent couldn't solve it, so only runs
+ * that submitted (and had no provider error) count; the rest are reported as excluded.
+ * Trace that motivated this: run-0b06fdaf29 picked the right answers, hit max_steps, never submitted.
+ */
+export function validSolveRates(res: AttackJson, itemIds: string[]): AttackResult {
+  const runs = res.runs ?? [];
+  if (!runs.length) return { solveRates: res.solveRates ?? [] }; // older runner output: nothing to filter on
+  const valid = new Set(runs.filter((r) => r.submitted && !r.infraError).map((r) => r.runId));
+  const unsubmitted = runs.filter((r) => !r.infraError && !r.submitted).length;
+  const providerErrors = runs.filter((r) => r.infraError).length;
+  const by = new Map<string, { runs: number; correct: number }>(itemIds.map((id) => [id, { runs: 0, correct: 0 }]));
+  for (const ar of res.agentRuns) {
+    const runId = ar.id.split(":")[0]!;
+    const b = by.get(ar.itemId);
+    if (!b || !valid.has(runId)) continue;
+    b.runs += 1;
+    if (ar.correct) b.correct += 1;
+  }
+  const solveRates = [...by].map(([itemId, b]) => ({ itemId, runs: b.runs, correct: b.correct, solveRate: b.runs ? b.correct / b.runs : 0, agentSolvable: b.runs > 0 && b.correct / b.runs >= 0.6 }));
+  return { solveRates, excluded: { unsubmitted, providerErrors, total: runs.length } };
 }
