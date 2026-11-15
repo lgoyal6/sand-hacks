@@ -98,7 +98,7 @@ function renderItem(item, idx) {
 // served from /figures/. alt is rendered as given; whoever writes the variant decides what it contains (a figure
 // whose alt text holds the data is readable to agents and screen readers alike).
 function renderFigure(item) {
-  const f = item.figure;
+  const f = item.figure ?? item.image; // B's shared type calls it `image`; `figure` kept as an alias
   if (!f || typeof f.src !== "string") return "";
   if (!/^data:image\/(png|jpeg|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(f.src) && !/^\/figures\/[\w.-]+$/.test(f.src)) return "";
   return `<figure class="figure"><img src="${esc(f.src)}" alt="${esc(f.alt ?? "")}" style="max-width:100%"></figure>`;
@@ -175,7 +175,8 @@ async function handle(req, res) {
     if (!q.id || !Array.isArray(q.items) || q.items.length === 0) return json(res, 400, { error: "quiz needs id and items" });
     for (const it of q.items) {
       if (!it.id || !it.stem || !it.type || it.answerKey === undefined) return json(res, 400, { error: `bad item ${it.id}` });
-      if (it.figure && (typeof it.figure.src !== "string" || it.figure.src.length > 2_000_000)) return json(res, 400, { error: `bad figure on ${it.id}` });
+      const fig = it.figure ?? it.image;
+      if (fig && (typeof fig.src !== "string" || fig.src.length > 2_000_000)) return json(res, 400, { error: `bad image on ${it.id}` });
     }
     quizzes.set(q.id, q);
     return json(res, 201, { id: q.id, url: `http://localhost:${PORT}/quiz/${encodeURIComponent(q.id)}` });
