@@ -1,7 +1,9 @@
 // Leak scan CLI.
 //   pnpm --filter @unprompted/leakscan scan --testset openstax-is2e      Phase 0 kill test #3 -> results/killtest-<ts>.json
 //   pnpm --filter @unprompted/leakscan scan --quiz data/fixtures/quiz-sample-stats.json   -> data/fixtures/leaks.json
-// Options: --screenshots (Browser API, CAPTCHA auto-solve off), --threshold 0.5, --no-fuzzy
+// Options: --screenshots (Browser API, never solves CAPTCHAs), --captcha-off-at-zone (attest the zone's CAPTCHA
+//   Solver is OFF in the Bright Data dashboard, when the zone rejects the per-session CDP switch), --threshold 0.5, --no-fuzzy
+//   --rescreen re-screenshots the findings already in data/fixtures/leaks.json without new searches
 // Without BRIGHTDATA_API_TOKEN + BRIGHTDATA_SERP_ZONE it exits non-zero. It never writes made-up findings.
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
@@ -60,7 +62,7 @@ async function main() {
       for (const f of best.values()) {
         const out = resolve(dir, `${f.id}.png`);
         try {
-          const r = await screenshot(cfg.browserWss, f.url, out);
+          const r = await screenshot(cfg.browserWss, f.url, out, { captchaOffAtZone: flag("captcha-off-at-zone") });
           if (r.ok) f.screenshotUrl = `/api/leaks/screens/${f.id}.png`;
           else console.warn(`screenshot skipped for ${f.url}: ${r.reason}`);
         } catch (e) {

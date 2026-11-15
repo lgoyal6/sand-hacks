@@ -7,7 +7,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "scan": "tsx --env-file-if-exists=../../.env.local src/cli.ts"
+    "scan": "tsx --env-file-if-exists=../../.env.local src/cli.ts",
+    "rescreen": "tsx --env-file-if-exists=../../.env.local src/rescreen.ts"
   },
   "dependencies": {
     "@unprompted/shared": "workspace:*",

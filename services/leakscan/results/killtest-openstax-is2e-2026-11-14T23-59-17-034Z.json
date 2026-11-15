@@ -23,7 +23,8 @@
           "sourceType": "other",
           "snippet": "Which of the following is NOT true about the theoretical — Which of the following is NOT true about the theoretical distribution of sums?Question 19Answera.The mean, median, and mode are equal.b.The area ...",
           "foundAt": "2026-11-14T23:59:18.496Z",
-          "matchScore": 1
+          "matchScore": 1,
+          "screenshotUrl": "/api/leaks/screens/leak-7c72072af6ac.png"
         },
         {
           "id": "leak-79065aa77192",
@@ -56,7 +57,8 @@
           "sourceType": "chegg",
           "snippet": "NeverReady batteries has engineered a newer, longer ... — NeverReady batteries has engineered a newer, longer lasting AAA battery. The company claims this battery has an average life span of 18 hours with a ...",
           "foundAt": "2026-11-14T23:59:20.830Z",
-          "matchScore": 1
+          "matchScore": 1,
+          "screenshotUrl": "/api/leaks/screens/leak-ab932261be01.png"
         },
         {
           "id": "leak-0d39d06063c6",
@@ -95,7 +97,8 @@
           "sourceType": "chegg",
           "snippet": "Solved What is meant by the term \" 90% confident\" when — What is meant by the term \" 90% confident\" when constructing a confidence interval for a mean? If we took repeated samples, the sample mean would equal ...",
           "foundAt": "2026-11-14T23:59:19.030Z",
-          "matchScore": 1
+          "matchScore": 1,
+          "screenshotUrl": "/api/leaks/screens/leak-c9e79540a95d.png"
         },
         {
           "id": "leak-fe5b00264386",
@@ -128,7 +131,8 @@
           "sourceType": "chegg",
           "snippet": "The average height of young adult males has a normal ... — The average height of young adult males has a normal distribution with standard deviation of 2.5 inches. You want to estimate the mean height of students ...",
           "foundAt": "2026-11-14T23:59:20.518Z",
-          "matchScore": 1
+          "matchScore": 1,
+          "screenshotUrl": "/api/leaks/screens/leak-9b9ee0fcdc45.png"
         },
         {
           "id": "leak-275c3b818b71",
@@ -161,7 +165,8 @@
           "sourceType": "other",
           "snippet": "In a box of assorted cookies, 36% contain chocolate and ... — In a box of assorted cookies, 36% contain chocolate and 12% contain nuts. Of those, 8% contain both chocolate and nuts.Read more",
           "foundAt": "2026-11-14T23:59:20.506Z",
-          "matchScore": 1
+          "matchScore": 1,
+          "screenshotUrl": "/api/leaks/screens/leak-b0bee93f8ff4.png"
         },
         {
           "id": "leak-a2dc244cf345",
@@ -250,7 +255,8 @@
           "sourceType": "other",
           "snippet": "When a new drug is created, the pharmaceutical ... - Vaia — Suppose the null hypothesis is “the drug is unsafe.” What is the Type II Error? a. To conclude the drug is safe when in, fact, it is unsafe. b. Not to ...Read more",
           "foundAt": "2026-11-14T23:59:22.400Z",
-          "matchScore": 1
+          "matchScore": 1,
+          "screenshotUrl": "/api/leaks/screens/leak-7c51a920fbba.png"
         },
         {
           "id": "leak-88b8308dcd74",
@@ -283,7 +289,8 @@
           "sourceType": "other",
           "snippet": "Q.65 Previously, an organization repo... [FREE SOLUTION] — Previously, an organization reported that teenagers spent 4.5 hours per week, on average, on the phone. The organization. thinks that, currently, the mean is ...Read more",
           "foundAt": "2026-11-14T23:59:23.169Z",
-          "matchScore": 1
+          "matchScore": 1,
+          "screenshotUrl": "/api/leaks/screens/leak-a9f8a2ca65ca.png"
         },
         {
           "id": "leak-d84fa582319c",
@@ -327,6 +334,59 @@
           "results": 1
         }
       ]
+    }
+  ],
+  "screenshots": [
+    {
+      "url": "https://mathladderai.com/free-worksheets/amc-8-practice-problems",
+      "ok": true
+    },
+    {
+      "url": "https://brainly.com/question/15324714",
+      "ok": true
+    },
+    {
+      "url": "https://www.studocu.com/en-us/messages/question/9914019/which-of-the-following-is-not-true-about-the-theoretical-distribution-of-sumsquestion",
+      "ok": true
+    },
+    {
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/neverready-batteries-engineered-newer-longer-lasting-aaa-battery-company-claims-battery-av-q73107934",
+      "ok": true
+    },
+    {
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/meant-term-90-confident-constructing-confidence-interval-mean-took-repeated-samples-sample-q122703523",
+      "ok": true
+    },
+    {
+      "url": "https://www.chegg.com/homework-help/questions-and-answers/average-height-young-adult-males-normal-distribution-standard-deviation-25-inches-want-est-q208066458",
+      "ok": true
+    },
+    {
+      "url": "https://brainly.com/question/40392315",
+      "ok": true
+    },
+    {
+      "url": "https://quizlet.com/458585532/stat-201-hw-8-flash-cards/",
+      "ok": false,
+      "reason": "challenge, no screenshot"
+    },
+    {
+      "url": "https://www.coursehero.com/file/p2ji8dr/105-A-statistics-instructor-believes-that-fewer-than-20-of-Evergreen-Valley/",
+      "ok": false,
+      "reason": "challenge, no screenshot"
+    },
+    {
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/hypothesis-testing-with-one-sample/q68-when-a-new-drug-is-created-the-pharmaceutical-company-mu/",
+      "ok": true
+    },
+    {
+      "url": "https://www.vaia.com/en-us/textbooks/math/introductory-statistics-oer-2018/hypothesis-testing-with-one-sample/q65-previously-an-organization-reported-that-teenagers-spent/",
+      "ok": true
+    },
+    {
+      "url": "https://www.transtutors.com/questions/according-to-the-center-for-disease-control-website-in-2022-at-least-2-of-high-schoo-13615655.htm",
+      "ok": false,
+      "reason": "challenge, no screenshot"
     }
   ]
 }

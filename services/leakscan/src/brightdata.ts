@@ -91,24 +91,40 @@ export class BrightDataSerp implements SearchClient {
 const CHALLENGE = /captcha|are you a robot|verify you are human|unusual traffic|access denied|cf-challenge|just a moment/i;
 
 /**
- * Screenshot a public page through the Bright Data Browser API with CAPTCHA auto-solve disabled.
- * Returns null (and the reason) when the page is gated, so callers fall back to snippet evidence.
+ * Screenshot a public page through the Bright Data Browser API without solving CAPTCHAs.
+ *
+ * CAPTCHA policy: we never solve or bypass a challenge. Two ways to guarantee the solver is off:
+ *   1. the per-session CDP call `Captcha.setAutoSolve {autoSolve:false}` succeeds, or
+ *   2. the caller attests the zone has CAPTCHA Solver turned OFF in the Bright Data dashboard
+ *      (`captchaOffAtZone`). For zone unprompted_browser this was checked by the team on 2026-11-14;
+ *      that zone does not accept the CDP call, so use `--captcha-off-at-zone` on the CLI.
+ * If neither holds, the page is not loaded. Either way, a page that shows a challenge is skipped
+ * ("challenge, no screenshot"); we never try to get past it.
  */
-export async function screenshot(wss: string, url: string, outPath: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+export async function screenshot(
+  wss: string,
+  url: string,
+  outPath: string,
+  opts: { captchaOffAtZone?: boolean } = {},
+): Promise<{ ok: true } | { ok: false; reason: string }> {
   const { chromium } = await import("playwright-core");
   const browser = await chromium.connectOverCDP(wss, { timeout: 60_000 });
   try {
     const page = await browser.newPage();
     const cdp = await page.context().newCDPSession(page);
+    let solverOff = false;
     try {
       await cdp.send("Captcha.setAutoSolve" as never, { autoSolve: false } as never);
+      solverOff = true;
     } catch {
-      return { ok: false, reason: "could not disable CAPTCHA auto-solve; refusing to load the page" };
+      solverOff = !!opts.captchaOffAtZone;
     }
+    if (!solverOff) return { ok: false, reason: "CAPTCHA solver not confirmed off; page not loaded" };
     await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
     const title = await page.title();
     const body = (await page.locator("body").innerText({ timeout: 10_000 }).catch(() => "")).slice(0, 4000);
-    if (CHALLENGE.test(title) || CHALLENGE.test(body)) return { ok: false, reason: "page shows a bot challenge; skipped" };
+    if (CHALLENGE.test(title) || CHALLENGE.test(body) || CHALLENGE.test(page.url()))
+      return { ok: false, reason: "challenge, no screenshot" };
     await page.screenshot({ path: outPath, fullPage: false });
     return { ok: true };
   } finally {
