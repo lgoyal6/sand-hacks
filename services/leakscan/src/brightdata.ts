@@ -41,6 +41,18 @@ export class BrightDataSerp implements SearchClient {
   constructor(private cfg: BrightDataConfig, private opts: { num?: number; endpoint?: string; retries?: number } = {}) {}
 
   /** Retries transient failures (empty or non-JSON bodies, 429, 5xx) with backoff. */
+  /** Google search with extra URL params (e.g. { tbs: "cdr:1,cd_min:1/1/2026,cd_max:1/31/2026" } for a date range). */
+  async searchWith(query: string, params: Record<string, string>): Promise<SerpResult[]> {
+    const saved = this.extra;
+    this.extra = params;
+    try {
+      return await this.search(query);
+    } finally {
+      this.extra = saved;
+    }
+  }
+  private extra: Record<string, string> = {};
+
   async search(query: string): Promise<SerpResult[]> {
     const attempts = this.opts.retries ?? 3;
     let last: unknown;
@@ -65,7 +77,9 @@ export class BrightDataSerp implements SearchClient {
       headers: { Authorization: `Bearer ${this.cfg.token}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         zone: this.cfg.serpZone,
-        url: `https://www.google.com/search?q=${q}&hl=en&gl=us&num=${this.opts.num ?? 20}&brd_json=1`,
+        url: `https://www.google.com/search?q=${q}&hl=en&gl=us&num=${this.opts.num ?? 20}&brd_json=1${Object.entries(this.extra)
+          .map(([k, v]) => `&${k}=${encodeURIComponent(v)}`)
+          .join("")}`,
         format: "raw",
       }),
     });

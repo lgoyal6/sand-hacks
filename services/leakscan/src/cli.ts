@@ -21,6 +21,16 @@ function arg(name: string): string | undefined {
 }
 const flag = (name: string) => process.argv.includes(`--${name}`);
 
+/** Exercise text lives only in the gitignored testsets/private/ (written by the plain collector). */
+async function loadTestset(dir: string, name: string) {
+  const { existsSync } = await import("node:fs");
+  const priv = resolve(dir, "private", `${name}.json`);
+  const pub = resolve(dir, `${name}.json`);
+  const ts = JSON.parse(await readFile(existsSync(priv) ? priv : pub, "utf8"));
+  if (ts.items.some((i: { stem?: string }) => !i.stem)) throw new Error(`Test set ${name} has no exercise text. Run scripts/recollect.py or scripts/collect_openstax.py first.`);
+  return ts;
+}
+
 async function main() {
   const cfg = brightDataFromEnv();
   if (!cfg) {
@@ -33,7 +43,7 @@ async function main() {
   let items: ScanItem[];
   let source: string;
   if (testset) {
-    const ts = JSON.parse(await readFile(resolve(HERE, "../testsets", `${testset}.json`), "utf8"));
+    const ts = await loadTestset(resolve(HERE, "../testsets"), testset);
     items = ts.items.map((i: { id: string; stem: string }) => ({ id: i.id, stem: i.stem }));
     source = `testset:${testset}`;
   } else if (quizPath) {

@@ -11,7 +11,7 @@ import { AgentAvatar } from "@/components/ui/agent-avatar";
 
 export const metadata = {
   title: "The State of Leaked Homework · Unprompted",
-  description: "85% of real textbook exercises we searched were already on homework-help sites. Method, limits and open data.",
+  description: "84% of real textbook exercises we searched were already on homework-help sites. Method, limits and open data.",
 };
 
 interface Study {
@@ -184,6 +184,9 @@ export default async function Page() {
                 {exact} of {totalResults} results matched the text exactly. A hand check of 8 random hits found all 8 genuine.
               </li>
               <li>We stored links and match scores only: never answers, page content or the exercise text in this dataset.</li>
+              <li>
+                The exercise text was collected by a plain script that respects openstax.org&apos;s robots.txt and was never read by an AI model. An earlier AI-assisted copy was discarded and redone; one exercise changed outcome, so the total went from 78 to 77.
+              </li>
             </ul>
           </div>
           <div className="flex flex-col gap-3">

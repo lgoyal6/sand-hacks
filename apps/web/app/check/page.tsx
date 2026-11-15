@@ -78,7 +78,7 @@ export default function Page() {
           <AgentAvatar agent="leak-scout" size="lg" state={phase === "scanning" ? "active" : "idle"} />
           <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.02em]">Is your question already online?</h1>
           <p className="max-w-[540px] text-[16px] leading-relaxed text-muted-foreground">
-            Paste a quiz or homework question. We search the web live and show which homework sites have it. In our study, 85% of textbook exercises were already there.
+            Paste a quiz or homework question. We search the web live and show which homework sites have it. In our study, 84% of textbook exercises were already there.
           </p>
         </div>
 
@@ -191,7 +191,7 @@ export default function Page() {
         <p className="text-center text-xs leading-relaxed text-muted-foreground">
           Your question is sent to a web search (via Bright Data) and is not stored; we keep only a one-way hash for an hour to avoid repeat searches. We show public links and match strength, never answers or copied content.{" "}
           <Link href="/study" className="underline hover:text-foreground">
-            How we measured 85%
+            How we measured it
           </Link>
         </p>
       </main>

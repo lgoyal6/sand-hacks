@@ -1,0 +1,815 @@
+{
+  "summary": {
+    "collected": "2026-11-15T03:11:44.155Z",
+    "months": [
+      "2025-12",
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07",
+      "2026-08",
+      "2026-09",
+      "2026-10",
+      "2026-11"
+    ],
+    "queries": [
+      "AI do my Canvas quiz",
+      "AI agent that takes Canvas quizzes",
+      "auto complete Canvas quiz AI extension",
+      "AI take my online class for me",
+      "AI agent do my homework on Blackboard",
+      "AI that answers Canvas quiz automatically"
+    ],
+    "serpCalls": 72,
+    "queryErrors": 15,
+    "uniquePages": 102,
+    "byMonth": [
+      {
+        "month": "2025-12",
+        "pages": 6
+      },
+      {
+        "month": "2026-01",
+        "pages": 10
+      },
+      {
+        "month": "2026-02",
+        "pages": 9
+      },
+      {
+        "month": "2026-03",
+        "pages": 13
+      },
+      {
+        "month": "2026-04",
+        "pages": 5
+      },
+      {
+        "month": "2026-05",
+        "pages": 7
+      },
+      {
+        "month": "2026-06",
+        "pages": 9
+      },
+      {
+        "month": "2026-07",
+        "pages": 8
+      },
+      {
+        "month": "2026-08",
+        "pages": 11
+      },
+      {
+        "month": "2026-09",
+        "pages": 9
+      },
+      {
+        "month": "2026-10",
+        "pages": 11
+      },
+      {
+        "month": "2026-11",
+        "pages": 4
+      }
+    ],
+    "byPlatform": {
+      "Websites and services": 46,
+      "YouTube": 29,
+      "Reddit": 15,
+      "Canvas community": 4,
+      "Browser add-on stores": 2,
+      "Universities": 2,
+      "Medium": 1,
+      "GitHub": 1,
+      "News and press": 1,
+      "TikTok": 1
+    },
+    "topServiceHosts": [
+      {
+        "host": "canvasninja.app",
+        "pages": 4
+      },
+      {
+        "host": "facebook.com",
+        "pages": 3
+      },
+      {
+        "host": "canvasquiz.com",
+        "pages": 3
+      },
+      {
+        "host": "cogniguide.app",
+        "pages": 2
+      },
+      {
+        "host": "addons.mozilla.org",
+        "pages": 2
+      },
+      {
+        "host": "linkedin.com",
+        "pages": 2
+      },
+      {
+        "host": "creator.tutorade.com",
+        "pages": 1
+      },
+      {
+        "host": "mindko.com",
+        "pages": 1
+      },
+      {
+        "host": "apexvision.ai",
+        "pages": 1
+      },
+      {
+        "host": "boingboing.net",
+        "pages": 1
+      },
+      {
+        "host": "curiously.app",
+        "pages": 1
+      },
+      {
+        "host": "premium.boingboing.net",
+        "pages": 1
+      },
+      {
+        "host": "higher-ed-faculty.pocketguidetoai.com",
+        "pages": 1
+      },
+      {
+        "host": "snapgpt.me",
+        "pages": 1
+      },
+      {
+        "host": "globalonlineacademy.org",
+        "pages": 1
+      },
+      {
+        "host": "dev.to",
+        "pages": 1
+      },
+      {
+        "host": "lti.edugears.ai",
+        "pages": 1
+      },
+      {
+        "host": "alicekeeler.com",
+        "pages": 1
+      },
+      {
+        "host": "aintai.io",
+        "pages": 1
+      },
+      {
+        "host": "examclutch.com",
+        "pages": 1
+      },
+      {
+        "host": "jotform.com",
+        "pages": 1
+      },
+      {
+        "host": "taskade.com",
+        "pages": 1
+      },
+      {
+        "host": "ibl.ai",
+        "pages": 1
+      },
+      {
+        "host": "coasty.ai",
+        "pages": 1
+      },
+      {
+        "host": "collegiumai.app",
+        "pages": 1
+      }
+    ],
+    "method": "Six phrasings of 'an AI does my LMS coursework' searched on Google via the Bright Data SERP API, one search per phrasing per calendar month (Google's custom date range), top 20 results each. A page counts once per month. Platform is classified from the host name.",
+    "caveats": [
+      "Search results are not a census: this samples what Google surfaces for these phrasings.",
+      "Google's date filter reflects when Google dated the page, which can differ from when it was posted.",
+      "Pages discuss as well as advertise; a Reddit thread complaining about these tools counts the same as an ad.",
+      "Recent months can look smaller because Google has had less time to index them."
+    ]
+  },
+  "pages": [
+    {
+      "url": "https://www.facebook.com/BlackboardLMS/posts/-a-new-ai-gift-is-coming-to-blackboard-on-december-4were-introducing-ava-respons/1312257457592329/",
+      "host": "facebook.com",
+      "platform": "Websites and services",
+      "month": "2025-12"
+    },
+    {
+      "url": "https://medium.com/@dreambridgeeducation/can-ai-do-my-homework-a-student-experiment-with-smart-tools-d10afdc0154c",
+      "host": "medium.com",
+      "platform": "Medium",
+      "month": "2025-12"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=6nSfAGvXe2A",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2025-12"
+    },
+    {
+      "url": "https://community.instructure.com/en/en/discussion/664356/quizzes-hide-results-from-students-toggle",
+      "host": "community.instructure.com",
+      "platform": "Canvas community",
+      "month": "2025-12"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=FZsLWgkA-ME",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2025-12"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=5jJ6m0XPl6g",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2025-12"
+    },
+    {
+      "url": "https://www.cogniguide.app/quizzes/canvas-multiple-choice-hack",
+      "host": "cogniguide.app",
+      "platform": "Websites and services",
+      "month": "2026-01"
+    },
+    {
+      "url": "https://creator.tutorade.com/tools/canvas-assessment-tool",
+      "host": "creator.tutorade.com",
+      "platform": "Websites and services",
+      "month": "2026-01"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Zse-zsLLXVc",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-01"
+    },
+    {
+      "url": "https://addons.mozilla.org/en-CA/firefox/addon/quiz-solver-ai/",
+      "host": "addons.mozilla.org",
+      "platform": "Browser add-on stores",
+      "month": "2026-01"
+    },
+    {
+      "url": "https://www.reddit.com/r/Professors/comments/1qjr8cy/try_using_an_ai_browser_to_complete_your_lms/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-01"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=X4dH4UUgs9A",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-01"
+    },
+    {
+      "url": "https://www.mindko.com/blog/how-ai-is-changing-homework-for-students",
+      "host": "mindko.com",
+      "platform": "Websites and services",
+      "month": "2026-01"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=JZSTiVgYM4A",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-01"
+    },
+    {
+      "url": "https://apexvision.ai/guides/find-canvas-quiz-answers-timed-exams",
+      "host": "apexvision.ai",
+      "platform": "Websites and services",
+      "month": "2026-01"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=e6pvUXT8PO0",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-01"
+    },
+    {
+      "url": "https://www.cogniguide.app/quizzes/canvas-compatible-question-generator-ai-tool",
+      "host": "cogniguide.app",
+      "platform": "Websites and services",
+      "month": "2026-02"
+    },
+    {
+      "url": "https://boingboing.net/2026/02/25/new-ai-agent-does-your-homework-for-you-from-reading-to-writing-to-discussions.html",
+      "host": "boingboing.net",
+      "platform": "Websites and services",
+      "month": "2026-02"
+    },
+    {
+      "url": "https://community.instructure.com/en/discussion/665315/is-there-a-canvas-ai-that-can-generate-canvas-quiz-from-a-word-quiz",
+      "host": "community.instructure.com",
+      "platform": "Canvas community",
+      "month": "2026-02"
+    },
+    {
+      "url": "https://www.reddit.com/r/boringdystopia/comments/1rcmiza/ai_can_now_take_your_classes_for_you/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-02"
+    },
+    {
+      "url": "https://www.curiously.app/blog/ai-improve-asynchronous-online-learning",
+      "host": "curiously.app",
+      "platform": "Websites and services",
+      "month": "2026-02"
+    },
+    {
+      "url": "https://www.linkedin.com/posts/klarapirklova_einstein-an-ai-agent-designed-as-a-student-activity-7431824240326275073-n8kF",
+      "host": "linkedin.com",
+      "platform": "Websites and services",
+      "month": "2026-02"
+    },
+    {
+      "url": "https://premium.boingboing.net/p/new-ai-agent-does-your-homework-for",
+      "host": "premium.boingboing.net",
+      "platform": "Websites and services",
+      "month": "2026-02"
+    },
+    {
+      "url": "https://www.reddit.com/r/chrome_extensions/comments/1r7l11c/i_built_a_chrome_extension_that_solves_quiz/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-02"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=jFW6VgEnlyg",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-02"
+    },
+    {
+      "url": "https://higher-ed-faculty.pocketguidetoai.com/guides/use-canvass-ai-quiz-generator-to-build-assessments-faster--85da78b9-fa7f-4408-b7b9-0c23f70ceb75",
+      "host": "higher-ed-faculty.pocketguidetoai.com",
+      "platform": "Websites and services",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://www.reddit.com/r/WCU/comments/1rztkfi/i_built_an_app_that_gives_you_an_ai_assistant_for/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://uwm.edu/advancing-learning/identifying-potential-indicators-of-student-ai-use-in-canvas/",
+      "host": "uwm.edu",
+      "platform": "Universities",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=pjTi40dBvPM",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://www.snapgpt.me/blog/canvas-quiz-help-one-tab/",
+      "host": "snapgpt.me",
+      "platform": "Websites and services",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://github.com/sgaofen/canvas-sniper",
+      "host": "github.com",
+      "platform": "GitHub",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=nr24bSQA4UY",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://www.reddit.com/r/BackToCollege/comments/1s5spt9/is_this_normal_community_college_course_basically/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://globalonlineacademy.org/insights/blog/the-ai-classroom-a-teachers-reflection-on-ai-in-the-classroom",
+      "host": "globalonlineacademy.org",
+      "platform": "Websites and services",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=mSLHzhmhbrQ",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=9k2c4KIn210",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://www.linkedin.com/posts/drjeffdoyle_new-ai-agent-logs-directly-into-college-platform-activity-7435074113129365504-PYEt",
+      "host": "linkedin.com",
+      "platform": "Websites and services",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://dev.to/favourite1975/i-built-an-ai-tutor-that-actually-sees-your-homework-heres-how-1hd3",
+      "host": "dev.to",
+      "platform": "Websites and services",
+      "month": "2026-03"
+    },
+    {
+      "url": "https://www.reddit.com/r/studytips/comments/1sgimzm/i_created_a_chrome_extension_for_canvas_quizexam/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-04"
+    },
+    {
+      "url": "https://lti.edugears.ai/en/blog/free-ai-question-generator-moodle-canvas",
+      "host": "lti.edugears.ai",
+      "platform": "Websites and services",
+      "month": "2026-04"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=9UITO3CsiSY",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-04"
+    },
+    {
+      "url": "https://addons.mozilla.org/en-US/firefox/addon/canvaspass/",
+      "host": "addons.mozilla.org",
+      "platform": "Browser add-on stores",
+      "month": "2026-04"
+    },
+    {
+      "url": "https://www.reddit.com/r/AskReddit/comments/1sasmx8/those_currently_taking_classes_do_you_use_ai_to/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-04"
+    },
+    {
+      "url": "https://alicekeeler.com/2026/05/25/try-out-gemini-canvas-tool/",
+      "host": "alicekeeler.com",
+      "platform": "Websites and services",
+      "month": "2026-05"
+    },
+    {
+      "url": "https://aintai.io/blog/can-canvas-detect-ai-the-truth-for-students-and-faculty/",
+      "host": "aintai.io",
+      "platform": "Websites and services",
+      "month": "2026-05"
+    },
+    {
+      "url": "https://www.examclutch.com/canvas-quiz-answers",
+      "host": "examclutch.com",
+      "platform": "Websites and services",
+      "month": "2026-05"
+    },
+    {
+      "url": "https://www.reddit.com/r/sideprojects/comments/1t9anfu/built_a_chrome_extension_to_speed_through_canvas/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-05"
+    },
+    {
+      "url": "https://www.jotform.com/ai/best-ai-tutor/",
+      "host": "jotform.com",
+      "platform": "Websites and services",
+      "month": "2026-05"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=IlCckdHoLg8",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-05"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=LBb94wHUnA0",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-05"
+    },
+    {
+      "url": "https://www.canvasninja.app/blog/canvas-quiz-solver-ai/",
+      "host": "canvasninja.app",
+      "platform": "Websites and services",
+      "month": "2026-06"
+    },
+    {
+      "url": "https://www.canvasninja.app/answer-saver/",
+      "host": "canvasninja.app",
+      "platform": "Websites and services",
+      "month": "2026-06"
+    },
+    {
+      "url": "https://www.reddit.com/r/AIToolsAndTips/comments/1ugaxed/im_being_forced_to_attend_an_online_course_need/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-06"
+    },
+    {
+      "url": "https://www.taskade.com/agents/education/online-course-developer",
+      "host": "taskade.com",
+      "platform": "Websites and services",
+      "month": "2026-06"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=sj0sNeuVsj0",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-06"
+    },
+    {
+      "url": "https://ibl.ai/solutions/k-12/agent/tutoring-agent",
+      "host": "ibl.ai",
+      "platform": "Websites and services",
+      "month": "2026-06"
+    },
+    {
+      "url": "https://coasty.ai/blog/ai-automation-education-teacher-burnout-computer-use",
+      "host": "coasty.ai",
+      "platform": "Websites and services",
+      "month": "2026-06"
+    },
+    {
+      "url": "https://www.canvasninja.app/blog/canvas-ai-exam/",
+      "host": "canvasninja.app",
+      "platform": "Websites and services",
+      "month": "2026-06"
+    },
+    {
+      "url": "https://www.canvasninja.app/blog/canvas-ai-homework-helper/",
+      "host": "canvasninja.app",
+      "platform": "Websites and services",
+      "month": "2026-06"
+    },
+    {
+      "url": "https://www.reddit.com/r/studytips/comments/1uq642r/ai_program_to_create_practice_quiz_that_looks/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-07"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=XLsoNpO5fik",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-07"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=QLoY_aTPU0k",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-07"
+    },
+    {
+      "url": "https://collegiumai.app/guides/best-ai-tool-for-canvas",
+      "host": "collegiumai.app",
+      "platform": "Websites and services",
+      "month": "2026-07"
+    },
+    {
+      "url": "https://cheatly.vercel.app/blog/best-free-quiz-solver-extensions-2026",
+      "host": "cheatly.vercel.app",
+      "platform": "Websites and services",
+      "month": "2026-07"
+    },
+    {
+      "url": "https://library.csi.cuny.edu/ai/tools",
+      "host": "library.csi.cuny.edu",
+      "platform": "Universities",
+      "month": "2026-07"
+    },
+    {
+      "url": "https://www.reddit.com/r/BotNation/comments/1uo2q9v/if_ai_writes_your_homework_and_a_robot_writes_it/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-07"
+    },
+    {
+      "url": "https://www.instagram.com/reel/DbVZs5Buvfn/",
+      "host": "instagram.com",
+      "platform": "Websites and services",
+      "month": "2026-07"
+    },
+    {
+      "url": "https://hwsolved.net/blog/canvas-best-ai-tools",
+      "host": "hwsolved.net",
+      "platform": "Websites and services",
+      "month": "2026-08"
+    },
+    {
+      "url": "https://futurism.com/artificial-intelligence/college-kids-ai-agents-cheat-online-courses",
+      "host": "futurism.com",
+      "platform": "News and press",
+      "month": "2026-08"
+    },
+    {
+      "url": "https://www.facebook.com/nytimes/posts/ai-agents-have-made-it-possible-for-students-to-outsource-a-semester-of-work-wit/1454835213165604/",
+      "host": "facebook.com",
+      "platform": "Websites and services",
+      "month": "2026-08"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=PdFggS28r2M",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-08"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=cW6I_YNR_E4",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-08"
+    },
+    {
+      "url": "https://www.reddit.com/r/AccusedOfUsingAI/comments/1vxsb4z/i_created_a_chrome_extension_for_canvas_quizexam/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-08"
+    },
+    {
+      "url": "https://www.nytimes.com/2026/08/10/us/ai-cheating-online-degrees.html",
+      "host": "nytimes.com",
+      "platform": "Websites and services",
+      "month": "2026-08"
+    },
+    {
+      "url": "https://www.reddit.com/r/technology/comments/1vkkvy5/ai_agents_are_taking_entire_online_courses_for/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-08"
+    },
+    {
+      "url": "https://www.blackboard.com/news/ai-agents-are-taking-entire-online-courses-for-cheating-students",
+      "host": "blackboard.com",
+      "platform": "Websites and services",
+      "month": "2026-08"
+    },
+    {
+      "url": "https://www.reddit.com/r/GetStudying/comments/1vxs56a/i_created_a_chrome_extension_for_canvas_quizexam/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-08"
+    },
+    {
+      "url": "https://community.instructure.com/en/kb/articles/660995-what-options-can-i-set-in-a-quiz",
+      "host": "community.instructure.com",
+      "platform": "Canvas community",
+      "month": "2026-08"
+    },
+    {
+      "url": "https://canvasquiz.com/guides/can-canvas-detect-chatgpt/",
+      "host": "canvasquiz.com",
+      "platform": "Websites and services",
+      "month": "2026-09"
+    },
+    {
+      "url": "https://community.instructure.com/en/en/kb/articles/664235-how-do-i-use-igniteai-question-authoring-for-quizzes",
+      "host": "community.instructure.com",
+      "platform": "Canvas community",
+      "month": "2026-09"
+    },
+    {
+      "url": "https://www.reddit.com/r/TurnitinAIResults/comments/1wus7bg/i_created_a_chrome_extension_for_canvas_quizexam/",
+      "host": "reddit.com",
+      "platform": "Reddit",
+      "month": "2026-09"
+    },
+    {
+      "url": "https://www.tiktok.com/discover/canvas-hack-to-use-ai-on-exam",
+      "host": "tiktok.com",
+      "platform": "TikTok",
+      "month": "2026-09"
+    },
+    {
+      "url": "https://getanswerlyai.com/blog/how-answerly-ai-works.html",
+      "host": "getanswerlyai.com",
+      "platform": "Websites and services",
+      "month": "2026-09"
+    },
+    {
+      "url": "https://canvasquiz.com/vs/canvas-hack/",
+      "host": "canvasquiz.com",
+      "platform": "Websites and services",
+      "month": "2026-09"
+    },
+    {
+      "url": "https://www.mheducation.com/highered/blog/2026/08/how-to-teach-ai-without-adding-another-course.html",
+      "host": "mheducation.com",
+      "platform": "Websites and services",
+      "month": "2026-09"
+    },
+    {
+      "url": "https://tutezy.ai/blog/add-ai-tutor-to-online-course/",
+      "host": "tutezy.ai",
+      "platform": "Websites and services",
+      "month": "2026-09"
+    },
+    {
+      "url": "https://umassboston.service-now.com/sp?id=kb_artic...",
+      "host": "umassboston.service-now.com",
+      "platform": "Websites and services",
+      "month": "2026-09"
+    },
+    {
+      "url": "https://canvas-quiz-solver.en.softonic.com/chrome/extension",
+      "host": "canvas-quiz-solver.en.softonic.com",
+      "platform": "Websites and services",
+      "month": "2026-10"
+    },
+    {
+      "url": "https://www.youtube.com/shorts/DGN9npAMBuo",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-10"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=Ccg0h-73BYw",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-10"
+    },
+    {
+      "url": "https://www.youtube.com/shorts/oNDxtMoQnfU",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-10"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=PkqRBbKIsBE",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-10"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=isMVoPFUjYI",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-10"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=_okO6VNfVyM",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-10"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=AhKLZdUrGms",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-10"
+    },
+    {
+      "url": "https://pathify.com/integrations/ai-agent-assignments-via-blackboard/",
+      "host": "pathify.com",
+      "platform": "Websites and services",
+      "month": "2026-10"
+    },
+    {
+      "url": "https://gravity.fast/blog/ai-agent-for-education/",
+      "host": "gravity.fast",
+      "platform": "Websites and services",
+      "month": "2026-10"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=dr3BgLVH0z0",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-10"
+    },
+    {
+      "url": "https://canvasquiz.com/ai-homework-helper/",
+      "host": "canvasquiz.com",
+      "platform": "Websites and services",
+      "month": "2026-11"
+    },
+    {
+      "url": "https://www.youtube.com/shorts/U_6SwtzvxGY",
+      "host": "youtube.com",
+      "platform": "YouTube",
+      "month": "2026-11"
+    },
+    {
+      "url": "https://www.facebook.com/groups/1404116417142065/posts/2212292259657806/",
+      "host": "facebook.com",
+      "platform": "Websites and services",
+      "month": "2026-11"
+    },
+    {
+      "url": "https://support.monday.com/hc/en-us/articles/34740933271058-Get-started-with-monday-service-AI-agents",
+      "host": "support.monday.com",
+      "platform": "Websites and services",
+      "month": "2026-11"
+    }
+  ]
+}

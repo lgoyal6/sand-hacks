@@ -10,7 +10,8 @@
     "scan": "tsx --env-file-if-exists=../../.env.local src/cli.ts",
     "rescreen": "tsx --env-file-if-exists=../../.env.local src/rescreen.ts",
     "study": "tsx --env-file-if-exists=../../.env.local src/study.ts",
-    "archive-watch": "tsx --env-file-if-exists=../../.env.local src/archive-watch.ts"
+    "archive-watch": "tsx --env-file-if-exists=../../.env.local src/archive-watch.ts",
+    "agent-market": "tsx --env-file-if-exists=../../.env.local src/agent-market.ts"
   },
   "dependencies": {
     "@unprompted/shared": "workspace:*",
