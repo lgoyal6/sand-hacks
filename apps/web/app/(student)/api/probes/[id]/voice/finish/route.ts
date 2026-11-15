@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getProbe, patchProbe } from "../../../../../_lib/probes";
+import { gradeProbeAsync } from "@/lib/agents/council";
 import { cfLatencyFromWords, formatTranscript, getConversation, scribeCall } from "../../../../../_lib/elevenlabs";
 
 // After the call: pull the finalized transcript (with per-turn times) from ElevenLabs and store it.
@@ -44,6 +45,9 @@ export async function POST(req: Request, ctx: RouteContext<"/api/probes/[id]/voi
       counterfactualAnswer: cfAnswer?.message?.trim() ?? probe.counterfactualAnswer,
       ...(scribe ? { counterfactualLatencyMs: scribe.latencyMs, counterfactualLatencySource: "scribe" as const, scribeWords: words } : {}),
     });
+    // If the student already finished the probe (confidence after), the transcript is the last piece: grade now.
+    const after = await getProbe(id);
+    if (after?.completedAt && transcript.trim()) gradeProbeAsync(id);
     return NextResponse.json({
       status: conv.status,
       transcript,

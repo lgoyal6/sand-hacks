@@ -1,0 +1,29 @@
+{
+  "leak-index-2026-11.csv": {
+    "kind": "study_dataset",
+    "sha256": "700aeacf19ac939d7141b1a5a6f535fe98707c08c863dd36432577dcf6ff5dfc",
+    "memo": "unprompted:v1:study_dataset:700aeacf19ac939d7141b1a5a6f535fe98707c08c863dd36432577dcf6ff5dfc",
+    "signature": null,
+    "status": "not_anchored",
+    "error": "Simulation failed. \nMessage: Transaction simulation failed: This account may not be used to pay transaction fees. \nLogs: \n[]. \nCatch the `SendTransactionError` and call `getLogs()` on it for full deta",
+    "file": "data/open/leak-index-2026-11.csv"
+  },
+  "leaked-homework-2026-11.csv": {
+    "kind": "study_dataset",
+    "sha256": "b7535baa4af2da418b64b187a08a0b6cb967b2667006481865451e15aa7e570b",
+    "memo": "unprompted:v1:study_dataset:b7535baa4af2da418b64b187a08a0b6cb967b2667006481865451e15aa7e570b",
+    "signature": null,
+    "status": "not_anchored",
+    "error": "Simulation failed. \nMessage: Transaction simulation failed: This account may not be used to pay transaction fees. \nLogs: \n[]. \nCatch the `SendTransactionError` and call `getLogs()` on it for full deta",
+    "file": "data/open/leaked-homework-2026-11.csv"
+  },
+  "attack_summaries.json": {
+    "kind": "attack_summary",
+    "sha256": "5d936a76092e8ad2796ddd05b1d7b87d5e4901c198115e67b9882b47c903a0d4",
+    "memo": "unprompted:v1:attack_summary:5d936a76092e8ad2796ddd05b1d7b87d5e4901c198115e67b9882b47c903a0d4",
+    "signature": null,
+    "status": "not_anchored",
+    "error": "Simulation failed. \nMessage: Transaction simulation failed: This account may not be used to pay transaction fees. \nLogs: \n[]. \nCatch the `SendTransactionError` and call `getLogs()` on it for full deta",
+    "file": "data/fixtures/attack_summaries.json"
+  }
+}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getProbe, patchProbe, saveExplainSignals } from "../../../_lib/probes";
 import { getAttempt } from "../../../quiz/_lib/attempts";
+import { gradeProbeAsync } from "@/lib/agents/council";
 import { writeEvents } from "@/lib/telemetry/server";
 
 // Completes a probe: transcript, confidence after, counterfactual latency. Grading (the council) happens later.
@@ -71,5 +72,8 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/probes/[id]">)
     ).catch(() => {});
   }
   const out = await patchProbe(id, patch);
+  // Grading council (B): once the probe is complete AND has words to grade. A voice probe whose transcript
+  // hasn't arrived yet is graded by /voice/finish instead, so each probe is graded once.
+  if (patch.completedAt && out && (out.explanation?.trim() || out.transcript?.trim() || out.counterfactualAnswer?.trim())) gradeProbeAsync(id);
   return NextResponse.json({ ok: true, probe: { id: out!.id, completedAt: out!.completedAt } });
 }

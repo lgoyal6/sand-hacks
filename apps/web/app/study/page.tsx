@@ -8,6 +8,8 @@ import { Download } from "lucide-react";
 import { DATA_DIR } from "@/lib/db/fixtures";
 import { SiteHeader } from "@/components/ui/site-header";
 import { AgentAvatar } from "@/components/ui/agent-avatar";
+import { AnchorBadge } from "@/components/dashboard/anchor-badge";
+import { loadAnchors } from "@/lib/notary/registry";
 
 export const metadata = {
   title: "The State of Leaked Homework · Unprompted",
@@ -102,6 +104,11 @@ function RangeRow({ label, sub, strict, exact, n }: { label: string; sub?: strin
   );
 }
 
+async function loadAnchorsCached() {
+  "use cache";
+  return loadAnchors();
+}
+
 async function loadMarket(): Promise<Market | null> {
   "use cache";
   try {
@@ -163,6 +170,7 @@ export default async function Page() {
   const s = await load();
   const market = await loadMarket();
   const index = await loadIndex();
+  const anchors = await loadAnchorsCached();
   const subjects = Object.entries(s.by_subject).sort((a, b) => b[1].pct - a[1].pct);
   const sites = Object.entries(s.by_site).sort((a, b) => b[1].exercises - a[1].exercises);
   const maxSite = Math.max(...sites.map(([, v]) => v.exercises));
@@ -417,6 +425,14 @@ export default async function Page() {
             <a href="/study/data/LICENSE.md" className="inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
               License and notes
             </a>
+          </div>
+          <div className="flex flex-col gap-1.5 border-t border-border pt-3">
+            {["leak-index-2026-11.csv", "leaked-homework-2026-11.csv"].map((f) =>
+              anchors[f] ? <AnchorBadge key={f} file={f} sha256={anchors[f].sha256} signature={anchors[f].signature} label={f} /> : null,
+            )}
+            <p className="text-xs text-muted-foreground">
+              Each file&apos;s SHA-256 fingerprint is written to Solana devnet as a public memo, so anyone can check the data hasn&apos;t changed since publication. Only the hash goes on-chain.
+            </p>
           </div>
         </section>
 

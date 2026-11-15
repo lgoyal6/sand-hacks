@@ -76,7 +76,9 @@ export async function anchor(kind: AnchorKind, sha256: string): Promise<AnchorRe
     const signature = await sendAndConfirmTransaction(conn, new Transaction().add(ix), [signer], { commitment: "confirmed" });
     return { kind, sha256, memo, signature, status: "anchored", anchoredAt: new Date().toISOString(), explorerUrl: explorerUrl(signature) };
   } catch (e) {
-    return { kind, sha256, memo, signature: null, status: "not_anchored", error: (e as Error).message.slice(0, 200) };
+    const msg = (e as Error).message;
+    const error = /pay transaction fees|insufficient (funds|lamports)|AccountNotFound/i.test(msg) ? "the notary account has no devnet SOL yet" : msg.slice(0, 160);
+    return { kind, sha256, memo, signature: null, status: "not_anchored", error };
   }
 }
 

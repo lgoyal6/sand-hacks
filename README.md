@@ -152,6 +152,7 @@ sequenceDiagram
 | **Tiger Data** | Telemetry hypertables, continuous aggregates, `state_agg` / `heartbeat_agg` features that separate agents from humans by behavior |
 | **Bright Data** | Leak scan (SERP), evidence screenshots (Browser API), daily leak watch (Web Archive), cited sources for the Researcher |
 | **ElevenLabs** | The voice think-aloud agent with client tools, and Scribe word timestamps for counterfactual latency |
+| **Solana** | Public integrity notary on devnet: fingerprints of the quiz each student received, agent results and the open dataset, verifiable by anyone |
 | **Vultr** | The only deploy target (not deployed yet) |
 
 ## Results so far (real data, Nov 14 2026)
@@ -254,6 +255,12 @@ cd services/agents && uv run pytest
 ```
 
 </details>
+
+## Integrity anchoring (Solana devnet)
+
+Unprompted uses Solana devnet as a public notary, not a database. For each integrity record (the exact quiz version a student received, each published agent-attack summary, and the `/study` open dataset files) we compute a SHA-256 fingerprint and write only that hash as an SPL Memo: `unprompted:v1:<kind>:<sha256>`. Anyone can re-hash the record and compare it with the on-chain memo (the Re-verify buttons and `GET /study/verify` do exactly that). No student data or text ever goes on-chain.
+
+Devnet only: the notary refuses any RPC that isn't devnet, by URL and by genesis hash. Anchoring is asynchronous and never blocks a student; if devnet is unavailable the record says "not anchored yet" and is retried. Code: `apps/web/lib/notary` (CLI: `lib/notary/cli.ts publish | anchor | verify`). The signing key lives only in the local `.env.local`.
 
 ## Principles
 
