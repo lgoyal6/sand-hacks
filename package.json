@@ -1,0 +1,9 @@
+{
+  "name": "unprompted",
+  "private": true,
+  "packageManager": "pnpm@10.4.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @unprompted/web dev",
+    "dev:sandbox": "pnpm --filter @unprompted/sandbox dev"
+  }
+}

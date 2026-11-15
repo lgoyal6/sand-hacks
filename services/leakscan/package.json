@@ -1,0 +1,23 @@
+{
+  "name": "@unprompted/leakscan",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "scan": "tsx --env-file-if-exists=../../.env.local src/cli.ts",
+    "rescreen": "tsx --env-file-if-exists=../../.env.local src/rescreen.ts"
+  },
+  "dependencies": {
+    "@unprompted/shared": "workspace:*",
+    "playwright-core": "^1.65.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

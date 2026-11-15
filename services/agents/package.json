@@ -1,0 +1,11 @@
+{
+  "name": "@unprompted/agents",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Stagehand runner (TypeScript side of workstream A). The Python attack CLI shells out to stagehand/run.mjs.",
+  "dependencies": {
+    "@browserbasehq/stagehand": "4.3.0",
+    "zod": "4.4.3"
+  }
+}

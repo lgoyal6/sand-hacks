@@ -1,0 +1,72 @@
+{
+  "id": "sample-stats",
+  "courseId": "sandbox-course",
+  "title": "Intro Statistics: Quiz 1",
+  "sourceFormat": "markdown",
+  "items": [
+    {
+      "id": "sample-stats-q1",
+      "quizId": "sample-stats",
+      "type": "mcq",
+      "stem": "A sample of 25 has mean 40 and standard deviation 10. What is the standard error of the mean?",
+      "choices": [
+        { "id": "a", "text": "0.4" },
+        { "id": "b", "text": "2" },
+        { "id": "c", "text": "10" },
+        { "id": "d", "text": "50" }
+      ],
+      "answerKey": "b",
+      "objective": "compute standard error from s and n"
+    },
+    {
+      "id": "sample-stats-q2",
+      "quizId": "sample-stats",
+      "type": "mcq",
+      "stem": "If the sample size quadruples and nothing else changes, the width of a 95% confidence interval for the mean:",
+      "choices": [
+        { "id": "a", "text": "doubles" },
+        { "id": "b", "text": "halves" },
+        { "id": "c", "text": "quarters" },
+        { "id": "d", "text": "stays the same" }
+      ],
+      "answerKey": "b",
+      "objective": "relationship between n and CI width"
+    },
+    {
+      "id": "sample-stats-q3",
+      "quizId": "sample-stats",
+      "type": "numeric",
+      "stem": "A fair die is rolled twice. What is the probability that the sum is 7? Give a fraction.",
+      "answerKey": "1/6",
+      "objective": "enumerate outcomes in a joint sample space"
+    },
+    {
+      "id": "sample-stats-q4",
+      "quizId": "sample-stats",
+      "type": "mcq",
+      "stem": "A study finds a p-value of 0.03 at alpha = 0.05. Which statement is correct?",
+      "choices": [
+        { "id": "a", "text": "There is a 3% chance the null hypothesis is true" },
+        { "id": "b", "text": "If the null were true, data this extreme would occur about 3% of the time" },
+        { "id": "c", "text": "The effect is large" },
+        { "id": "d", "text": "The alternative hypothesis is proven" }
+      ],
+      "answerKey": "b",
+      "objective": "interpret a p-value"
+    },
+    {
+      "id": "sample-stats-q5",
+      "quizId": "sample-stats",
+      "type": "mcq",
+      "stem": "Which change reduces the probability of a Type II error, holding alpha fixed?",
+      "choices": [
+        { "id": "a", "text": "Decrease sample size" },
+        { "id": "b", "text": "Increase sample size" },
+        { "id": "c", "text": "Use a two-sided test instead of one-sided" },
+        { "id": "d", "text": "Decrease the effect size" }
+      ],
+      "answerKey": "b",
+      "objective": "power and sample size"
+    }
+  ]
+}
