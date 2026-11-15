@@ -39,14 +39,15 @@ export async function POST(req: Request) {
   // (server-only NOTARY_SALT) is anchored, and nothing is anchored until that salt exists. Runs after the response.
   if (attempt.store === "neon") {
     const sha = fingerprint(quizVersionRecord(quiz.id, quiz.items));
-    const salt = process.env.NOTARY_SALT?.trim();
+    // Held until D's keyed anchorRecord (HMAC) is on dev, so appeals compare keyed to keyed (agreed with B and D).
+    const salt: string | undefined = undefined;
     after(async () => {
       const r = salt && salt.length >= 32 ? await anchor("quiz_version", fingerprint({ salt, record: quizVersionRecord(quiz.id, quiz.items) })) : null;
       await neon()
         ?.query("update attempt set quiz_version_sha256 = $2, quiz_version_anchor = $3::jsonb where id = $1", [
           attempt.id,
           sha,
-          JSON.stringify(r ?? { status: "not_anchored", error: "NOTARY_SALT not set (anchoring held)" }),
+          JSON.stringify(r ?? { status: "not_anchored", error: "anchoring held until the keyed fingerprint ships" }),
         ])
         .catch((err) => console.warn("[notary] attempt fingerprint not stored:", (err as Error).message));
       if (r && r.status !== "anchored") console.warn(`[notary] attempt ${attempt.id} not anchored: ${r.error ?? "unknown"}`);
