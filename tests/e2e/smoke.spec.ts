@@ -61,7 +61,12 @@ test("practice quiz: answer all 5, feedback, typed probe, telemetry lands", asyn
   });
 
   await page.goto(`/quiz/${QUIZ}?mode=practice&student=${student}`);
-  await page.locator("#start-practice").click();
+  // On a cold dev server the button can render before hydration (or mid-compile); retry until the quiz starts.
+  await expect(async () => {
+    const start = page.locator("#start-practice");
+    if (await start.isVisible()) await start.click({ timeout: 5_000 });
+    await expect(page.locator(`#item-${QUIZ}-q1`)).toBeVisible({ timeout: 5_000 });
+  }).toPass({ timeout: 60_000 });
 
   let probes = 0;
   for (let n = 1; n <= 5; n++) {
@@ -69,7 +74,8 @@ test("practice quiz: answer all 5, feedback, typed probe, telemetry lands", asyn
     const item = page.locator(`#item-${itemId}`);
     await expect(item, `question ${n} visible`).toBeVisible();
     const a = ANSWERS[itemId];
-    if (a.choice) await item.locator(`#choice-${a.choice}`).click();
+    // Radios are visually hidden; people click the choice's label.
+    if (a.choice) await item.locator(`label:has(#choice-${a.choice}), label[for="choice-${a.choice}"]`).first().click();
     else {
       await page.locator("#answer-input").click();
       await page.locator("#answer-input").pressSequentially(a.text!, { delay: 40 }); // real key events
@@ -79,7 +85,7 @@ test("practice quiz: answer all 5, feedback, typed probe, telemetry lands", asyn
     // Either a probe opens (before feedback) or feedback shows directly.
     const probe = page.locator("#probe");
     const feedback = page.locator("#item-feedback");
-    await expect(probe.or(feedback)).toBeVisible();
+    await expect(probe.or(feedback)).toBeVisible({ timeout: 30_000 }); // grading can be slow on a cold dev server
     if (await probe.isVisible()) {
       probes++;
       await runTypedProbe(page, apiFailures);
@@ -89,7 +95,7 @@ test("practice quiz: answer all 5, feedback, typed probe, telemetry lands", asyn
     await page.locator(n < 5 ? "#next-item" : "#finish-quiz").click();
   }
 
-  await expect(page.locator("#quiz-done")).toBeVisible();
+  await expect(page.locator("#quiz-done")).toBeVisible({ timeout: 30_000 });
   await expect(page.locator("#quiz-score")).toContainText("5");
   expect(probes, "practice mode opens at least one probe").toBeGreaterThanOrEqual(1);
   expect(pageErrors, "uncaught page errors").toEqual([]);

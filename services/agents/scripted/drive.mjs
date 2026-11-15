@@ -44,7 +44,8 @@ async function nextFreeIndex() {
 }
 
 async function waitVisible(page, sel, ms = 20000) {
-  await page.locator(sel).first().waitFor({ state: "visible", timeout: ms });
+  // sr-only inputs count as "attached" rather than visible
+  await page.locator(sel).first().waitFor({ state: /#choice-[a-z]$/.test(sel) ? "attached" : "visible", timeout: ms });
   return page.locator(sel).first();
 }
 
@@ -101,7 +102,8 @@ async function session(browser, label, seed) {
     for (const [i, item] of quiz.items.entries()) {
       await waitVisible(page, `#item-${item.id}`);
       const a = answerFor(item, rng);
-      if (a.choice) await io.click(`#item-${item.id} #choice-${a.choice}`);
+      // Radios are visually hidden: cdp clicks the visible label (trusted), jsfill clicks the input itself (untrusted).
+      if (a.choice) await io.click(STYLE === "cdp" ? `#item-${item.id} label:has(#choice-${a.choice})` : `#item-${item.id} #choice-${a.choice}`);
       else await io.type("#answer-input", a.text);
       await io.click("#submit-answer");
       await page.locator("#probe, #item-feedback").first().waitFor({ state: "visible", timeout: 20000 });
