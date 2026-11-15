@@ -12,6 +12,10 @@ A learning app for the age of AI agents. Unprompted attacks a quiz with the same
 
 ---
 
+## Live demo
+
+**https://144-202-119-181.sslip.io** (Vultr). Sign in with the one-click demo student or professor. Public, no sign-in: `/check` and `/study`.
+
 ## Why
 
 Agents can now log into a student's LMS and finish quizzes on their own, and there is no technical fix on the LMS side. Detectors that judge how text *looks* misfire on non-native writers. And rewriting questions does not stop agents either: we tried 12 rewrites of one question across five strategies (new numbers, real-world setting, figure-only, find-the-error) and Gemini browser agents still solved every one we could measure (6/6 and 8/8 valid runs). Every attempt is kept as a Neon branch you can inspect. So Unprompted stops trying to out-write the agent:
@@ -273,4 +277,4 @@ Devnet only: the notary refuses any RPC that isn't devnet, by URL and by genesis
 - **Respect the web.** Public pages only; we store snippets, links and screenshots, never solutions, and we never solve or bypass CAPTCHAs.
 - **Agents attack only our own sandboxes**, never real courses or accounts.
 
-<sub>Built at SanD Hacks 2026. Full spec: [`docs/build-plan.md`](docs/build-plan.md) · Team rules: [`docs/CONTRACTS.md`](docs/CONTRACTS.md)</sub>
+<sub>Built at SanD Hacks 2026. Handoff and demo guide: [`docs/HANDOFF.md`](docs/HANDOFF.md) · Full spec: [`docs/build-plan.md`](docs/build-plan.md) · Team rules: [`docs/CONTRACTS.md`](docs/CONTRACTS.md)</sub>
