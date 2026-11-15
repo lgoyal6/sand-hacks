@@ -11,7 +11,7 @@ const { rows } = await main.query<{ id: string; candidate_json: any }>("select i
 await store.close();
 const qid = `${quizId}-retake-${new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)}`;
 const quiz = { id: qid, courseId: "sandbox-course", title: "Intro Statistics: practice set", sourceFormat: "markdown",
-  items: [{ ...original, id: `${origId}-control`, quizId: qid, originalItemId: origId }, ...rows.map((r) => ({ ...r.candidate_json, id: r.id, quizId: qid }))] };
+  items: [{ ...original, id: `${origId}-control`, quizId: qid, originalItemId: origId }, ...rows.map((r) => { const { figureText: _hidden, ...visible } = r.candidate_json; return { ...visible, id: r.id, quizId: qid }; })] };
 await writeFile(out!, JSON.stringify(quiz, null, 2));
 console.log(qid, quiz.items.map((i) => i.id).join(","));
 setTimeout(() => process.exit(0), 50);

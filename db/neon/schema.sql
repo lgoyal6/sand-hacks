@@ -41,3 +41,28 @@ alter table item add column if not exists figure_json jsonb;
 alter table item add column if not exists figure_text text;
 -- C: accessible-version requests per attempt, e.g. [{itemId, kind: "figure_text", at}]
 alter table attempt add column if not exists accommodations jsonb default '[]';
+-- The quiz students get: in each original's slot, the latest PROFESSOR-APPROVED variant (never merely
+-- "verified"), else the original. Approval only happens after merge, so an approved variant's item is on main.
+create or replace view delivered_item as
+select
+  o.quiz_id,
+  (regexp_match(o.id, '-q(\d+)$'))[1]::int as slot,
+  o.id as original_item_id,
+  coalesce(v.id, o.id) as item_id,
+  coalesce(v.stem, o.stem) as stem,
+  coalesce(v.type, o.type) as type,
+  case when v.id is not null then v.choices_json else o.choices_json end as choices_json,
+  coalesce(v.answer_key, o.answer_key) as answer_key,
+  coalesce(v.objective, o.objective) as objective,
+  case when v.id is not null then v.figure_json else o.figure_json end as figure_json,
+  case when v.id is not null then v.figure_text else o.figure_text end as figure_text,
+  v.id is not null as is_variant
+from item o
+left join lateral (
+  select i.* from variant_experiment e join item i on i.id = e.candidate_item_id
+  where e.item_id = o.id and e.status = 'approved' and e.candidate_item_id is not null
+  order by e.created_at desc, e.id desc limit 1
+) v on true
+where o.original_item_id is null;
+-- C: the exact item ids served in an attempt (variants included), next to quiz_version.
+alter table attempt add column if not exists delivered_item_ids jsonb default '[]';
