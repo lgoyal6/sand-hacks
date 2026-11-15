@@ -4,25 +4,14 @@
 // `course` and `breadcrumbs` props are still accepted so existing pages compile, but are not rendered.
 // For learning screens use ChatLayout from "@/components/ui/chat".
 import * as React from "react";
-import { BarChart3, FlaskConical, Gauge } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatSidebar, type SidebarGroup, type SidebarNavLink } from "@/components/ui/chat/chat-sidebar";
 
-export const APP_LINKS: SidebarNavLink[] = [
-  { label: "Studio", href: "/studio", icon: <FlaskConical /> },
-  { label: "Insights", href: "/professor", icon: <BarChart3 /> },
-  { label: "Progress", href: "/progress", icon: <Gauge /> },
-];
+/** @deprecated The sidebar builds links from the viewer's role (components/ui/nav). Kept so imports compile. */
+export const APP_LINKS: SidebarNavLink[] = [];
 
-export const DEFAULT_GROUPS: SidebarGroup[] = [
-  {
-    label: "Intro Statistics",
-    items: [
-      { id: "quiz-1", title: "Quiz 1", meta: "Practice", href: "/quiz/sample-stats" },
-      { id: "course", title: "Course home", href: "/course" },
-    ],
-  },
-];
+/** No page-specific groups by default: the sidebar adds the current class's quizzes itself. */
+export const DEFAULT_GROUPS: SidebarGroup[] = [];
 
 /** @deprecated Course sub-nav is retired. Kept so existing imports compile. */
 export interface CourseNavItem {
@@ -59,7 +48,7 @@ export function AppShell({ children, title, subtitle, actions, wide, groups = DE
   const [collapsed, setCollapsed] = React.useState(false);
   return (
     <div className="flex h-svh w-full overflow-hidden bg-background">
-      <ChatSidebar groups={groups} links={APP_LINKS} collapsed={collapsed} onCollapsedChange={setCollapsed} user={{ name: "Professor", detail: "Intro Statistics" }} />
+      <ChatSidebar groups={groups} collapsed={collapsed} onCollapsedChange={setCollapsed} />
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
         {(title || actions) && (
           <header className={cn("mx-auto flex w-full items-end justify-between gap-4 px-8 pb-2 pt-10", !wide && "max-w-5xl")}>
