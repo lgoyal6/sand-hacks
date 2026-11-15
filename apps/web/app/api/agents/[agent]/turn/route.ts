@@ -7,14 +7,17 @@
 // Mode and quiz come from the attempt on the server (lib/agents/session), never from the request.
 import type { AgentEvent } from "@unprompted/shared";
 import { sessionFor } from "@/lib/agents/session";
+import { getViewer } from "@/lib/auth/server";
 
 const MASTRA_URL = (process.env.MASTRA_URL?.trim() || "http://localhost:3102").replace(/\/$/, "");
 
 /** Agents the browser may talk to directly. Others (judge panel, rewriter) run inside workflows. */
-const AGENTS: Record<string, { id: string; name: string; practiceOnly?: boolean; maxSteps?: number }> = {
+const AGENTS: Record<string, { id: string; name: string; practiceOnly?: boolean; professorOnly?: boolean; maxSteps?: number }> = {
   tutor: { id: "tutor", name: "Tutor" },
   // Web research can't be a way to look up answers mid-quiz: refused in graded mode, before any model call.
   researcher: { id: "researcher", name: "Researcher", practiceOnly: true, maxSteps: 6 },
+  // Professor tools: quiz-level evidence, not for students.
+  "leak-scout": { id: "leak-scout", name: "Leak scout", professorOnly: true, maxSteps: 5 },
 };
 
 const TOOL_LABEL: Record<string, string> = {
@@ -23,6 +26,8 @@ const TOOL_LABEL: Record<string, string> = {
   explainResult: "Looking up what the question tests",
   brightdata_search_engine: "Searching the web (Bright Data)",
   brightdata_scrape_as_markdown: "Reading a source (Bright Data)",
+  leakReport: "Checking leak findings on record",
+  scanQuizForLeaks: "Searching the web for the questions (Bright Data)",
 };
 
 const URL_RE = /https?:\/\/[^\s"'<>)\]]+/g;
@@ -37,6 +42,10 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
   if (!input) return Response.json({ error: "input is required" }, { status: 400 });
   if (input.length > 4000) return Response.json({ error: "input is too long" }, { status: 413 });
 
+  if (spec.professorOnly) {
+    const viewer = await getViewer().catch(() => null);
+    if (!viewer || viewer.role !== "professor") return Response.json({ error: "Professors only." }, { status: 403 });
+  }
   const session = await sessionFor(body.attemptId);
   if (spec.practiceOnly && session.mode !== "practice") {
     const now = new Date().toISOString();
