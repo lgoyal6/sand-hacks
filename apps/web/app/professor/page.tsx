@@ -20,6 +20,7 @@ import {
   loadArchiveWatch,
   loadAttackSummary,
   loadAttempts,
+  loadPseudonyms,
   loadLeaks,
   loadProbes,
   loadQuiz,
@@ -246,8 +247,8 @@ async function ExplainGapPanel() {
 
 async function SessionsPanel() {
   await connection();
-  const [sessions, attempts] = await Promise.all([loadSessions(), loadAttempts()]);
-  const pseudo = new Map(attempts.data.map((a) => [a.id, a.studentPseudonym]));
+  const sessions = await loadSessions();
+  const pseudo = await loadPseudonyms(sessions.data.map((x) => x.attempt_id));
   const rows: SessionRow[] = sessions.data.map((s) => {
     const base = {
       attemptId: s.attempt_id,
