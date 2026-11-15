@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import type { ExplainGapCell } from "@unprompted/shared";
 import { AppShell } from "@/components/ui/app-shell";
+import { TreeCard } from "@/app/studio/_components/tree-card";
+import { loadTree } from "@/app/studio/_lib/tree";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Kpi, Panel, PanelEmpty, SourceNote } from "@/components/dashboard/panel";
 import { SolveRateHeatmap } from "@/components/dashboard/solve-rate-heatmap";
@@ -38,6 +40,9 @@ export default function Page() {
         </Suspense>
         <Suspense fallback={<PanelSkeleton />}>
           <LeakPanel />
+        </Suspense>
+        <Suspense fallback={<PanelSkeleton />}>
+          <TreePanel />
         </Suspense>
         <Suspense fallback={<PanelSkeleton />}>
           <ExplainGapPanel />
@@ -165,6 +170,27 @@ async function LeakPanel() {
         <SourceNote origin={leaks.origin} updatedAt={leaks.updatedAt} />
       </div>
       <LeakRadar data={radar} />
+    </div>
+  );
+}
+
+async function TreePanel() {
+  await connection();
+  const quiz = await loadQuiz();
+  const quizId = quiz.data?.id ?? "sample-stats";
+  let tree: Awaited<ReturnType<typeof loadTree>> | null = null;
+  let error: string | null = null;
+  try {
+    tree = await loadTree(quizId);
+  } catch (e) {
+    error = (e as Error).message;
+  }
+  return (
+    <div className="space-y-2">
+      <div className="px-1">
+        <h2 className="text-[15px] font-semibold">Experiment tree</h2>
+      </div>
+      {tree ? <TreeCard data={tree} /> : <PanelEmpty>{error ? `Couldn't read the experiment tree: ${error}` : "No experiments yet."}</PanelEmpty>}
     </div>
   );
 }
