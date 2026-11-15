@@ -2,6 +2,7 @@
 // - The one model-backed request on these paths, POST /api/probes/:id/counterfactual, is stubbed with page.route,
 //   so a cache miss can never fall through to Gemini. Everything else is real (server grading, telemetry, probes).
 // - Rows are tagged studentPseudonym "e2e-<ts>" and never deleted.
+import { signIn } from "./auth";
 import { test, expect, type Page, type Response } from "@playwright/test";
 import { config } from "dotenv";
 import path from "node:path";
@@ -30,6 +31,7 @@ async function blockLLM(page: Page) {
 }
 
 test("home page loads", async ({ page }) => {
+  await signIn(page, "student");
   const res = await page.goto("/");
   expect(res?.status()).toBe(200);
   await expect(page.locator("body")).toContainText(/Unprompted|Intro Statistics|studio/i);
@@ -38,6 +40,7 @@ test("home page loads", async ({ page }) => {
 test("professor studio loads", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  await signIn(page, "professor");
   const res = await page.goto("/studio");
   expect(res?.status()).toBe(200);
   await expect(page.locator("main, body").first()).not.toBeEmpty();
@@ -60,6 +63,7 @@ test("practice quiz: answer all 5, feedback, typed probe, telemetry lands", asyn
     }
   });
 
+  await signIn(page, "student");
   await page.goto(`/quiz/${QUIZ}?mode=practice&student=${student}`);
   // On a cold dev server the button can render before hydration (or mid-compile); retry until the quiz starts.
   await expect(async () => {

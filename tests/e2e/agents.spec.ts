@@ -1,5 +1,6 @@
 // Agents panel smoke tests. ZERO LLM calls: the studio replays a recorded run (time-compressed SSE), and the
 // event bridge is exercised with a synthetic window event.
+import { signIn } from "./auth";
 import { test, expect } from "@playwright/test";
 
 test.use({ viewport: { width: 1440, height: 900 } }); // the panel is hidden below the lg breakpoint
@@ -7,6 +8,7 @@ test.use({ viewport: { width: 1440, height: 900 } }); // the panel is hidden bel
 test("studio: replaying a recorded run shows agent activity in the Agents panel", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  await signIn(page, "professor");
   await page.goto("/studio");
   const panel = page.getByRole("complementary", { name: "Agents" });
   await expect(panel).toBeVisible();
@@ -22,6 +24,7 @@ test("studio: replaying a recorded run shows agent activity in the Agents panel"
 });
 
 test("agent-status window events render in the Agents panel", async ({ page }) => {
+  await signIn(page, "professor");
   await page.goto("/studio");
   const panel = page.getByRole("complementary", { name: "Agents" });
   await expect(panel).toBeVisible();

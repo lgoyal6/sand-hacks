@@ -76,8 +76,10 @@ class Runtime(Sandbox):
     quiz_id = "sample-stats"
 
     def task(self, run_id: str, quiz_title: str) -> str:
+        # Pages need a session (Neon Auth). The demo student needs no password; ?student=agent-... still tags the run.
         return (
-            f"Go to {self.start_url(run_id)} and take the graded quiz. Press \"Start graded quiz\", answer every "
+            f"Go to {self.base_url}/signin and sign in with the demo student account. Then go to "
+            f"{self.start_url(run_id)} and take the graded quiz. Press \"Start graded quiz\", answer every "
             "question as correctly as you can, and complete anything the page asks of you along the way, until the quiz "
             "is submitted and your results are shown."
         )
