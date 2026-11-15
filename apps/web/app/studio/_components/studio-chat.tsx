@@ -318,7 +318,7 @@ export function StudioChat({ data }: { data: StudioData }) {
     if (m.kind === "leaks") {
       return (
         <Message key={m.id} role="assistant" agentName={nameFor(m)}>
-          {m.error ? <p className="text-muted-foreground">{m.error}</p> : m.text ? <p>{m.text}</p> : null}
+          {m.error ? <p className="text-muted-foreground">{m.error}</p> : m.text ? <p>{withBold(m.text)}</p> : null}
           {m.radar ? (
             <div className="mt-3">
               <LeakRadar data={m.radar} />
@@ -401,6 +401,13 @@ export function StudioChat({ data }: { data: StudioData }) {
         {decideError ? <p className="text-sm text-rejected">{decideError}</p> : null}
       </Thread>
     </ChatLayout>
+  );
+}
+
+/** Agents may use **bold** (and nothing else); render it without a Markdown library. */
+function withBold(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? <strong key={i}>{part.slice(2, -2)}</strong> : <span key={i}>{part}</span>,
   );
 }
 
