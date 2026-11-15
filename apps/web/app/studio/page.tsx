@@ -1,9 +1,18 @@
-// Placeholder from the scaffold. Owner: B (see docs/CONTRACTS.md).
+// Professor studio (owner: B): a chat thread where the professor attacks a quiz,
+// watches variants get written and checked, and approves survivors.
+import { Suspense } from "react";
+import { getStudioData } from "./_lib/data";
+import { StudioChat } from "./_components/studio-chat";
+
 export default function Page() {
   return (
-    <section className="space-y-2">
-      <h1 className="text-2xl font-semibold">Professor studio</h1>
-      <p className="text-muted-foreground">Import a quiz, attack it with agents, and approve verified variants.</p>
-    </section>
+    <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Loading studio…</div>}>
+      <Studio />
+    </Suspense>
   );
+}
+
+async function Studio() {
+  const data = await getStudioData("sample-stats");
+  return <StudioChat data={data} />;
 }

@@ -2,7 +2,7 @@
 //   POST /studio/api/variants/<id>  { "action": "approve" | "unapprove" }
 import path from "node:path";
 import type { VariantExperiment } from "@unprompted/shared";
-import { FIXTURES_DIR, updateJson } from "@/lib/db/fixtures";
+import { FIXTURES_DIR, readJson, updateJson } from "@/lib/db/fixtures";
 import { neonMain } from "../../../_lib/data";
 
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
@@ -21,9 +21,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     if (exists.rows[0]) return Response.json({ error: `variant is ${exists.rows[0].status}; only ${from} variants can be ${body.action}d` }, { status: 409 });
   }
 
-  // Fixture fallback (no Neon, or the variant only exists in variants.json).
+  // Fixture fallback (no Neon, or the variant only exists in variants.json). Never create the file.
+  const file = path.join(FIXTURES_DIR, "variants.json");
+  const existing = await readJson<VariantExperiment[] | null>(file, null);
+  if (!existing?.some((v) => v.id === id)) return Response.json({ error: "variant not found" }, { status: 404 });
   let result: { status?: string; error?: string } = { error: "variant not found" };
-  await updateJson<VariantExperiment[]>(path.join(FIXTURES_DIR, "variants.json"), [], (all) =>
+  await updateJson<VariantExperiment[]>(file, [], (all) =>
     all.map((v) => {
       if (v.id !== id) return v;
       if (v.status !== from) {

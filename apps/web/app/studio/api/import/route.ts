@@ -31,8 +31,9 @@ export async function POST(req: Request) {
   });
   if (code !== 0) {
     await fs.rm(file, { force: true });
-    const reason = out.split("\n").find((l) => /^Error: |item .* has|unknown item type|no items/.test(l.trim())) ?? out.trim().split("\n").at(-1);
-    return Response.json({ error: `Couldn't read that quiz: ${reason?.replace(/^.*Error:\s*/, "")}` }, { status: 422 });
+    // tsx prints a code frame too; the parser's message is the line that starts with "Error:".
+    const reason = out.split("\n").map((l) => l.trim()).find((l) => /^Error: /.test(l))?.slice(7) ?? "unrecognized format";
+    return Response.json({ error: `Couldn't read that quiz: ${reason}` }, { status: 422 });
   }
   return Response.json({ quizId: slug, message: out.trim().split("\n").filter((l) => l.startsWith("Imported")).at(-1) });
 }

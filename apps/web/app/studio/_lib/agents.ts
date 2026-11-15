@@ -114,6 +114,13 @@ export function reduceRun(prev: RunState, e: StudioEvent): RunState {
       s.running = false;
       s.finished = { ok: e.ok, message: e.message };
       for (const n of AGENT_ORDER) if (s.agents[n].status === "working" || s.agents[n].status === "thinking") set(n, "idle", "Done");
+      for (const id of s.order) {
+        const c = s.cards[id]!;
+        if (c.status === "generating" || c.status === "checking" || c.status === "re-attacking") {
+          c.status = "unverified";
+          c.reason = "The run ended before this variant was decided.";
+        }
+      }
       return s;
     case "stage": {
       const c = card(s, e.experimentId, e.itemId, e.strategy);
@@ -145,8 +152,12 @@ export function reduceRun(prev: RunState, e: StudioEvent): RunState {
       c.checks.push({ label: CHECK_LABEL[e.check] ?? e.check, passed: e.passed, detail: e.detail });
       if (e.check === "answerKeyConsistent") {
         set("Quiz checker", e.passed ? "complete" : "complete", `${short(e.experimentId)}: ${e.passed ? "key reproduced 3/3" : "key not reproduced"}`);
-      } else if (e.total) {
-        set("Judge panel", "complete", `${short(e.experimentId)}: ${e.agree}/${e.total} agree (${CHECK_LABEL[e.check]?.toLowerCase()})`);
+      } else {
+        // Older recordings have no vote counts; their detail reads "panel 3/3: ...".
+        const m = e.detail.match(/panel (\d+)\/(\d+)/);
+        const agree = e.agree ?? (m ? Number(m[1]) : undefined);
+        const total = e.total ?? (m ? Number(m[2]) : undefined);
+        set("Judge panel", "complete", `${short(e.experimentId)}: ${agree != null && total ? `${agree}/${total} agree` : e.passed ? "agrees" : "disagrees"} (${CHECK_LABEL[e.check]?.toLowerCase()})`);
       }
       return s;
     }
