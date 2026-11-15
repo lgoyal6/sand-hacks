@@ -214,3 +214,33 @@ export function selectTargets(
   }
   return { targets, notes };
 }
+
+// ---------- 7. professor decision (human in the loop) ----------
+
+export interface ApprovalDecision {
+  id: string;
+  approve: boolean;
+  note?: string;
+}
+
+/**
+ * Apply the professor's decisions on main. Only verified variants can be decided:
+ * approve -> "approved"; reject -> "rejected" with the professor's reason.
+ * Returns the ids that changed (anything else was not verified, or already decided).
+ */
+export async function applyApprovals(db: Db, decisions: ApprovalDecision[]): Promise<string[]> {
+  const changed: string[] = [];
+  for (const d of decisions) {
+    const reason = d.approve ? null : `Rejected by professor${d.note ? `: ${d.note}` : ""}`;
+    const { rows } = await db.query<{ id: string }>(
+      `update variant_experiment
+          set status = $2,
+              reasons_json = case when $3::text is null then reasons_json else coalesce(reasons_json, '[]'::jsonb) || to_jsonb($3::text) end
+        where id = $1 and status = 'verified'
+        returning id`,
+      [d.id, d.approve ? "approved" : "rejected", reason],
+    );
+    if (rows[0]) changed.push(rows[0].id);
+  }
+  return changed;
+}
