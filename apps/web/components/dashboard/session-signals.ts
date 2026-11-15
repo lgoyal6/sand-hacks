@@ -28,10 +28,11 @@ export function sessionSignals(r: Omit<SessionRow, "signals">): string[] {
 }
 
 
-/** Label from the attempt's studentPseudonym: "agent-<runId>" = agent run, "script-…"/"test-…" = scripted test. */
+/** Label from the attempt's studentPseudonym: "agent-<runId>" = agent run, script-/scripted-/test-/qa-/e2e- = scripted test. */
 export function whoFromPseudonym(p: string | undefined): SessionRow["who"] {
   if (!p) return "unlabelled";
   if (p.startsWith("agent-")) return "agent run";
-  if (/^(script|test|qa)-/.test(p)) return "scripted test";
+  // A's and C's automated runs: script-, scripted-, test-, qa-, e2e- (anything else is treated as a person).
+  if (/^(script|scripted|test|qa|e2e)[-_]/i.test(p)) return "scripted test";
   return "human";
 }

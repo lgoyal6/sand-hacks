@@ -92,6 +92,8 @@ def label_sessions(features: Iterable[dict], attempts: dict[str, dict]) -> list[
         pseudo = str(a.get("studentPseudonym", ""))
         if pseudo.startswith("agent-"):
             out.append(Session(row["attempt_id"], 1, pseudo, featurize(row)))
+        elif pseudo.lower().startswith(("script-", "scripted-", "test-", "qa-", "e2e-")):
+            continue  # scripted test sessions are neither agents nor people
         elif a.get("consentTelemetry", a.get("consent", True)):
             out.append(Session(row["attempt_id"], 0, pseudo or row["attempt_id"], featurize(row)))
     return out
