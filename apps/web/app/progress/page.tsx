@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { ProgressView } from "@/components/progress/progress-view";
 import { getViewer } from "@/lib/auth/server";
+import { AppShell } from "@/components/ui/app-shell";
 
 async function Body({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   // Professors don't have "Your progress"; their view is the class roster.
@@ -14,11 +15,10 @@ async function Body({ searchParams }: { searchParams: Promise<Record<string, str
 
 export default function ProgressPage({ searchParams }: PageProps<"/progress">) {
   return (
-    <main className="mx-auto w-full max-w-[760px] px-4 py-10">
-      <h1 className="mb-8 text-2xl font-semibold tracking-tight">Your progress</h1>
+    <AppShell title="Your progress" subtitle="What you can explain, what to review next.">
       <Suspense fallback={<p className="text-muted-foreground">Loading your progress...</p>}>
         <Body searchParams={searchParams} />
       </Suspense>
-    </main>
+    </AppShell>
   );
 }

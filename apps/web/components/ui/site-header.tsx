@@ -1,6 +1,7 @@
 // Header for public pages (/check, /study). Owner: D.
 import Link from "next/link";
 import { Logo } from "@/components/ui/logo";
+import { SiteHeaderAccount } from "@/components/ui/site-header-account";
 
 export function SiteHeader() {
   return (
@@ -16,9 +17,7 @@ export function SiteHeader() {
           <Link href="/study" className="rounded-full px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
             The study
           </Link>
-          <Link href="/signin" className="ml-1 rounded-full border border-border px-3.5 py-1.5 hover:bg-muted">
-            Sign in
-          </Link>
+          <SiteHeaderAccount />
         </nav>
       </div>
     </header>
