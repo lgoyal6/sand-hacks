@@ -18,6 +18,6 @@ export async function POST(req: Request, ctx: RouteContext<"/api/probes/[id]/cou
   const answer = attempt.responses.find((r) => r.itemId === item.id)?.answer;
   const explanation = String(body.explanation ?? "").slice(0, 4000);
   const cf = await counterfactualFor(item, answer, explanation);
-  await patchProbe(id, { counterfactualPrompt: cf.prompt, counterfactualSource: cf.source, explanation });
+  await patchProbe(id, { counterfactualPrompt: cf.prompt, counterfactualSource: cf.source, counterfactualModel: "model" in cf ? cf.model : undefined, explanation });
   return NextResponse.json({ prompt: cf.prompt, source: cf.source });
 }

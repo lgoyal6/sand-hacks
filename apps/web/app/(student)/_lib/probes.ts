@@ -16,6 +16,7 @@ export type ProbeRecord = Probe & {
   explanation?: string;
   counterfactualAnswer?: string;
   counterfactualSource?: "gemini" | "template";
+  counterfactualModel?: string;
   retried?: boolean;
   conversationId?: string; // ElevenLabs conversation, when voice
 };
@@ -92,6 +93,7 @@ export async function counterfactualFor(item: Item, answer: string | string[] | 
     "Rules:",
     "- Change exactly one parameter, condition, or assumption of the ORIGINAL question (e.g. the sample size doubles, a value becomes negative, the test becomes one-sided), or ask which step would break.",
     "- The new answer must follow from the same reasoning as the original. Answerable in 20-40 seconds by talking, without a calculator.",
+    "- Perturb an INPUT of the problem (data, sample, setup), never the quantity the student must reason about. The question must not contain its own answer.",
     "- Build on the student's own answer and words where possible. Don't reveal whether their answer was right. Don't include the answer.",
     "- Warm, plain, one or two sentences, under 40 words. No preamble like 'Great job'.",
     "",
@@ -112,7 +114,7 @@ export async function counterfactualFor(item: Item, answer: string | string[] | 
     });
     const q = out.question?.trim();
     if (!q || q.length > 400) return fallback;
-    return { prompt: q, source: "gemini" as const };
+    return { prompt: q, source: "gemini" as const, model: out._model };
   } catch (err) {
     console.error("[probe] counterfactual generation failed, using template:", (err as Error).message);
     return fallback;
