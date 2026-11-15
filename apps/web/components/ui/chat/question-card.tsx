@@ -157,8 +157,8 @@ export function ChoiceOption({ letter, children, kind = "radio", state, classNam
   return (
     <label
       className={cn(
-        "group/opt relative flex w-full cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-3 text-[15px] transition-colors hover:bg-muted/60",
-        "has-[:checked]:border-foreground/70 has-[:checked]:bg-muted/60 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+        "group/opt relative flex w-full cursor-pointer items-center gap-3.5 rounded-[14px] border border-border px-[18px] py-4 text-[16px] transition-colors hover:bg-muted/60",
+        "has-[:checked]:border-foreground has-[:checked]:border-[1.5px] has-[:checked]:bg-muted/50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
         disabled && "cursor-default hover:bg-transparent",
         state === "correct" && "border-verified/50 bg-verified-soft has-[:checked]:border-verified/60 has-[:checked]:bg-verified-soft",
         state === "incorrect" && "border-foreground/20 bg-muted",
@@ -169,7 +169,7 @@ export function ChoiceOption({ letter, children, kind = "radio", state, classNam
       <span
         aria-hidden
         className={cn(
-          "grid size-6 shrink-0 place-items-center rounded-full border border-border text-xs font-medium text-muted-foreground transition-colors",
+          "grid size-7 shrink-0 place-items-center rounded-full border border-border text-[13px] font-medium text-muted-foreground transition-colors",
           "peer-checked:border-foreground peer-checked:bg-foreground peer-checked:text-background",
           state === "correct" && "border-verified bg-verified text-white peer-checked:border-verified peer-checked:bg-verified",
         )}

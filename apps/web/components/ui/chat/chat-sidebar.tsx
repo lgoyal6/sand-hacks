@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import * as React from "react";
 import { PanelLeftClose, PanelLeftOpen, Search, SquarePen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Logo as BrandLogo } from "@/components/ui/logo";
 
 export interface SidebarItem {
   id: string;
@@ -40,14 +41,7 @@ export interface ChatSidebarProps {
 }
 
 export function Logo({ compact = false }: { compact?: boolean }) {
-  return (
-    <span className="flex items-center gap-2">
-      <span aria-hidden className="grid size-7 place-items-center rounded-lg bg-brand text-[13px] font-semibold text-white">
-        U
-      </span>
-      {!compact && <span className="text-[15px] font-semibold tracking-tight">Unprompted</span>}
-    </span>
-  );
+  return <BrandLogo wordmark={!compact} size={compact ? 26 : 24} />;
 }
 
 export function ChatSidebar({
