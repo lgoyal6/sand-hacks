@@ -2,7 +2,7 @@
 // Order: CANVAS_BASE_URL + CANVAS_TOKEN in the env, else a token the professor pasted (kept in server
 // memory for this process only, per professor; a restart forgets it).
 import "server-only";
-import { CanvasClient } from "./client";
+import { CanvasClient, CanvasError } from "./client";
 
 const pasted = new Map<string, { baseUrl: string; token: string; name: string }>();
 
@@ -15,8 +15,20 @@ export function canvasFor(userId: string): { client: CanvasClient; source: "env"
 }
 
 export async function connectCanvas(userId: string, baseUrl: string, token: string) {
-  const client = new CanvasClient(baseUrl, token);
-  const me = await client.self(); // validates the token before keeping it
+  let client: CanvasClient;
+  try {
+    client = new CanvasClient(baseUrl, token);
+  } catch {
+    throw new Error("Enter your Canvas address, starting with https://");
+  }
+  let me: { id: number; name: string };
+  try {
+    me = await client.self(); // validates the token before keeping it
+  } catch (e) {
+    if (e instanceof CanvasError) throw e;
+    // Network-level failure (DNS, TLS, refused): say so plainly instead of "fetch failed".
+    throw new Error(`Couldn't reach ${new URL(baseUrl).host}. Check the Canvas address.`);
+  }
   pasted.set(userId, { baseUrl, token, name: me.name });
   return { name: me.name };
 }

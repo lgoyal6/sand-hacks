@@ -2,7 +2,9 @@
 // Studio as a conversation (owner: B), on D's chat shell. No LLM behind the composer: it maps
 // plain requests to actions (attack results, rewrite, replay, import), so it spends no quota.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Download, FileUp, GitBranch, Globe, History, PlayCircle, Target, Wand2 } from "lucide-react";
+import { Download, FileUp, GitBranch, Globe, History, Link2, Target } from "lucide-react";
+import { CanvasCard } from "./canvas-card";
+import { AppealPicker } from "./appeal-picker";
 import { TreeCard } from "./tree-card";
 import type { TreeData } from "../_lib/tree";
 import type { LeakFinding } from "@unprompted/shared";
@@ -36,7 +38,9 @@ type Msg =
   | { id: string; role: "assistant"; agent?: string; kind: "run"; runId: string }
   | { id: string; role: "assistant"; agent?: string; kind: "import" }
   | { id: string; role: "assistant"; agent?: string; kind: "leaks"; text: string; radar: LeakRadarData | null; done: boolean; error?: string }
-  | { id: string; role: "assistant"; agent?: string; kind: "tree" };
+  | { id: string; role: "assistant"; agent?: string; kind: "tree" }
+  | { id: string; role: "assistant"; agent?: string; kind: "canvas" }
+  | { id: string; role: "assistant"; agent?: string; kind: "appeal" };
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 let seq = 0;
@@ -131,9 +135,12 @@ export function StudioChat({ data }: { data: StudioData }) {
     push({ id: nid(), role: "user", text: "Attack my quiz" });
     push({ id: nid(), role: "assistant", agent: "Quiz checker", kind: "attack" });
     if (solvable.length) {
-      say(`Agents can answer ${solvable.length} of ${quiz?.items.length ?? 0} questions. Want me to rewrite them so agents fail but the skill being tested stays the same?`, {
-        actions: [{ label: "Rewrite agent-solvable questions", primary: true, run: () => offerRewrite(solvable.map((s) => s.itemId)) }],
-      });
+      say(
+        `Agents can answer ${solvable.length} of ${quiz?.items.length ?? 0} questions. I can write new versions that keep the same answer and skill and aren't already online, so copied answer keys stop working. In our tests agents still solve reasonable rewrites, so for these questions the think-aloud check is what shows real understanding.`,
+        {
+          actions: [{ label: "Write new versions", primary: true, run: () => offerRewrite(solvable.map((s) => s.itemId)) }],
+        },
+      );
     }
   }, [offerRewrite, push, quiz?.items.length, say, solvable]);
 
@@ -240,6 +247,8 @@ export function StudioChat({ data }: { data: StudioData }) {
       push({ id: nid(), role: "user", text: t });
       if (/replay|recorded/i.test(t)) return replay();
       if (/leak|online|published|posted|quizlet|chegg|reddit/i.test(t)) return void checkLeaks();
+      if (/what .*saw|appeal|time.?travel/i.test(t)) return push({ id: nid(), role: "assistant", kind: "appeal" });
+      if (/connect\s+canvas|import.*canvas|canvas.*course/i.test(t)) return push({ id: nid(), role: "assistant", kind: "canvas" });
       if (/export|canvas/i.test(t)) return void exportCanvas();
       if (/tree|branch|neon/i.test(t)) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "tree" });
       if (/saved|past|previous/i.test(t) && data.experiments.length) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "saved" });
@@ -388,6 +397,29 @@ export function StudioChat({ data }: { data: StudioData }) {
         </Message>
       );
     }
+    if (m.kind === "appeal") {
+      return (
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
+          <p>Pick an attempt. I&apos;ll branch the database at the moment it started and show the quiz exactly as that student saw it.</p>
+          <div className="mt-3">
+            <AppealPicker quizId={quiz!.id} />
+          </div>
+        </Message>
+      );
+    }
+    if (m.kind === "canvas") {
+      return (
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
+          <CanvasCard
+            onImported={(r) =>
+              say(`Imported "${r.title}" from Canvas: ${r.items} question${r.items === 1 ? "" : "s"}${r.skipped?.length ? `, ${r.skipped.length} skipped (unsupported types)` : ""}.`, {
+                actions: [{ label: "Open it here and attack it", primary: true, run: () => (window.location.href = `/studio?quiz=${encodeURIComponent(r.quizId)}`) }],
+              })
+            }
+          />
+        </Message>
+      );
+    }
     if (m.kind === "tree") {
       return (
         <Message key={m.id} role="assistant" agentName={nameFor(m)}>
@@ -439,19 +471,6 @@ export function StudioChat({ data }: { data: StudioData }) {
             <Chip icon={<Target />} onClick={showAttack}>
               Attack my quiz
             </Chip>
-            {solvable.length ? (
-              <Chip icon={<Wand2 />} onClick={() => handle("rewrite agent-solvable questions")}>
-                Rewrite what agents solve
-              </Chip>
-            ) : null}
-            {data.recordings.length ? (
-              <Chip icon={<PlayCircle />} onClick={() => handle("replay the recorded run")}>
-                Replay a recorded run
-              </Chip>
-            ) : null}
-            <Chip icon={<Download />} onClick={() => void exportCanvas()}>
-              Export to Canvas
-            </Chip>
             <Chip icon={<Globe />} onClick={() => void checkLeaks()}>
               Is any of this online?
             </Chip>
@@ -460,11 +479,15 @@ export function StudioChat({ data }: { data: StudioData }) {
                 Experiment tree
               </Chip>
             ) : null}
-            {data.experiments.length ? (
-              <Chip icon={<History />} onClick={() => handle("show saved variants")}>
-                Saved variants
-              </Chip>
-            ) : null}
+            <Chip icon={<History />} onClick={() => handle("show what a student saw")}>
+              Show what a student saw
+            </Chip>
+            <Chip icon={<Download />} onClick={() => void exportCanvas()}>
+              Export to Canvas
+            </Chip>
+            <Chip icon={<Link2 />} onClick={() => handle("connect canvas")}>
+              Connect Canvas
+            </Chip>
           </>
         ),
       }}
