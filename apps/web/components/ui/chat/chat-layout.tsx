@@ -8,6 +8,9 @@ import { PanelRightOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ChatSidebar, type ChatSidebarProps } from "./chat-sidebar";
 import { AgentPanel, type AgentInfo } from "./agent-panel";
+import { usePathname } from "next/navigation";
+import { useNav } from "@/components/ui/nav";
+import { LeakAlertBanner } from "@/components/dashboard/leak-alerts";
 
 export interface ChatLayoutProps {
   sidebar: Omit<ChatSidebarProps, "collapsed" | "onCollapsedChange">;
@@ -53,6 +56,9 @@ export function ChatLayout({ sidebar, agents, activeAgentId, children, empty, ho
               </button>
             )}
           </div>
+          <React.Suspense fallback={null}>
+            <StudioAlerts />
+          </React.Suspense>
 
           {scene ? (
             <motion.div
@@ -115,5 +121,17 @@ export function Chip({ children, onClick, icon }: { children: React.ReactNode; o
       {icon}
       {children}
     </button>
+  );
+}
+
+/** Leak alerts banner: professors, in the Studio only. Reads the URL, so it renders under Suspense. */
+function StudioAlerts() {
+  const pathname = usePathname();
+  const { viewer } = useNav();
+  if (viewer?.role !== "professor" || pathname !== "/studio") return null;
+  return (
+    <div className="px-4 pb-2">
+      <LeakAlertBanner className="mx-auto max-w-[720px]" />
+    </div>
   );
 }

@@ -50,17 +50,22 @@ export function AppShell({ children, title, subtitle, actions, wide, groups = DE
     <div className="flex h-svh w-full overflow-hidden bg-background">
       <ChatSidebar groups={groups} collapsed={collapsed} onCollapsedChange={setCollapsed} />
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        {(title || actions) && (
-          <header className={cn("mx-auto flex w-full items-end justify-between gap-4 px-4 pb-2 pt-16 sm:px-8 md:pt-10", !wide && "max-w-5xl")}>
-            <div className="min-w-0">
-              {title && <h1 className="truncate text-[26px] font-semibold tracking-tight">{title}</h1>}
-              {subtitle && <p className="mt-1 text-[15px] text-muted-foreground">{subtitle}</p>}
-            </div>
-            {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
-          </header>
-        )}
+        {(title || actions) && <PageHeading title={title} subtitle={subtitle} actions={actions} wide={wide} />}
         <main className={cn("mx-auto w-full flex-1 px-4 py-6 sm:px-8", !wide && "max-w-5xl", className)}>{children}</main>
       </div>
     </div>
+  );
+}
+
+/** The page title block shared by AppShell and PublicShell, so public and in-app pages look the same. */
+export function PageHeading({ title, subtitle, actions, wide }: { title?: string; subtitle?: React.ReactNode; actions?: React.ReactNode; wide?: boolean }) {
+  return (
+    <header className={cn("mx-auto flex w-full flex-wrap items-end justify-between gap-4 px-4 pb-2 pt-16 sm:px-8 md:pt-10", !wide && "max-w-5xl")}>
+      <div className="min-w-0">
+        {title && <h1 className="text-[26px] font-semibold tracking-tight">{title}</h1>}
+        {subtitle && <p className="mt-1 text-[15px] text-muted-foreground">{subtitle}</p>}
+      </div>
+      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+    </header>
   );
 }

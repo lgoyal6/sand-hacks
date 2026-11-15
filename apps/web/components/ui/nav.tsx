@@ -2,7 +2,6 @@
 // One source of truth for the sidebar (owner: D): links per role, the signed-in viewer, and the current class.
 // Every page's sidebar (AppShell, ChatLayout, Studio) reads from here, so the nav is the same everywhere.
 import * as React from "react";
-import { usePathname } from "next/navigation";
 import { BarChart3, FlaskConical, Gauge, Search, ScanSearch, SquarePen, Users } from "lucide-react";
 import type { NavClass } from "@/app/api/nav/route";
 
@@ -19,15 +18,17 @@ export interface NavLinkDef {
   /** Other path prefixes that should light this link up. */
   match?: string[];
   section?: string;
+  /** Shows the count of unseen leak alerts. */
+  alerts?: boolean;
 }
 
 /** Student: New session, Your progress. Professor: Studio, Students, Insights, then public tools. */
 export function linksFor(role: NavRole | null): NavLinkDef[] {
   if (role === "professor")
     return [
-      { label: "Studio", href: "/studio", icon: <FlaskConical /> },
+      { label: "Studio", href: "/studio", icon: <FlaskConical />, alerts: true },
       { label: "Students", href: "/professor/students", icon: <Users /> },
-      { label: "Insights", href: "/professor", icon: <BarChart3 />, match: ["/professor/design"] },
+      { label: "Insights", href: "/professor", icon: <BarChart3 />, match: ["/professor/design"], alerts: true },
       { label: "Leak checker", href: "/check", icon: <Search />, section: "Public tools" },
       { label: "Leak study", href: "/study", icon: <ScanSearch />, section: "Public tools" },
     ];
@@ -67,7 +68,6 @@ function load(): Promise<Omit<NavState, "loading">> {
 
 export function useNav() {
   const [state, setState] = React.useState<NavState>(() => (last ? { loading: false, ...last } : { loading: true, viewer: null, classes: [] }));
-  const pathname = usePathname();
   const [classId, setClassId] = React.useState<string | null>(null);
   React.useEffect(() => {
     let live = true;
@@ -79,7 +79,7 @@ export function useNav() {
       live = false;
       listeners.delete(sync);
     };
-  }, [pathname]);
+  }, []);
   const current = state.classes.find((c) => c.id === classId) ?? state.classes[0] ?? null;
   const setClass = React.useCallback((id: string) => {
     // A plain preference cookie: no auth involved.

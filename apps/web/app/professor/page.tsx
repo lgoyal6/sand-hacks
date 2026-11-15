@@ -16,6 +16,7 @@ import { ExplainGapGrid, QuadrantSummary, quadrantOf } from "@/components/dashbo
 import { SessionTable } from "@/components/dashboard/session-table";
 import { sessionSignals, whoFromPseudonym, type SessionRow } from "@/components/dashboard/session-signals";
 import { PanelLoader } from "@/components/ui/page-loader";
+import { LeakAlertBanner } from "@/components/dashboard/leak-alerts";
 import {
   itemLabels,
   loadAgentRuns,
@@ -36,6 +37,7 @@ export default function Page() {
   return (
     <AppShell wide title="Insights" subtitle="Intro Statistics · Quiz 1. What agents can do with this quiz, what's online, and who can explain their answers.">
       <div className="space-y-6">
+        <LeakAlertBanner />
         <Suspense fallback={<PanelLoader title="Loading the numbers" subtitle="Summing up this quiz" />}>
           <KpiRow />
         </Suspense>
