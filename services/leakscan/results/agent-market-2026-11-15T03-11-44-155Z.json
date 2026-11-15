@@ -77,25 +77,24 @@
       }
     ],
     "byPlatform": {
-      "Websites and services": 46,
+      "Websites and services": 37,
       "YouTube": 29,
       "Reddit": 15,
+      "Facebook and Instagram": 4,
       "Canvas community": 4,
+      "News and press": 3,
       "Browser add-on stores": 2,
+      "LinkedIn": 2,
       "Universities": 2,
       "Medium": 1,
       "GitHub": 1,
-      "News and press": 1,
+      "Blogs": 1,
       "TikTok": 1
     },
     "topServiceHosts": [
       {
         "host": "canvasninja.app",
         "pages": 4
-      },
-      {
-        "host": "facebook.com",
-        "pages": 3
       },
       {
         "host": "canvasquiz.com",
@@ -107,10 +106,6 @@
       },
       {
         "host": "addons.mozilla.org",
-        "pages": 2
-      },
-      {
-        "host": "linkedin.com",
         "pages": 2
       },
       {
@@ -126,15 +121,7 @@
         "pages": 1
       },
       {
-        "host": "boingboing.net",
-        "pages": 1
-      },
-      {
         "host": "curiously.app",
-        "pages": 1
-      },
-      {
-        "host": "premium.boingboing.net",
         "pages": 1
       },
       {
@@ -147,10 +134,6 @@
       },
       {
         "host": "globalonlineacademy.org",
-        "pages": 1
-      },
-      {
-        "host": "dev.to",
         "pages": 1
       },
       {
@@ -188,6 +171,26 @@
       {
         "host": "collegiumai.app",
         "pages": 1
+      },
+      {
+        "host": "cheatly.vercel.app",
+        "pages": 1
+      },
+      {
+        "host": "hwsolved.net",
+        "pages": 1
+      },
+      {
+        "host": "nytimes.com",
+        "pages": 1
+      },
+      {
+        "host": "blackboard.com",
+        "pages": 1
+      },
+      {
+        "host": "getanswerlyai.com",
+        "pages": 1
       }
     ],
     "method": "Six phrasings of 'an AI does my LMS coursework' searched on Google via the Bright Data SERP API, one search per phrasing per calendar month (Google's custom date range), top 20 results each. A page counts once per month. Platform is classified from the host name.",
@@ -195,14 +198,15 @@
       "Search results are not a census: this samples what Google surfaces for these phrasings.",
       "Google's date filter reflects when Google dated the page, which can differ from when it was posted.",
       "Pages discuss as well as advertise; a Reddit thread complaining about these tools counts the same as an ad.",
-      "Recent months can look smaller because Google has had less time to index them."
+      "Recent months can look smaller because Google has had less time to index them.",
+      "15 of 72 searches failed and returned nothing, so every month is undercounted somewhat."
     ]
   },
   "pages": [
     {
       "url": "https://www.facebook.com/BlackboardLMS/posts/-a-new-ai-gift-is-coming-to-blackboard-on-december-4were-introducing-ava-respons/1312257457592329/",
       "host": "facebook.com",
-      "platform": "Websites and services",
+      "platform": "Facebook and Instagram",
       "month": "2025-12"
     },
     {
@@ -304,7 +308,7 @@
     {
       "url": "https://boingboing.net/2026/02/25/new-ai-agent-does-your-homework-for-you-from-reading-to-writing-to-discussions.html",
       "host": "boingboing.net",
-      "platform": "Websites and services",
+      "platform": "News and press",
       "month": "2026-02"
     },
     {
@@ -328,13 +332,13 @@
     {
       "url": "https://www.linkedin.com/posts/klarapirklova_einstein-an-ai-agent-designed-as-a-student-activity-7431824240326275073-n8kF",
       "host": "linkedin.com",
-      "platform": "Websites and services",
+      "platform": "LinkedIn",
       "month": "2026-02"
     },
     {
       "url": "https://premium.boingboing.net/p/new-ai-agent-does-your-homework-for",
       "host": "premium.boingboing.net",
-      "platform": "Websites and services",
+      "platform": "News and press",
       "month": "2026-02"
     },
     {
@@ -418,13 +422,13 @@
     {
       "url": "https://www.linkedin.com/posts/drjeffdoyle_new-ai-agent-logs-directly-into-college-platform-activity-7435074113129365504-PYEt",
       "host": "linkedin.com",
-      "platform": "Websites and services",
+      "platform": "LinkedIn",
       "month": "2026-03"
     },
     {
       "url": "https://dev.to/favourite1975/i-built-an-ai-tutor-that-actually-sees-your-homework-heres-how-1hd3",
       "host": "dev.to",
-      "platform": "Websites and services",
+      "platform": "Blogs",
       "month": "2026-03"
     },
     {
@@ -598,7 +602,7 @@
     {
       "url": "https://www.instagram.com/reel/DbVZs5Buvfn/",
       "host": "instagram.com",
-      "platform": "Websites and services",
+      "platform": "Facebook and Instagram",
       "month": "2026-07"
     },
     {
@@ -616,7 +620,7 @@
     {
       "url": "https://www.facebook.com/nytimes/posts/ai-agents-have-made-it-possible-for-students-to-outsource-a-semester-of-work-wit/1454835213165604/",
       "host": "facebook.com",
-      "platform": "Websites and services",
+      "platform": "Facebook and Instagram",
       "month": "2026-08"
     },
     {
@@ -802,7 +806,7 @@
     {
       "url": "https://www.facebook.com/groups/1404116417142065/posts/2212292259657806/",
       "host": "facebook.com",
-      "platform": "Websites and services",
+      "platform": "Facebook and Instagram",
       "month": "2026-11"
     },
     {

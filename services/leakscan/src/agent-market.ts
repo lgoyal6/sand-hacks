@@ -3,7 +3,7 @@
 // Bright Data SERP only (no Web Unlocker: it exists to get past bot protection, which we don't do).
 // Stores AGGREGATES plus public URLs, hosts, platforms and the month window. No titles, snippets,
 // usernames, comments or any personal data.
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { BrightDataSerp, brightDataFromEnv } from "./brightdata";
@@ -31,6 +31,9 @@ const PLATFORMS: [RegExp, string][] = [
   [/(^|\.)(youtube\.com|youtu\.be)$/, "YouTube"],
   [/(^|\.)tiktok\.com$/, "TikTok"],
   [/(^|\.)(x\.com|twitter\.com)$/, "X"],
+  [/(^|\.)(facebook\.com|instagram\.com)$/, "Facebook and Instagram"],
+  [/(^|\.)linkedin\.com$/, "LinkedIn"],
+  [/(^|\.)(dev\.to|substack\.com)$/, "Blogs"],
   [/(^|\.)quora\.com$/, "Quora"],
   [/(^|\.)medium\.com$/, "Medium"],
   [/(^|\.)(chromewebstore\.google\.com|chrome\.google\.com)$/, "Chrome Web Store"],
@@ -39,7 +42,7 @@ const PLATFORMS: [RegExp, string][] = [
   [/(^|\.)(instructure\.com|community\.canvaslms\.com)$/, "Canvas community"],
   [/(^|\.)(github\.com)$/, "GitHub"],
   [/\.(edu|ac\.uk|edu\.au)$/, "Universities"],
-  [/(^|\.)(news\.ycombinator\.com|insidehighered\.com|chronicle\.com|futurism\.com|404media\.co|theverge\.com|wired\.com)$/, "News and press"],
+  [/(^|\.)(news\.ycombinator\.com|insidehighered\.com|chronicle\.com|futurism\.com|404media\.co|theverge\.com|wired\.com|boingboing\.net)$/, "News and press"],
 ];
 export function platformOf(host: string): string {
   return PLATFORMS.find(([re]) => re.test(host))?.[1] ?? "Websites and services";
@@ -62,16 +65,26 @@ async function main() {
     console.error("Missing BRIGHTDATA_API_TOKEN / BRIGHTDATA_SERP_ZONE. Nothing run.");
     process.exit(2);
   }
+  const from = arg("from", "");
   const months = Number(arg("months", "12"));
   const maxQ = Number(arg("max-queries", "90"));
   const serp = new BrightDataSerp(cfg, { retries: 2 });
-  const windows = monthWindows(months);
+  let windows = monthWindows(months);
   type Row = { url: string; host: string; platform: string; month: string; query: number };
   const rows: Row[] = [];
   let calls = 0;
   let errors = 0;
-  const started = new Date();
-  for (const w of windows) {
+  let started = new Date();
+  if (from) {
+    // Re-aggregate a previous run (e.g. after fixing the platform classifier). No new searches.
+    const prev = JSON.parse(await readFile(resolve(ROOT, from), "utf8"));
+    for (const p of prev.pages) rows.push({ ...p, platform: platformOf(p.host), query: -1 });
+    calls = prev.summary.serpCalls;
+    errors = prev.summary.queryErrors;
+    started = new Date(prev.summary.collected);
+    windows = prev.summary.months.map((m: string) => ({ label: m, tbs: "" }));
+  }
+  for (const w of from ? [] : windows) {
     for (const [qi, q] of QUERIES.entries()) {
       if (calls >= maxQ) break;
       calls++;
@@ -124,6 +137,7 @@ async function main() {
       "Google's date filter reflects when Google dated the page, which can differ from when it was posted.",
       "Pages discuss as well as advertise; a Reddit thread complaining about these tools counts the same as an ad.",
       "Recent months can look smaller because Google has had less time to index them.",
+      `${errors} of ${calls} searches failed and returned nothing, so every month is undercounted somewhat.`,
     ],
   };
   const out = { summary, pages: pages.map(({ url, host, platform, month }) => ({ url, host, platform, month })) };

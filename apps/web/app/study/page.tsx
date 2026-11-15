@@ -44,6 +44,55 @@ const BOOK: Record<string, string> = {
 };
 
 /** The published dataset is static, so it's cached (and the page prerenders). */
+interface Market {
+  summary: {
+    collected: string;
+    months: string[];
+    queries: string[];
+    serpCalls: number;
+    queryErrors: number;
+    uniquePages: number;
+    byMonth: { month: string; pages: number }[];
+    byPlatform: Record<string, number>;
+    topServiceHosts: { host: string; pages: number }[];
+  };
+}
+
+async function loadMarket(): Promise<Market | null> {
+  "use cache";
+  try {
+    return JSON.parse(await fs.readFile(path.join(DATA_DIR, "open", "agent-market-2026-11.json"), "utf8"));
+  } catch {
+    return null;
+  }
+}
+
+const monthLabel = (m: string) => new Date(`${m}-01T00:00:00Z`).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
+
+/** 12 thin columns anchored at the baseline, value printed above each, month under it. */
+function MonthColumns({ data }: { data: { month: string; pages: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.pages));
+  return (
+    <div className="flex flex-col gap-2">
+      <ol className="grid h-40 items-end gap-2" style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}>
+        {data.map((d) => (
+          <li key={d.month} className="group flex h-full flex-col items-center justify-end gap-1" title={`${monthLabel(d.month)} ${d.month.slice(0, 4)}: ${d.pages} pages`} tabIndex={0}>
+            <span className="num text-xs text-muted-foreground">{d.pages}</span>
+            <span className="w-full max-w-7 rounded-t-[4px] bg-brand transition-opacity group-hover:opacity-80" style={{ height: `${(d.pages / max) * 100}%` }} />
+          </li>
+        ))}
+      </ol>
+      <ol className="grid gap-2 border-t border-border pt-1.5" style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}>
+        {data.map((d) => (
+          <li key={d.month} className="text-center text-[11px] text-muted-foreground">
+            {monthLabel(d.month)}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 async function load(): Promise<Study> {
   "use cache";
   return JSON.parse(await fs.readFile(path.join(DATA_DIR, "open", "leaked-homework-2026-11.json"), "utf8"));
@@ -68,6 +117,7 @@ function BarRow({ label, sub, value, max, display, title }: { label: string; sub
 
 export default async function Page() {
   const s = await load();
+  const market = await loadMarket();
   const subjects = Object.entries(s.by_subject).sort((a, b) => b[1].pct - a[1].pct);
   const sites = Object.entries(s.by_site).sort((a, b) => b[1].exercises - a[1].exercises);
   const maxSite = Math.max(...sites.map(([, v]) => v.exercises));
@@ -139,6 +189,49 @@ export default async function Page() {
             <span className="num font-semibold">{s.answer_mentioned_in_snippet}</span> of the {s.found_on_study_sites} found exercises had a search snippet that mentions an answer or solution. That&apos;s a floor: flashcard sites often show the answer right after the question.
           </p>
         </section>
+
+        {market && (
+          <section aria-labelledby="market" className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <h2 id="market" className="text-lg font-semibold">
+                The agent-for-hire market
+              </h2>
+              <p className="max-w-[680px] text-sm leading-relaxed text-muted-foreground">
+                Public pages that advertise or discuss AI agents doing LMS coursework (&quot;AI do my Canvas quiz&quot;, auto-complete extensions, &quot;take my online class&quot;). {market.summary.uniquePages} unique pages over the last 12 months.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <span className="text-xs text-muted-foreground">Pages found per month</span>
+              <MonthColumns data={market.summary.byMonth} />
+            </div>
+            <div className="grid gap-8 sm:grid-cols-2">
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">Where they are</span>
+                <ul className="flex flex-col gap-1.5">
+                  {Object.entries(market.summary.byPlatform)
+                    .slice(0, 8)
+                    .map(([k, v]) => (
+                      <BarRow key={k} label={k} value={v} max={Math.max(...Object.values(market.summary.byPlatform))} display={String(v)} title={`${k}: ${v} pages`} />
+                    ))}
+                </ul>
+              </div>
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">Service sites and extensions found</span>
+                <ul className="flex flex-col divide-y divide-border text-sm">
+                  {market.summary.topServiceHosts.slice(0, 10).map((h) => (
+                    <li key={h.host} className="flex justify-between gap-3 py-1.5">
+                      <span className="truncate">{h.host}</span>
+                      <span className="num text-muted-foreground">{h.pages}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              Method: {market.summary.queries.length} phrasings searched on Google through the Bright Data SERP API, one search per phrasing per month (Google&apos;s date range), top 20 results; a page counts once per month. Limits: a sample of what search surfaces, not a census; pages that discuss these tools count the same as ads; Google&apos;s dates can differ from posting dates; {market.summary.queryErrors} of {market.summary.serpCalls} searches failed, so months are undercounted. We store public links, hosts and months only: no titles, usernames or comments.
+            </p>
+          </section>
+        )}
 
         <details className="rounded-2xl border border-border px-5 py-4">
           <summary className="cursor-pointer text-sm font-medium">Table view</summary>
