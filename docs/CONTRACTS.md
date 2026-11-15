@@ -69,7 +69,7 @@ API keys go in a repo-root `.env.local` (template: `.env.example`, never commit)
 - Agents only attack our own sandboxes, never real courses or accounts.
 - Store leak snippets, URLs and screenshots only, never copyrighted solutions.
 - Report real numbers, including bad ones. No faked results in the demo.
-- **Deploy target:** Vultr only, with a GoDaddy domain. Never deploy to Vercel, Netlify or any other host, and never connect the repo to one.
+- **Deploy target:** Vultr only, at unprompted.courses (registered at Porkbun). Never deploy to Vercel, Netlify or any other host, and never connect the repo to one.
 - **Models: Gemini only.** Every LLM call uses a Google Gemini model, either via the direct key (GEMINI_API_KEY) or via GMI (GMI_BASE_URL, `google/gemini-*` models only, no other families). Judge panels use 3 different Gemini models and are labelled "three Gemini models".
 - **Agents look like siblings:** every Mastra agent (Tutor, Explain coach, Researcher, Quiz checker, Rewriter, Judge panel, Leak scout, Supervisor) is drawn with one parameterized `<AgentAvatar agent=... state=...>` (owner D): same family, distinct hue, pattern and motion per agent. Agent events use one shared shape from `packages/shared`.
 - **No emojis** anywhere in the repo: code, UI copy, docs or commit messages. Use lucide icons for check, cross and similar marks.
