@@ -1,1 +1,0 @@
-export{t as json,n as jsonLanguage}from"./dist-Dq32n9F4.js";

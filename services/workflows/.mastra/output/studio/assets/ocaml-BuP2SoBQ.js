@@ -1,1 +1,0 @@
-export{t as default}from"./ocaml-D6dNsUd0.js";
