@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { ProgressView } from "@/components/progress/progress-view";
 import { getViewer } from "@/lib/auth/server";
 import { AppShell } from "@/components/ui/app-shell";
-import { LoadingShell } from "@/components/ui/page-loader";
+import { LoadingShell, PageLoader } from "@/components/ui/page-loader";
 
 async function Body({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   // Professors don't have "Your progress"; their view is the class roster.
@@ -16,7 +16,7 @@ async function Body({ searchParams }: { searchParams: Promise<Record<string, str
 
 export default function ProgressPage({ searchParams }: PageProps<"/progress">) {
   return (
-    <Suspense fallback={<LoadingShell title="Loading your progress" subtitle="Gathering your quizzes and explanations" />}>
+    <Suspense fallback={<Suspense fallback={<PageLoader title="Loading your progress" subtitle="Gathering your quizzes and explanations" />}><LoadingShell title="Loading your progress" subtitle="Gathering your quizzes and explanations" /></Suspense>}>
       <AppShell title="Your progress" subtitle="What you can explain, what to review next.">
         <Body searchParams={searchParams} />
       </AppShell>
