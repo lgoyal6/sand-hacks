@@ -1,8 +1,8 @@
 "use client";
 // "Rewrite race" card (owner: B), per D's direction-A spec: one lane per version, each on its own
-// Neon branch; passed checks are green bars, a failed check is "✕ reason" in muted ink, losers fade,
+// Neon branch; passed checks are green bars, a failed check is an X icon plus the reason in muted ink, losers fade,
 // the survivor's block offers the merge. No red anywhere.
-import { GitBranch } from "lucide-react";
+import { GitBranch, X } from "lucide-react";
 import { PillButton } from "@/components/ui/chat";
 import { cn } from "@/lib/utils";
 import type { CheckState, RaceData, RaceLane } from "../_lib/race";
@@ -24,8 +24,9 @@ function Cell({ c, survivor, last }: { c: CheckState & { correct?: number; runs?
   }
   if (c.state === "failed") {
     return (
-      <span className="line-clamp-2 text-[11px] leading-snug text-muted-foreground" title={c.detail}>
-        ✕ {shorten(c.detail)}
+      <span className="flex items-start gap-1 text-[11px] leading-snug text-muted-foreground" title={c.detail}>
+        <X className="mt-px size-3 shrink-0" aria-label="failed" />
+        <span className="line-clamp-2">{shorten(c.detail)}</span>
       </span>
     );
   }
