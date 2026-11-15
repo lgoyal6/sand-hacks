@@ -14,14 +14,16 @@ const variantIds = variantArg!.split(",");
 const store = await openBranchStore();
 const main = (await store.main()).db;
 const quizId = origId!.replace(/-q\d+$/, "");
-const original = (await loadQuiz(main, quizId)).items.find((i) => i.id === origId)!;
+const sourceQuiz = await loadQuiz(main, quizId);
+const quizTitle = sourceQuiz.title.replace(/^Sample quiz:\s*/i, "").replace(/\s*\([^)]*\)\s*$/, "");
+const original = sourceQuiz.items.find((i) => i.id === origId)!;
 const { rows } = await main.query<{ id: string; candidate_json: any }>("select id, candidate_json from variant_experiment where id = any($1)", [variantIds]);
 await store.close();
 
 const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
 const qid = `${quizId}-retake-${stamp}`;
 const quiz: Quiz = {
-  id: qid, courseId: "sandbox-course", title: "Intro Statistics: practice set", sourceFormat: "markdown",
+  id: qid, courseId: "sandbox-course", title: `${quizTitle} · practice set ${qid.slice(-6)}`, sourceFormat: "markdown",
   items: [{ ...original, id: `${origId}-control`, quizId: qid, originalItemId: origId }, ...rows.map((r) => { const { figureText: _hidden, ...visible } = r.candidate_json; return { ...visible, id: r.id, quizId: qid }; })],
 };
 const report: Record<string, unknown> = { quizId: qid, items: quiz.items.map((i) => i.id), byModel: {} };
