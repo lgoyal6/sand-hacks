@@ -260,7 +260,30 @@
       "local browser failed to start": 1
     },
     "didNotSubmit": 0,
-    "isolated": false
+    "isolated": false,
+    "excludedByModel": {
+      "gmi:google/gemini-3.5-flash-lite": {
+        "runs": 3,
+        "excluded": 3,
+        "reasons": {
+          "provider content filter": 3
+        }
+      },
+      "gmi:google/gemini-3.6-flash": {
+        "runs": 3,
+        "excluded": 2,
+        "reasons": {
+          "provider rejected request": 2
+        }
+      },
+      "gemini:gemini-3.5-flash-lite": {
+        "runs": 1,
+        "excluded": 1,
+        "reasons": {
+          "local browser failed to start": 1
+        }
+      }
+    }
   },
   "stats-inference": {
     "quizId": "stats-inference",
@@ -531,7 +554,16 @@
       "provider content filter": 2
     },
     "didNotSubmit": 0,
-    "isolated": false
+    "isolated": false,
+    "excludedByModel": {
+      "gmi:google/gemini-3.5-flash-lite": {
+        "runs": 3,
+        "excluded": 2,
+        "reasons": {
+          "provider content filter": 2
+        }
+      }
+    }
   },
   "calc-derivatives": {
     "quizId": "calc-derivatives",
@@ -796,7 +828,30 @@
       }
     ],
     "didNotSubmit": 0,
-    "isolated": false
+    "isolated": false,
+    "excludedByModel": {
+      "gmi:google/gemini-3.5-flash-lite": {
+        "runs": 3,
+        "excluded": 2,
+        "reasons": {
+          "provider content filter": 2
+        }
+      },
+      "gmi:google/gemini-3.6-flash": {
+        "runs": 3,
+        "excluded": 1,
+        "reasons": {
+          "provider rejected request": 1
+        }
+      },
+      "gmi:google/gemini-3.8-flash": {
+        "runs": 3,
+        "excluded": 1,
+        "reasons": {
+          "provider rejected request": 1
+        }
+      }
+    }
   },
   "python-basics": {
     "quizId": "python-basics",
@@ -1049,7 +1104,16 @@
       }
     ],
     "didNotSubmit": 0,
-    "isolated": false
+    "isolated": false,
+    "excludedByModel": {
+      "gmi:google/gemini-3.5-flash-lite": {
+        "runs": 3,
+        "excluded": 3,
+        "reasons": {
+          "provider content filter": 3
+        }
+      }
+    }
   },
   "bio-cells": {
     "quizId": "bio-cells",
@@ -1307,7 +1371,30 @@
       }
     ],
     "didNotSubmit": 0,
-    "isolated": false
+    "isolated": false,
+    "excludedByModel": {
+      "gmi:google/gemini-3.5-flash-lite": {
+        "runs": 3,
+        "excluded": 2,
+        "reasons": {
+          "provider content filter": 2
+        }
+      },
+      "gmi:google/gemini-3.6-flash": {
+        "runs": 3,
+        "excluded": 1,
+        "reasons": {
+          "provider rejected request": 1
+        }
+      },
+      "gmi:google/gemini-3.8-flash": {
+        "runs": 3,
+        "excluded": 1,
+        "reasons": {
+          "provider rejected request": 1
+        }
+      }
+    }
   },
   "econ-micro": {
     "quizId": "econ-micro",
@@ -1334,8 +1421,8 @@
     "didNotSubmit": 0,
     "infraErrors": 5,
     "infraReasons": {
-      "provider rejected request": 2,
-      "provider content filter": 3
+      "provider content filter": 3,
+      "provider rejected request": 2
     },
     "runs": [
       {
@@ -1579,6 +1666,22 @@
         "outcome": "submitted"
       }
     ],
-    "isolated": true
+    "isolated": true,
+    "excludedByModel": {
+      "gmi:google/gemini-3.5-flash-lite": {
+        "runs": 3,
+        "excluded": 3,
+        "reasons": {
+          "provider content filter": 3
+        }
+      },
+      "gmi:google/gemini-3.8-flash": {
+        "runs": 3,
+        "excluded": 2,
+        "reasons": {
+          "provider rejected request": 2
+        }
+      }
+    }
   }
 }

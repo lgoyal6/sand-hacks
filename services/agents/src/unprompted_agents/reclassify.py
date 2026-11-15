@@ -13,7 +13,7 @@ from pathlib import Path
 
 from .attack import infra_reason
 from .cli import REPO, _dump, _load
-from .stats import solve_rates, summary
+from .stats import excluded_by_model, solve_rates, summary
 
 
 def reclassify(out: Path) -> dict:
@@ -40,7 +40,7 @@ def reclassify(out: Path) -> dict:
                 reasons[m["infraReason"]] = reasons.get(m["infraReason"], 0) + 1
         summaries[quiz_id] = {**s, **summary(kept, good), "quizId": quiz_id, "infraErrors": sum(m["infraError"] for m in metas),
                               "didNotSubmit": sum(m["outcome"] == "did_not_submit" for m in metas),
-                              "infraReasons": reasons, "runs": metas}
+                              "infraReasons": reasons, "excludedByModel": excluded_by_model(metas), "runs": metas}
         report[quiz_id] = {k: summaries[quiz_id][k] for k in ("itemRuns", "itemCorrect", "accuracy", "accuracyCI95", "infraErrors")}
     _dump(out / "agent_runs.json", runs)
     _dump(out / "solve_rates.json", rates)

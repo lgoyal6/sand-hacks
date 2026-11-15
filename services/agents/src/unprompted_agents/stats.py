@@ -62,3 +62,16 @@ def summary(runs: list[dict], attempts: list[dict]) -> dict:
             k: {"itemRuns": len(v), "accuracy": round(sum(v) / len(v), 4)} for k, v in sorted(by_cfg.items())
         },
     }
+
+
+def excluded_by_model(metas: list[dict]) -> dict:
+    """Runs that never produced a result, per model, with reasons. Provider limitations, not agent results: e.g.
+    GMI's content filter stops gemini-3.5-flash-lite at our login page before the agent does anything."""
+    out: dict[str, dict] = {}
+    for m in metas:
+        e = out.setdefault(m["model"], {"runs": 0, "excluded": 0, "reasons": {}})
+        e["runs"] += 1
+        if m.get("infraReason"):
+            e["excluded"] += 1
+            e["reasons"][m["infraReason"]] = e["reasons"].get(m["infraReason"], 0) + 1
+    return {k: v for k, v in out.items() if v["excluded"]}
