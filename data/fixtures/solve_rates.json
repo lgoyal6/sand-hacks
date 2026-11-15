@@ -1,131 +1,5 @@
 [
   {
-    "itemId": "calc-derivatives-q1",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "calc-derivatives-q2",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "calc-derivatives-q3",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "calc-derivatives-q4",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "calc-derivatives-q5",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "calc-derivatives-q6",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "python-basics-q1",
-    "runs": 6,
-    "correct": 6,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "python-basics-q2",
-    "runs": 6,
-    "correct": 6,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "python-basics-q3",
-    "runs": 6,
-    "correct": 6,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "python-basics-q4",
-    "runs": 6,
-    "correct": 6,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "python-basics-q5",
-    "runs": 6,
-    "correct": 6,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "python-basics-q6",
-    "runs": 6,
-    "correct": 6,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "bio-cells-q1",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "bio-cells-q2",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "bio-cells-q3",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "bio-cells-q4",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "bio-cells-q5",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
-    "itemId": "bio-cells-q6",
-    "runs": 5,
-    "correct": 5,
-    "solveRate": 1.0,
-    "agentSolvable": true
-  },
-  {
     "itemId": "econ-micro-q1",
     "runs": 4,
     "correct": 4,
@@ -204,41 +78,167 @@
   },
   {
     "itemId": "stats-inference-q1",
-    "runs": 4,
-    "correct": 4,
+    "runs": 6,
+    "correct": 6,
     "solveRate": 1.0,
     "agentSolvable": true
   },
   {
     "itemId": "stats-inference-q2",
-    "runs": 4,
-    "correct": 4,
+    "runs": 6,
+    "correct": 6,
     "solveRate": 1.0,
     "agentSolvable": true
   },
   {
     "itemId": "stats-inference-q3",
-    "runs": 4,
-    "correct": 4,
+    "runs": 6,
+    "correct": 6,
     "solveRate": 1.0,
     "agentSolvable": true
   },
   {
     "itemId": "stats-inference-q4",
-    "runs": 4,
-    "correct": 4,
+    "runs": 6,
+    "correct": 6,
     "solveRate": 1.0,
     "agentSolvable": true
   },
   {
     "itemId": "stats-inference-q5",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "stats-inference-q6",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q1",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q2",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q3",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q4",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q5",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "calc-derivatives-q6",
+    "runs": 6,
+    "correct": 6,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q1",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q2",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q3",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q4",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q5",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "python-basics-q6",
+    "runs": 5,
+    "correct": 5,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "bio-cells-q1",
     "runs": 4,
     "correct": 4,
     "solveRate": 1.0,
     "agentSolvable": true
   },
   {
-    "itemId": "stats-inference-q6",
+    "itemId": "bio-cells-q2",
+    "runs": 4,
+    "correct": 4,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "bio-cells-q3",
+    "runs": 4,
+    "correct": 4,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "bio-cells-q4",
+    "runs": 4,
+    "correct": 4,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "bio-cells-q5",
+    "runs": 4,
+    "correct": 4,
+    "solveRate": 1.0,
+    "agentSolvable": true
+  },
+  {
+    "itemId": "bio-cells-q6",
     "runs": 4,
     "correct": 4,
     "solveRate": 1.0,
