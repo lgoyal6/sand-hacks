@@ -77,3 +77,24 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/probes/[id]">)
   if (patch.completedAt && out && (out.explanation?.trim() || out.transcript?.trim() || out.counterfactualAnswer?.trim())) gradeProbeAsync(id);
   return NextResponse.json({ ok: true, probe: { id: out!.id, completedAt: out!.completedAt } });
 }
+
+// Student-facing result after the think-aloud: confidence before/after and, once the council has graded it,
+// the explanation score (0-4, preliminary until a professor approves) with one line of feedback.
+export async function GET(_req: Request, ctx: RouteContext<"/api/probes/[id]">) {
+  const { id } = await ctx.params;
+  const probe = await getProbe(id);
+  if (!probe) return NextResponse.json({ error: "probe not found" }, { status: 404 });
+  const council = probe.councilScores as unknown as { judges?: { round2?: { score: number; reason?: string }; round1?: { score: number; reason?: string } }[] } | undefined;
+  const judges = Array.isArray(council?.judges) ? council!.judges : [];
+  const final = typeof probe.finalScore === "number" ? probe.finalScore : null;
+  // The reason from the judge whose score matches the median (final) score, when there is one.
+  const match = judges.map((j) => j.round2 ?? j.round1).find((r) => r && r.score === final);
+  return NextResponse.json({
+    graded: final !== null,
+    finalScore: final,
+    preliminary: !probe.professorApproved,
+    feedback: match?.reason ? match.reason.slice(0, 280) : null,
+    confidenceBefore: probe.confidenceBefore,
+    confidenceAfter: probe.confidenceAfter ?? null,
+  });
+}

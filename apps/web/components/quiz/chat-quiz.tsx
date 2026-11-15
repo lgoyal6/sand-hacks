@@ -11,7 +11,7 @@
 //   #confidence-after-N #probe-finish #probe-done #probe-continue #probe-voice-done #probe-switch-typing
 // Only the ACTIVE step renders these ids; finished steps become plain text, so ids stay unique.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BarChart3, FlaskConical, LogOut } from "lucide-react";
+import { BarChart3, FlaskConical, LogOut, Users } from "lucide-react";
 import { ConversationProvider } from "@elevenlabs/react";
 import { ChatLayout, Chip, Composer, Message, PillButton, QuestionCard, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
 import { useTelemetry } from "@/lib/telemetry/use-telemetry";
@@ -771,8 +771,12 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
         newHref: "/",
         newLabel: "New session",
         links: [
-          { label: "Your progress", href: "/progress", icon: <BarChart3 /> },
-          ...(viewer?.role === "professor" ? [{ label: "Professor studio", href: "/studio", icon: <FlaskConical /> }] : []),
+          ...(viewer?.role === "professor"
+            ? [
+                { label: "Students", href: "/professor/students", icon: <Users /> },
+                { label: "Professor studio", href: "/studio", icon: <FlaskConical /> },
+              ]
+            : [{ label: "Your progress", href: "/progress", icon: <BarChart3 /> }]),
           ...(viewer ? [{ label: "Sign out", href: "/signout", icon: <LogOut /> }] : []),
         ],
         user: { name: viewer?.name ?? student ?? "Student", detail: viewer?.role === "professor" ? "Professor" : "Student" },
