@@ -1,5 +1,5 @@
-import { PageLoader } from "@/components/ui/page-loader";
+import { LoadingShell } from "@/components/ui/page-loader";
 
 export default function Loading() {
-  return <PageLoader title="Opening the studio" subtitle="Loading your quiz and the agents" />;
+  return <LoadingShell title="Opening the studio" subtitle="Getting your quizzes ready" />;
 }

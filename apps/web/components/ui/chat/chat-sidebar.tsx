@@ -5,7 +5,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import * as React from "react";
-import { Check, ChevronsUpDown, LogOut, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
+import { Check, ChevronsUpDown, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Search } from "lucide-react";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { Logo as BrandLogo } from "@/components/ui/logo";
 import { isActive, linksFor, useNav, type NavLinkDef } from "@/components/ui/nav";
@@ -57,6 +58,7 @@ export function ChatSidebar({ groups, collapsed, onCollapsedChange }: ChatSideba
   const [query, setQuery] = React.useState("");
   const [searching, setSearching] = React.useState(false);
   const [switching, setSwitching] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = React.useState(false);
   // Signed out with auth off (local dev): show both roles' links so every page stays reachable.
   const links: NavLinkDef[] = nav.loading ? [] : role ? linksFor(role) : [...linksFor("student"), ...linksFor("professor").map((l) => ({ ...l, section: l.section ?? "Professor" }))];
   const home = role === "professor" ? "/studio" : "/";
@@ -91,8 +93,25 @@ export function ChatSidebar({ groups, collapsed, onCollapsedChange }: ChatSideba
     "grid size-9 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
   const roleLabel = role === "professor" ? "Professor" : role === "student" ? "Student" : "Not signed in";
 
+  // Phones: the sidebar lives in a sheet behind a menu button (top left); links close it.
+  const mobileMenu = (
+    <>
+      <button type="button" aria-label="Open menu" onClick={() => setMobileOpen(true)} className={cn(iconBtn, "fixed left-2.5 top-2.5 z-40 border border-sidebar-border bg-background md:hidden")}>
+        <Menu className="size-[18px]" />
+      </button>
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" showCloseButton={false} className="w-[280px] gap-0 p-0 md:hidden" onClickCapture={(e: React.MouseEvent) => (e.target as HTMLElement).closest("a") && setMobileOpen(false)}>
+          <SheetTitle className="sr-only">Navigation</SheetTitle>
+          {panel(true)}
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+
   if (collapsed) {
     return (
+      <>
+      {mobileMenu}
       <aside aria-label="Navigation" className="hidden h-svh w-14 shrink-0 flex-col items-center gap-1 border-r border-sidebar-border bg-sidebar py-3 md:flex">
         <Link href={home} aria-label="Unprompted home" className="mb-2">
           <Logo compact />
@@ -111,18 +130,29 @@ export function ChatSidebar({ groups, collapsed, onCollapsedChange }: ChatSideba
           </span>
         )}
       </aside>
+      </>
     );
   }
 
   return (
-    <aside aria-label="Navigation" className="hidden h-svh w-[260px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex">
+    <>
+      {mobileMenu}
+      {panel(false)}
+    </>
+  );
+
+  function panel(mobile: boolean) {
+    return (
+    <aside aria-label="Navigation" className={mobile ? "flex h-full w-full flex-col bg-sidebar" : "hidden h-svh w-[260px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar md:flex"}>
       <div className="flex items-center justify-between px-3 pb-2 pt-3">
         <Link href={home} className="rounded-lg px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <Logo />
         </Link>
-        <button type="button" className={iconBtn} aria-label="Collapse sidebar" onClick={() => onCollapsedChange(true)}>
-          <PanelLeftClose className="size-[18px]" />
-        </button>
+        {!mobile && (
+          <button type="button" className={iconBtn} aria-label="Collapse sidebar" onClick={() => onCollapsedChange(true)}>
+            <PanelLeftClose className="size-[18px]" />
+          </button>
+        )}
       </div>
 
       {/* Current class, always visible. Switching only changes a preference cookie, never the session. */}
@@ -251,5 +281,6 @@ export function ChatSidebar({ groups, collapsed, onCollapsedChange }: ChatSideba
         </div>
       )}
     </aside>
-  );
+    );
+  }
 }

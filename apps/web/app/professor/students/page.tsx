@@ -6,15 +6,15 @@ import { AppShell } from "@/components/ui/app-shell";
 import { Kpi, Panel, PanelEmpty } from "@/components/dashboard/panel";
 import { loadRoster } from "./_lib";
 import { RosterTable } from "./roster-table";
-import { PageLoader } from "@/components/ui/page-loader";
+import { LoadingShell } from "@/components/ui/page-loader";
 
 export default function Page() {
   return (
-    <AppShell wide title="Students" subtitle="Who has taken the quiz, how their explanations went, and what to talk about next.">
-      <Suspense fallback={<PageLoader title="Loading the roster" subtitle="Gathering attempts and think-alouds" />}>
+    <Suspense fallback={<LoadingShell title="Loading students" subtitle="Collecting this class's results" />}>
+      <AppShell wide title="Students" subtitle="Who has taken the quiz, how their explanations went, and what to talk about next.">
         <Roster />
-      </Suspense>
-    </AppShell>
+      </AppShell>
+    </Suspense>
   );
 }
 

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ChatQuiz } from "@/components/quiz/chat-quiz";
 import { getViewer } from "@/lib/auth/server";
 import { listQuizzes, toPublic } from "../_lib/quizzes";
-import { PageLoader } from "@/components/ui/page-loader";
+import { LoadingShell } from "@/components/ui/page-loader";
 
 async function QuizBody({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
@@ -28,7 +28,7 @@ async function QuizBody({ params, searchParams }: { params: Promise<{ id: string
 
 export default function QuizPage({ params, searchParams }: PageProps<"/quiz/[id]">) {
   return (
-    <Suspense fallback={<PageLoader title="Loading the quiz" subtitle="Getting your questions ready" />}>
+    <Suspense fallback={<LoadingShell title="Loading the quiz" subtitle="Getting your questions ready" />}>
       <QuizBody params={params} searchParams={searchParams} />
     </Suspense>
   );

@@ -51,7 +51,7 @@ export function AppShell({ children, title, subtitle, actions, wide, groups = DE
       <ChatSidebar groups={groups} collapsed={collapsed} onCollapsedChange={setCollapsed} />
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
         {(title || actions) && (
-          <header className={cn("mx-auto flex w-full items-end justify-between gap-4 px-8 pb-2 pt-10", !wide && "max-w-5xl")}>
+          <header className={cn("mx-auto flex w-full items-end justify-between gap-4 px-4 pb-2 pt-16 sm:px-8 md:pt-10", !wide && "max-w-5xl")}>
             <div className="min-w-0">
               {title && <h1 className="truncate text-[26px] font-semibold tracking-tight">{title}</h1>}
               {subtitle && <p className="mt-1 text-[15px] text-muted-foreground">{subtitle}</p>}
@@ -59,7 +59,7 @@ export function AppShell({ children, title, subtitle, actions, wide, groups = DE
             {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
           </header>
         )}
-        <main className={cn("mx-auto w-full flex-1 px-8 py-6", !wide && "max-w-5xl", className)}>{children}</main>
+        <main className={cn("mx-auto w-full flex-1 px-4 py-6 sm:px-8", !wide && "max-w-5xl", className)}>{children}</main>
       </div>
     </div>
   );

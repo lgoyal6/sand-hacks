@@ -36,25 +36,25 @@ export default function Page() {
   return (
     <AppShell wide title="Insights" subtitle="Intro Statistics · Quiz 1. What agents can do with this quiz, what's online, and who can explain their answers.">
       <div className="space-y-6">
-        <Suspense fallback={<PanelLoader title="Loading the numbers" />}>
+        <Suspense fallback={<PanelLoader title="Loading the numbers" subtitle="Summing up this quiz" />}>
           <KpiRow />
         </Suspense>
-        <Suspense fallback={<PanelLoader title="Loading agent results" />}>
+        <Suspense fallback={<PanelLoader title="Loading agent results" subtitle="Reading the browser agent runs" />}>
           <AgentAttackPanel />
         </Suspense>
-        <Suspense fallback={<PanelLoader title="Checking what is online" />}>
+        <Suspense fallback={<PanelLoader title="Checking what is online" subtitle="Reading the latest leak scan" />}>
           <LeakPanel />
         </Suspense>
-        <Suspense fallback={<PanelLoader title="Loading the experiment tree" />}>
+        <Suspense fallback={<PanelLoader title="Loading the experiment tree" subtitle="Reading variants and their checks" />}>
           <TreePanel />
         </Suspense>
-        <Suspense fallback={<PanelLoader title="Loading explain gaps" />}>
+        <Suspense fallback={<PanelLoader title="Loading explain gaps" subtitle="Comparing answers with explanations" />}>
           <ExplainGapPanel />
         </Suspense>
-        <Suspense fallback={<PanelLoader title="Loading think-alouds" />}>
+        <Suspense fallback={<PanelLoader title="Loading think-alouds" subtitle="Reading recent explanations" />}>
           <ExplanationsPanel />
         </Suspense>
-        <Suspense fallback={<PanelLoader title="Loading sessions" />}>
+        <Suspense fallback={<PanelLoader title="Loading sessions" subtitle="Reading behavior signals" />}>
           <SessionsPanel />
         </Suspense>
       </div>
