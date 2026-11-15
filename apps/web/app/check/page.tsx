@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/ui/site-header";
 import { AgentAvatar } from "@/components/ui/agent-avatar";
 import { PillButton } from "@/components/ui/chat/question-card";
 import type { CheckEvent } from "./_lib/types";
+import Loader from "@/components/ui/loader";
 
 const WATCHED = ["Quizlet", "Brainly", "Vaia", "Chegg", "Studocu", "Course Hero", "Numerade", "bartleby", "Transtutors", "Reddit"];
 type Hit = Extract<CheckEvent, { type: "hit" }>;
@@ -107,6 +108,7 @@ export default function Page() {
 
         {phase !== "idle" && (
           <section aria-label="Scan" className="flex flex-col gap-4">
+            {phase === "scanning" && <Loader size="sm" title="Scanning the web" subtitle="Searching homework sites through Bright Data" className="p-2" />}
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground" role="status" aria-live="polite">
               <span>
                 {phase === "scanning"

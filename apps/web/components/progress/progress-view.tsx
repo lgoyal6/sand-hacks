@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AgentAvatar } from "@/components/ui/agent-avatar";
 import { SampleBadge } from "@/components/ui/sample-badge";
 import { CalibrationChart } from "./calibration-chart";
+import { PageLoader } from "@/components/ui/page-loader";
 
 interface Progress {
   student: string | null;
@@ -38,7 +39,7 @@ export function ProgressView({ student }: { student?: string }) {
   }, [student]);
 
   if (error) return <p className="text-muted-foreground">Progress isn&apos;t available right now.</p>;
-  if (!data) return <p className="text-muted-foreground">Loading your progress...</p>;
+  if (!data) return <PageLoader title="Loading your progress" subtitle="Gathering your quizzes and explanations" />;
 
   const allScored = data.topics.every((t) => t.outcomeKind === "explanation");
   return (

@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { ChatQuiz } from "@/components/quiz/chat-quiz";
 import { getViewer } from "@/lib/auth/server";
 import { listQuizzes, toPublic } from "./(student)/quiz/_lib/quizzes";
+import { PageLoader } from "@/components/ui/page-loader";
 
 async function Home() {
   const [all, viewer] = await Promise.all([listQuizzes(), getViewer()]);
@@ -13,7 +14,7 @@ async function Home() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="h-svh" />}>
+    <Suspense fallback={<PageLoader title="Loading" subtitle="Getting your classes ready" />}>
       <Home />
     </Suspense>
   );
