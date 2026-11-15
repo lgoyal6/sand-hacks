@@ -143,6 +143,8 @@ export class OpenAICompatModel implements JsonModel {
         body: JSON.stringify({
           model: this.model,
           temperature: opts.temperature ?? 0.2,
+          // Reasoning models spend tokens thinking before the JSON; don't cut them off.
+          max_tokens: Number(envVal("GMI_MAX_TOKENS") ?? 8192),
           response_format: { type: "json_object" },
           messages: [
             ...(opts.system ? [{ role: "system", content: opts.system }] : []),
@@ -163,27 +165,21 @@ export class OpenAICompatModel implements JsonModel {
   }
 }
 
-export interface Models {
-  gemini: GeminiModel;
-  /** Extra panel seats from other model families; empty when GMI_API_KEY is missing. */
-  others: JsonModel[];
+/** Gemini through GMI's OpenAI-compatible API (no free-tier cap). Null without GMI_API_KEY. */
+export function gmiGemini(model: string, env = process.env): OpenAICompatModel | null {
+  const key = envVal("GMI_API_KEY", env);
+  if (!key) return null;
+  return new OpenAICompatModel(envVal("GMI_BASE_URL", env) ?? "https://api.gmi-serving.com/v1", key, model.startsWith("google/") ? model : `google/${model}`);
 }
 
-/** Build models from env, or null when GEMINI_API_KEY is missing (callers then refuse to run). */
-export function modelsFromEnv(env = process.env): Models | null {
+/** Direct Gemini API (needed for the code-execution tool). Null without GEMINI_API_KEY. */
+export function directGemini(model: string, env = process.env): GeminiModel | null {
   const key = envVal("GEMINI_API_KEY", env);
-  if (!key) return null;
-  const gemini = new GeminiModel(key, envVal("GEMINI_MODEL", env) ?? "gemini-3.5-flash");
-  const gmiKey = envVal("GMI_API_KEY", env);
-  const others: JsonModel[] = [];
-  if (gmiKey) {
-    const base = envVal("GMI_BASE_URL", env) ?? "https://api.gmi-serving.com/v1";
-    // Model ids are configurable because GMI's catalog changes; check `GET $GMI_BASE_URL/models`.
-    const ids = (envVal("GMI_PANEL_MODELS", env) ?? "deepseek-ai/DeepSeek-V3.2,Qwen/Qwen3-235B-A22B-Instruct-2507")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    for (const id of ids) others.push(new OpenAICompatModel(base, gmiKey, id));
-  }
-  return { gemini, others };
+  return key ? new GeminiModel(key, model) : null;
+}
+
+/** "gmi:google/gemini-3.8-flash" or "gemini:gemini-3.6-flash" -> "Gemini 3.8 Flash". */
+export function prettyModel(name: string): string {
+  const m = name.replace(/^(gmi|gemini):/, "").replace(/^google\//, "");
+  return m.replace(/^gemini-/, "Gemini ").replace(/-preview$/, " preview").replace(/-(flash|pro|lite)/g, (_, w: string) => ` ${w[0]!.toUpperCase()}${w.slice(1)}`);
 }

@@ -12,12 +12,10 @@ import { parseArgs } from "node:util";
 import { REPO_ROOT } from "../paths.js";
 import type { LeakFinding, SolveRate, VariantExperiment, VariantStrategy } from "@unprompted/shared";
 import { loadQuiz, parseMarkdownQuiz, saveQuiz } from "../ingest/markdown.js";
-import { openBranchStore } from "../db/index.js";
 import { ALL_STRATEGIES, runTransform } from "../runner.js";
-import { buildPanel, CliAttacker, GeminiCodeSolver, GeminiGenerator } from "../steps/adapters.js";
-import { envVal, GeminiModel, modelsFromEnv } from "../steps/llm.js";
 import { selectTargets } from "../steps/index.js";
-import type { Attacker, TransformEvent } from "../steps/types.js";
+import type { TransformEvent } from "../steps/types.js";
+import { buildContext } from "../context.js";
 
 const ROOT = REPO_ROOT;
 const FIX = path.join(ROOT, "data/fixtures");
@@ -45,16 +43,6 @@ async function readJson<T>(file: string): Promise<T | null> {
   }
 }
 
-const models = modelsFromEnv();
-if (!models) {
-  console.error("GEMINI_API_KEY is not set in the repo-root .env.local; refusing to fake variants.");
-  process.exit(1);
-}
-const key = envVal("GEMINI_API_KEY")!;
-const solverModel = new GeminiModel(key, envVal("GEMINI_SOLVER_MODEL") ?? "gemini-3.6-flash");
-const fallbackSeats = (envVal("GEMINI_PANEL_FALLBACKS") ?? "gemini-3.6-flash,gemini-3.5-flash-lite").split(",").map((m) => new GeminiModel(key, m.trim()));
-const panel = buildPanel(models.gemini, models.others, fallbackSeats);
-
 const quizFile = path.resolve(ROOT, values.quiz!);
 const quizId = path.basename(quizFile, ".md");
 const quiz = parseMarkdownQuiz(await readFile(quizFile, "utf8"), { quizId, courseId: "sandbox-course" });
@@ -75,15 +63,6 @@ if (!targets.length) {
   console.error(rates ? "No agent-solvable or leaked items to transform." : "No solve_rates.json yet; pass --items and --assume-solve-rate.");
   process.exit(1);
 }
-
-const attacker: Attacker = values["no-attack"]
-  ? { attack: async () => Promise.reject(new Error("re-attack disabled with --no-attack")) }
-  : new CliAttacker({
-      repoRoot: ROOT,
-      repeats: Number(values["attack-repeats"]),
-      models: values["attack-models"] ?? "gemini:gemini-3.5-flash",
-      log: (s) => process.stderr.write(`  [attack] ${s}\n`),
-    });
 
 const eventsFile = values.events ? path.resolve(values.events) : path.join(FIX, "variants_events.jsonl");
 await mkdir(FIX, { recursive: true });
@@ -112,11 +91,20 @@ const log = async (e: TransformEvent) => {
   console.log(`${((Date.now() - t0) / 1000).toFixed(1).padStart(6)}s ${id.padEnd(22)} ${line}`);
 };
 
-const store = await openBranchStore();
-console.log(
-  `Transform ${targets.map((t) => t.item.id).join(", ")} on ${store.kind}; generator ${models.gemini.name}, solver ${solverModel.name}, ` +
-    `panel [${panel.judges.map((j) => j.name).join("; ")}]${panel.independentFamilies ? "" : " (one model family)"}`,
-);
+let ctx;
+try {
+  ctx = await buildContext({
+    noAttack: values["no-attack"],
+    attackRepeats: Number(values["attack-repeats"]),
+    attackModels: values["attack-models"],
+    log: (s) => process.stderr.write(`  [attack] ${s}\n`),
+  });
+} catch (e) {
+  console.error(String((e as Error).message));
+  process.exit(1);
+}
+const { store, deps } = ctx;
+console.log(`Transform ${targets.map((t) => t.item.id).join(", ")} on ${store.kind}; ${ctx.describe}`);
 for (const n of notes) console.log(`NOTE ${n}`);
 
 let result;
@@ -130,7 +118,7 @@ try {
     store,
     onMain,
     targets,
-    { generator: new GeminiGenerator(models.gemini), solver: new GeminiCodeSolver(solverModel), judges: panel.judges, attacker },
+    deps,
     {
       candidatesPerItem: Number(values.n),
       strategies: (values.strategies?.split(",") as VariantStrategy[] | undefined) ?? ALL_STRATEGIES,
