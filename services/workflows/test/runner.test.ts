@@ -7,6 +7,7 @@ import { runTransform } from "../src/runner.js";
 import { mastra, setTransformContext } from "../src/mastra/index.js";
 import { applyApprovals, decide, loadExperiments, type Attacker, type Generator, type Judge, type Solver, type TransformEvent } from "../src/steps/index.js";
 import { sameAnswer, extractFinal } from "../src/steps/answers.js";
+import { normalizeCandidate } from "../src/steps/adapters.js";
 
 const md = await readFile(new URL("../../../data/quizzes/sample-stats.md", import.meta.url), "utf8");
 
@@ -69,7 +70,7 @@ describe("transform runner (fake models, PGlite branches)", () => {
       quiz,
       [{ item: quiz.items[0]!, solveRate: 1 }],
       { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker },
-      { candidatesPerItem: 4, strategies: ["isomorphic", "application", "find_error", "counterfactual"], onEvent: (e) => events.push(e) },
+      { candidatesPerItem: 4, strategies: ["isomorphic", "application", "find_error", "counterfactual"], onEvent: (e) => events.push(e), requireAgentResistance: true },
     );
 
     const byStrategy = Object.fromEntries(res.experiments.map((e) => [e.strategy, e]));
@@ -99,7 +100,7 @@ describe("transform runner (fake models, PGlite branches)", () => {
     expect(res.probePriority).toEqual([]);
 
     // A re-run numbers new variants after the old ones instead of colliding.
-    const again = await runTransform(store, quiz, [{ item: quiz.items[0]!, solveRate: 1 }], { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker }, { candidatesPerItem: 1, strategies: ["application"] });
+    const again = await runTransform(store, quiz, [{ item: quiz.items[0]!, solveRate: 1 }], { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker }, { candidatesPerItem: 1, strategies: ["application"], requireAgentResistance: true });
     expect(again.experiments[0]!.id).toBe("sample-stats-q1-v5");
     expect(again.probePriority).toEqual(["sample-stats-q1"]);
     await store.close();
@@ -161,7 +162,7 @@ describe("transform runner (fake models, PGlite branches)", () => {
     const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
     await saveQuiz((await store.main()).db, quiz);
     const allProviderErrors: Attacker = { attack: async (q) => ({ solveRates: q.items.map((i) => ({ itemId: i.id, runs: 0, correct: 0, solveRate: 0, agentSolvable: false })) }) };
-    const res = await runTransform(store, quiz, [{ item: quiz.items[0]!, solveRate: 1 }], { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker: allProviderErrors }, { candidatesPerItem: 1, strategies: ["isomorphic"] });
+    const res = await runTransform(store, quiz, [{ item: quiz.items[0]!, solveRate: 1 }], { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker: allProviderErrors }, { candidatesPerItem: 1, strategies: ["isomorphic"], requireAgentResistance: true });
     expect(res.experiments[0]!.status).toBe("proposed");
     expect(res.experiments[0]!.reasons.at(-1)).toMatch(/^not verified: the agent retake produced no valid runs/);
     await store.close();
@@ -194,6 +195,61 @@ describe("transform runner (fake models, PGlite branches)", () => {
     await store.close();
   }, 60_000);
 
+  it("default mode: verified = key + same skill + not online; the agent solve rate is recorded, not required", async () => {
+    const store = await PGliteBranchStore.create(await loadSchema());
+    const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
+    await saveQuiz((await store.main()).db, quiz);
+    const solvedByAgents: Attacker = { attack: async (q) => ({ solveRates: q.items.map((i) => ({ itemId: i.id, runs: 6, correct: 6, solveRate: 1, agentSolvable: true })) }) };
+    const clean = { check: async () => ({ leakFree: true, sources: [], queries: 2, queryErrors: 0 }) };
+    const res = await runTransform(store, quiz, [{ item: quiz.items[0]!, solveRate: 1 }], { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker: solvedByAgents, leakChecker: clean }, { candidatesPerItem: 1, strategies: ["isomorphic"] });
+    const e = res.experiments[0]!;
+    expect(e.status).toBe("verified");
+    expect(e.checks).toMatchObject({ leakFree: true, newSolveRate: 1 });
+    expect(e.reasons.at(-1)).toMatch(/^agent solve rate 6\/6 valid runs \(95% CI 61%-100%\), for information$/);
+    await store.close();
+  }, 60_000);
+
+  it("leak check: a rewrite already online is rejected; an unavailable search is recorded but doesn't block", async () => {
+    const store = await PGliteBranchStore.create(await loadSchema());
+    const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
+    await saveQuiz((await store.main()).db, quiz);
+    const deps = { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker };
+    const online = { check: async () => ({ leakFree: false, sources: ["quizlet.com"], queries: 2, queryErrors: 0 }) };
+    const a = await runTransform(store, quiz, [{ item: quiz.items[0]!, solveRate: 1 }], { ...deps, leakChecker: online }, { candidatesPerItem: 1, strategies: ["isomorphic"] });
+    expect(a.experiments[0]!.status).toBe("rejected");
+    expect(a.experiments[0]!.reasons.at(-1)).toBe("already online: quizlet.com");
+    expect(a.experiments[0]!.checks).toMatchObject({ leakFree: false, leakSources: ["quizlet.com"] });
+    const down = { check: async () => Promise.reject(new Error("every search failed")) };
+    const b = await runTransform(store, quiz, [{ item: quiz.items[1]!, solveRate: 1 }], { ...deps, leakChecker: down }, { candidatesPerItem: 1, strategies: ["isomorphic"] });
+    expect(b.experiments[0]!.status).toBe("verified");
+    expect(b.experiments[0]!.checks.leakFree).toBeUndefined();
+    expect(b.experiments[0]!.reasons.some((r) => r.startsWith("leak check unavailable"))).toBe(true);
+    await store.close();
+  }, 60_000);
+
+  it("fresh-data practice variants: ready after key + skill, no agent retake, and never delivered as a graded replacement", async () => {
+    const store = await PGliteBranchStore.create(await loadSchema());
+    const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
+    const main = (await store.main()).db;
+    await saveQuiz(main, quiz);
+    let attacked = false;
+    const spyAttacker: Attacker = { attack: async () => { attacked = true; return { solveRates: [] }; } };
+    const practiceGen: Generator = {
+      async generate(src: Item, strategy, k) {
+        const g = await generator.generate(src, strategy, k);
+        return { ...g, candidate: { ...g.candidate, source: { name: "BLS", url: "https://data.bls.gov/timeseries/LNS14000000", apiUrl: "https://api.bls.gov/x", fetchedAt: "2026-11-15T00:00:00Z" }, practice: true } as never };
+      },
+    };
+    const res = await runTransform(store, quiz, [{ item: quiz.items[0]!, solveRate: 1 }], { generator: practiceGen, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker: spyAttacker }, { candidatesPerItem: 1, strategies: ["fresh_data"] });
+    expect(res.experiments[0]!.status).toBe("verified");
+    expect(res.experiments[0]!.reasons.at(-1)).toMatch(/^practice variant on real data \(BLS, fetched 2026-11-15\)/);
+    expect(attacked).toBe(false);
+    expect(await applyApprovals(main, [{ id: "sample-stats-q1-v1", approve: true }])).toEqual(["sample-stats-q1-v1"]);
+    const slot1 = (await main.query<{ item_id: string }>("select item_id from delivered_item where quiz_id = 'sample-stats' and slot = 1")).rows[0];
+    expect(slot1).toEqual({ item_id: "sample-stats-q1" });
+    await store.close();
+  }, 60_000);
+
   it("decide() applies both halves of the survival rule", () => {
     const r = (correct: number, runs = 10): SolveRate => ({ itemId: "x", runs, correct, solveRate: correct / runs, agentSolvable: false });
     expect(decide(1, r(3)).survives).toBe(true);
@@ -201,6 +257,16 @@ describe("transform runner (fake models, PGlite branches)", () => {
     expect(decide(0.6, r(3)).survives).toBe(false); // only a 0.3 drop
     expect(decide(0.7, r(3)).survives).toBe(true); // exactly a 0.4 drop
     expect(decide(1, undefined).survives).toBe(false);
+  });
+
+  it("normalizes invented choice ids to letters and maps the key", () => {
+    const src = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" }).items[0]!;
+    const c = normalizeCandidate(
+      { stem: "Which is right?", type: "mcq", choices: [{ id: "id_a", text: "1" }, { id: "id_b", text: "2" }, { id: "id_c", text: "3" }], answerKey: "id_b", rationale: "r" },
+      src,
+    );
+    expect(c.choices!.map((x) => x.id)).toEqual(["a", "b", "c"]);
+    expect(c.answerKey).toBe("b");
   });
 
   it("compares answers by type", () => {

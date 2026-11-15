@@ -11,7 +11,8 @@ const STATUS: Record<CardStatus, { label: string; dot: string; pill: string }> =
   generating: { label: "Writing", dot: "bg-muted-foreground/40", pill: "bg-muted text-muted-foreground" },
   checking: { label: "Checking", dot: "bg-brand", pill: "bg-brand-soft text-brand" },
   "re-attacking": { label: "Re-testing with agents", dot: "bg-brand", pill: "bg-brand-soft text-brand" },
-  verified: { label: "Verified · needs your approval", dot: "bg-verified", pill: "bg-verified-soft text-verified" },
+  // "verified" internally; never "verified" in the UI, so nobody reads it as agent-proof.
+  verified: { label: "Ready: same answer, same skill, not online · needs your approval", dot: "bg-verified", pill: "bg-verified-soft text-verified" },
   approved: { label: "Approved", dot: "bg-verified", pill: "bg-verified-soft text-verified" },
   rejected: { label: "Rejected", dot: "bg-rejected", pill: "bg-rejected-soft text-rejected" },
   unverified: { label: "Not verified", dot: "bg-muted-foreground/40", pill: "bg-muted text-muted-foreground" },

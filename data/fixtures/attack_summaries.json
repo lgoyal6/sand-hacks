@@ -248,6 +248,775 @@
   },
   "stats-inference": {
     "quizId": "stats-inference",
+    "itemRuns": 36,
+    "itemCorrect": 36,
+    "accuracy": 1.0,
+    "accuracyCI95": [
+      0.9036,
+      1.0
+    ],
+    "attempts": 6,
+    "attemptsCompleted": 6,
+    "meanAttemptScore": 1.0,
+    "byAgentModel": {
+      "browser-use|gemini:gemini-3.5-flash-lite": {
+        "itemRuns": 6,
+        "accuracy": 1.0
+      },
+      "browser-use|gmi:google/gemini-3.6-flash": {
+        "itemRuns": 18,
+        "accuracy": 1.0
+      },
+      "browser-use|gmi:google/gemini-3.8-flash": {
+        "itemRuns": 12,
+        "accuracy": 1.0
+      }
+    },
+    "didNotSubmit": 0,
+    "wrongQuiz": 0,
+    "excludedByModel": {
+      "gmi:google/gemini-3.8-flash": {
+        "runs": 3,
+        "excluded": 1,
+        "reasons": {
+          "provider rejected request": 1
+        }
+      }
+    },
+    "infraErrors": 1,
+    "infraReasons": {
+      "provider rejected request": 1
+    },
+    "runs": [
+      {
+        "runId": "run-a751c985f3",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.6-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 11,
+        "seconds": 47.17,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "stats-inference-q1": 0,
+          "stats-inference-q2": 0,
+          "stats-inference-q3": 1,
+          "stats-inference-q4": 0,
+          "stats-inference-q5": 0,
+          "stats-inference-q6": 0
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-2a78d6b8a2",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.6-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 11,
+        "seconds": 78.99,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "stats-inference-q1": 1,
+          "stats-inference-q2": 1,
+          "stats-inference-q3": 1,
+          "stats-inference-q4": 1,
+          "stats-inference-q5": 3,
+          "stats-inference-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-1f7e283835",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.6-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 11,
+        "seconds": 27.92,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "stats-inference-q1": 1,
+          "stats-inference-q2": 1,
+          "stats-inference-q3": 1,
+          "stats-inference-q4": 1,
+          "stats-inference-q5": 3,
+          "stats-inference-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-073e6e3a56",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 14,
+        "seconds": 56.75,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "stats-inference-q1": 1,
+          "stats-inference-q2": 1,
+          "stats-inference-q3": 1,
+          "stats-inference-q4": 1,
+          "stats-inference-q5": 4,
+          "stats-inference-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-3841659a1b",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "error",
+        "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.8-flash, body: {'type': 'upstream_error', 'message': \"Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\", 'backend_status': 400, 'details': \"upstream_error: Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\"}",
+        "steps": 1,
+        "seconds": 10.81,
+        "costUsd": null,
+        "submitted": false,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 0,
+        "score": 0.0,
+        "answerChanges": {},
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": "provider rejected request",
+        "infraError": true,
+        "isolated": true,
+        "outcome": "infra"
+      },
+      {
+        "runId": "run-cf95a86e93",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 39,
+        "seconds": 102.0,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "stats-inference-q1": 1,
+          "stats-inference-q2": 1,
+          "stats-inference-q3": 1,
+          "stats-inference-q4": 1,
+          "stats-inference-q5": 3,
+          "stats-inference-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-7a9ffa7266",
+        "agent": "browser-use",
+        "model": "gemini:gemini-3.5-flash-lite",
+        "status": "completed",
+        "error": null,
+        "steps": 13,
+        "seconds": 64.13,
+        "costUsd": 0.021667249999999996,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "stats-inference-q1": 4,
+          "stats-inference-q2": 4,
+          "stats-inference-q3": 0,
+          "stats-inference-q4": 4,
+          "stats-inference-q5": 4,
+          "stats-inference-q6": 4
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      }
+    ],
+    "isolated": true
+  },
+  "calc-derivatives": {
+    "quizId": "calc-derivatives",
+    "itemRuns": 36,
+    "itemCorrect": 36,
+    "accuracy": 1.0,
+    "accuracyCI95": [
+      0.9036,
+      1.0
+    ],
+    "attempts": 6,
+    "attemptsCompleted": 6,
+    "meanAttemptScore": 1.0,
+    "byAgentModel": {
+      "browser-use|gemini:gemini-3.5-flash-lite": {
+        "itemRuns": 6,
+        "accuracy": 1.0
+      },
+      "browser-use|gmi:google/gemini-3.6-flash": {
+        "itemRuns": 12,
+        "accuracy": 1.0
+      },
+      "browser-use|gmi:google/gemini-3.8-flash": {
+        "itemRuns": 18,
+        "accuracy": 1.0
+      }
+    },
+    "didNotSubmit": 0,
+    "wrongQuiz": 0,
+    "excludedByModel": {
+      "gmi:google/gemini-3.6-flash": {
+        "runs": 3,
+        "excluded": 1,
+        "reasons": {
+          "provider rejected request": 1
+        }
+      }
+    },
+    "infraErrors": 1,
+    "infraReasons": {
+      "provider rejected request": 1
+    },
+    "runs": [
+      {
+        "runId": "run-ce4d07b78a",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.6-flash",
+        "status": "error",
+        "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.6-flash, body: {'type': 'invalid_thinking_signature', 'message': 'Invalid thinking-block signature; retry on a compatible provider', 'backend_status': 400}",
+        "steps": 15,
+        "seconds": 59.34,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "calc-derivatives-q1": 1,
+          "calc-derivatives-q2": 1,
+          "calc-derivatives-q3": 1,
+          "calc-derivatives-q4": 1,
+          "calc-derivatives-q5": 1,
+          "calc-derivatives-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-9ede6309b5",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.6-flash",
+        "status": "error",
+        "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.6-flash, body: {'type': 'upstream_error', 'message': \"Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\", 'backend_status': 400, 'details': \"upstream_error: Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\"}",
+        "steps": 12,
+        "seconds": 32.71,
+        "costUsd": null,
+        "submitted": false,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": {
+          "calc-derivatives-q1": {
+            "answer": "17",
+            "correct": true
+          },
+          "calc-derivatives-q2": {
+            "answer": "d",
+            "correct": false
+          },
+          "calc-derivatives-q3": {
+            "answer": "d",
+            "correct": false
+          },
+          "calc-derivatives-q4": {
+            "answer": "10",
+            "correct": true
+          },
+          "calc-derivatives-q5": {
+            "answer": "d",
+            "correct": false
+          },
+          "calc-derivatives-q6": {
+            "answer": "d",
+            "correct": false
+          }
+        },
+        "attemptsStarted": 1,
+        "score": 0.0,
+        "answerChanges": {
+          "calc-derivatives-q1": 1,
+          "calc-derivatives-q2": 4,
+          "calc-derivatives-q3": 4,
+          "calc-derivatives-q4": 1,
+          "calc-derivatives-q5": 4,
+          "calc-derivatives-q6": 4
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": "provider rejected request",
+        "infraError": true,
+        "isolated": true,
+        "outcome": "infra"
+      },
+      {
+        "runId": "run-1644f18647",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.6-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 10,
+        "seconds": 27.91,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "calc-derivatives-q1": 1,
+          "calc-derivatives-q2": 1,
+          "calc-derivatives-q3": 1,
+          "calc-derivatives-q4": 1,
+          "calc-derivatives-q5": 1,
+          "calc-derivatives-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-0e4ee7a0e7",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 19,
+        "seconds": 84.38,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "calc-derivatives-q1": 1,
+          "calc-derivatives-q2": 1,
+          "calc-derivatives-q3": 1,
+          "calc-derivatives-q4": 1,
+          "calc-derivatives-q5": 1,
+          "calc-derivatives-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-6018497b19",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 17,
+        "seconds": 85.97,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "calc-derivatives-q1": 1,
+          "calc-derivatives-q2": 1,
+          "calc-derivatives-q3": 1,
+          "calc-derivatives-q4": 1,
+          "calc-derivatives-q5": 1,
+          "calc-derivatives-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-a9a2d843c9",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 9,
+        "seconds": 36.93,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "calc-derivatives-q1": 1,
+          "calc-derivatives-q2": 1,
+          "calc-derivatives-q3": 1,
+          "calc-derivatives-q4": 1,
+          "calc-derivatives-q5": 1,
+          "calc-derivatives-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-7a1e16d133",
+        "agent": "browser-use",
+        "model": "gemini:gemini-3.5-flash-lite",
+        "status": "error",
+        "error": "ModelRateLimitError: status_code: 429, model_name: gemini-3.5-flash-lite, body: {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistudio.google.com/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 250000, model: gemini-3.5-flash-lite, description: Generate content input tokens per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.\\nPlease retry in 12.594311422s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://aistudio.google.com/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'description': 'Generate content input tokens per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.', 'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '250000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}",
+        "steps": 42,
+        "seconds": 344.54,
+        "costUsd": 0.09917053,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 7,
+        "score": 1.0,
+        "answerChanges": {
+          "calc-derivatives-q1": 0,
+          "calc-derivatives-q2": 0,
+          "calc-derivatives-q3": 0,
+          "calc-derivatives-q4": 0,
+          "calc-derivatives-q5": 0,
+          "calc-derivatives-q6": 0
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      }
+    ],
+    "isolated": true
+  },
+  "python-basics": {
+    "quizId": "python-basics",
+    "itemRuns": 30,
+    "itemCorrect": 30,
+    "accuracy": 1.0,
+    "accuracyCI95": [
+      0.8865,
+      1.0
+    ],
+    "attempts": 5,
+    "attemptsCompleted": 5,
+    "meanAttemptScore": 1.0,
+    "byAgentModel": {
+      "browser-use|gemini:gemini-3.5-flash-lite": {
+        "itemRuns": 6,
+        "accuracy": 1.0
+      },
+      "browser-use|gmi:google/gemini-3.6-flash": {
+        "itemRuns": 6,
+        "accuracy": 1.0
+      },
+      "browser-use|gmi:google/gemini-3.8-flash": {
+        "itemRuns": 18,
+        "accuracy": 1.0
+      }
+    },
+    "didNotSubmit": 0,
+    "wrongQuiz": 0,
+    "excludedByModel": {
+      "gmi:google/gemini-3.6-flash": {
+        "runs": 3,
+        "excluded": 2,
+        "reasons": {
+          "local browser failed to start": 2
+        }
+      }
+    },
+    "infraErrors": 2,
+    "infraReasons": {
+      "local browser failed to start": 2
+    },
+    "runs": [
+      {
+        "runId": "run-1ae721a796",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.6-flash",
+        "status": "error",
+        "error": "fatal: CDP WS handshake failed: timed out during opening handshake -- remote browser WebSocket connection failed. This can happen when network policy blocks the connection, the WS URL is wrong or expired, or the remote endpoint is down. If you use Browser Use cloud, verify auth and get a fresh URL via start_remote_daemon().",
+        "steps": 0,
+        "seconds": 28.27,
+        "costUsd": 0.0,
+        "submitted": false,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 0,
+        "score": 0.0,
+        "answerChanges": {},
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": "local browser failed to start",
+        "infraError": true,
+        "isolated": true,
+        "outcome": "infra"
+      },
+      {
+        "runId": "run-f593c306ef",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.6-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 15,
+        "seconds": 114.32,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "python-basics-q1": 1,
+          "python-basics-q2": 1,
+          "python-basics-q3": 1,
+          "python-basics-q4": 1,
+          "python-basics-q5": 1,
+          "python-basics-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-d5bbd60c59",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.6-flash",
+        "status": "error",
+        "error": "fatal: CDP WS handshake failed: timed out during opening handshake -- remote browser WebSocket connection failed. This can happen when network policy blocks the connection, the WS URL is wrong or expired, or the remote endpoint is down. If you use Browser Use cloud, verify auth and get a fresh URL via start_remote_daemon().",
+        "steps": 0,
+        "seconds": 45.02,
+        "costUsd": 0.0,
+        "submitted": false,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 0,
+        "score": 0.0,
+        "answerChanges": {},
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": "local browser failed to start",
+        "infraError": true,
+        "isolated": true,
+        "outcome": "infra"
+      },
+      {
+        "runId": "run-b0dcdcf6dc",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 15,
+        "seconds": 51.35,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "python-basics-q1": 1,
+          "python-basics-q2": 1,
+          "python-basics-q3": 1,
+          "python-basics-q4": 1,
+          "python-basics-q5": 1,
+          "python-basics-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-1805387751",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 18,
+        "seconds": 68.55,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "python-basics-q1": 1,
+          "python-basics-q2": 1,
+          "python-basics-q3": 1,
+          "python-basics-q4": 1,
+          "python-basics-q5": 1,
+          "python-basics-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-0f52a580f3",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "completed",
+        "error": null,
+        "steps": 8,
+        "seconds": 27.04,
+        "costUsd": null,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "python-basics-q1": 1,
+          "python-basics-q2": 1,
+          "python-basics-q3": 1,
+          "python-basics-q4": 1,
+          "python-basics-q5": 1,
+          "python-basics-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-c5042fabe7",
+        "agent": "browser-use",
+        "model": "gemini:gemini-3.5-flash-lite",
+        "status": "error",
+        "error": "ModelRateLimitError: status_code: 429, model_name: gemini-3.5-flash-lite, body: {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistudio.google.com/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 250000, model: gemini-3.5-flash-lite, description: Generate content input tokens per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.\\nPlease retry in 17.67116822s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://aistudio.google.com/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'description': 'Generate content input tokens per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.', 'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'model': 'gemini-3.5-flash-lite', 'location': 'global'}, 'quotaValue': '250000'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '17s'}]}}",
+        "steps": 39,
+        "seconds": 222.72,
+        "costUsd": 0.09571423000000001,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 3,
+        "score": 1.0,
+        "answerChanges": {
+          "python-basics-q1": 0,
+          "python-basics-q2": 0,
+          "python-basics-q3": 0,
+          "python-basics-q4": 0,
+          "python-basics-q5": 0,
+          "python-basics-q6": 0
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      }
+    ],
+    "isolated": true
+  },
+  "bio-cells": {
+    "quizId": "bio-cells",
     "itemRuns": 24,
     "itemCorrect": 24,
     "accuracy": 1.0,
@@ -273,133 +1042,72 @@
       }
     },
     "didNotSubmit": 0,
+    "wrongQuiz": 0,
     "excludedByModel": {
       "gmi:google/gemini-3.6-flash": {
         "runs": 3,
         "excluded": 1,
         "reasons": {
-          "provider rejected request": 1
+          "local browser failed to start": 1
         }
       },
       "gmi:google/gemini-3.8-flash": {
         "runs": 3,
         "excluded": 2,
         "reasons": {
-          "provider rejected request": 2
+          "local browser failed to start": 2
         }
       }
     },
     "infraErrors": 3,
     "infraReasons": {
-      "provider rejected request": 3
+      "local browser failed to start": 3
     },
     "runs": [
       {
-        "runId": "run-29b7b8be85",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.6-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 12,
-        "seconds": 31.14,
-        "costUsd": null,
-        "submitted": true,
-        "answeredNotSubmitted": null,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "stats-inference-q1": 1,
-          "stats-inference-q2": 1,
-          "stats-inference-q3": 1,
-          "stats-inference-q4": 1,
-          "stats-inference-q5": 3,
-          "stats-inference-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "isolated": true,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-79857f9652",
+        "runId": "run-69625bf26d",
         "agent": "browser-use",
         "model": "gmi:google/gemini-3.6-flash",
         "status": "error",
-        "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.6-flash, body: {'type': 'upstream_error', 'message': \"Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\", 'backend_status': 400, 'details': \"upstream_error: Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\"}",
-        "steps": 12,
-        "seconds": 27.35,
-        "costUsd": null,
+        "error": "fatal: CDP WS handshake failed: timed out during opening handshake -- remote browser WebSocket connection failed. This can happen when network policy blocks the connection, the WS URL is wrong or expired, or the remote endpoint is down. If you use Browser Use cloud, verify auth and get a fresh URL via start_remote_daemon().",
+        "steps": 0,
+        "seconds": 31.89,
+        "costUsd": 0.0,
         "submitted": false,
-        "answeredNotSubmitted": {
-          "stats-inference-q1": {
-            "answer": "b",
-            "correct": true
-          },
-          "stats-inference-q2": {
-            "answer": "b",
-            "correct": true
-          },
-          "stats-inference-q3": {
-            "answer": "2",
-            "correct": true
-          },
-          "stats-inference-q4": {
-            "answer": "b",
-            "correct": true
-          },
-          "stats-inference-q5": {
-            "answer": [
-              "a",
-              "b"
-            ],
-            "correct": false
-          },
-          "stats-inference-q6": {
-            "answer": "b",
-            "correct": true
-          }
-        },
-        "attemptsStarted": 1,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 0,
         "score": 0.0,
-        "answerChanges": {
-          "stats-inference-q1": 1,
-          "stats-inference-q2": 1,
-          "stats-inference-q3": 1,
-          "stats-inference-q4": 1,
-          "stats-inference-q5": 3,
-          "stats-inference-q6": 1
-        },
+        "answerChanges": {},
         "target": "sandbox",
         "probesTriggered": null,
         "stuckAtProbe": false,
-        "infraReason": "provider rejected request",
+        "infraReason": "local browser failed to start",
         "infraError": true,
         "isolated": true,
         "outcome": "infra"
       },
       {
-        "runId": "run-ac8fe75b65",
+        "runId": "run-5eadaad286",
         "agent": "browser-use",
         "model": "gmi:google/gemini-3.6-flash",
         "status": "completed",
         "error": null,
-        "steps": 12,
-        "seconds": 31.36,
+        "steps": 10,
+        "seconds": 34.69,
         "costUsd": null,
         "submitted": true,
+        "wrongQuiz": null,
         "answeredNotSubmitted": null,
         "attemptsStarted": 1,
         "score": 1.0,
         "answerChanges": {
-          "stats-inference-q1": 2,
-          "stats-inference-q2": 2,
-          "stats-inference-q3": 1,
-          "stats-inference-q4": 2,
-          "stats-inference-q5": 6,
-          "stats-inference-q6": 2
+          "bio-cells-q1": 1,
+          "bio-cells-q2": 1,
+          "bio-cells-q3": 3,
+          "bio-cells-q4": 1,
+          "bio-cells-q5": 1,
+          "bio-cells-q6": 1
         },
         "target": "sandbox",
         "probesTriggered": null,
@@ -410,25 +1118,26 @@
         "outcome": "submitted"
       },
       {
-        "runId": "run-914a281018",
+        "runId": "run-ea549f0452",
         "agent": "browser-use",
-        "model": "gmi:google/gemini-3.8-flash",
+        "model": "gmi:google/gemini-3.6-flash",
         "status": "completed",
         "error": null,
-        "steps": 10,
-        "seconds": 39.43,
+        "steps": 13,
+        "seconds": 43.86,
         "costUsd": null,
         "submitted": true,
+        "wrongQuiz": null,
         "answeredNotSubmitted": null,
         "attemptsStarted": 1,
         "score": 1.0,
         "answerChanges": {
-          "stats-inference-q1": 1,
-          "stats-inference-q2": 1,
-          "stats-inference-q3": 1,
-          "stats-inference-q4": 1,
-          "stats-inference-q5": 3,
-          "stats-inference-q6": 1
+          "bio-cells-q1": 1,
+          "bio-cells-q2": 1,
+          "bio-cells-q3": 3,
+          "bio-cells-q4": 1,
+          "bio-cells-q5": 1,
+          "bio-cells-q6": 1
         },
         "target": "sandbox",
         "probesTriggered": null,
@@ -439,83 +1148,102 @@
         "outcome": "submitted"
       },
       {
-        "runId": "run-db441d77f9",
+        "runId": "run-2379f74bfb",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "error",
+        "error": "fatal: CDP WS handshake failed: timed out during opening handshake -- remote browser WebSocket connection failed. This can happen when network policy blocks the connection, the WS URL is wrong or expired, or the remote endpoint is down. If you use Browser Use cloud, verify auth and get a fresh URL via start_remote_daemon().",
+        "steps": 0,
+        "seconds": 41.95,
+        "costUsd": 0.0,
+        "submitted": false,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 0,
+        "score": 0.0,
+        "answerChanges": {},
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": "local browser failed to start",
+        "infraError": true,
+        "isolated": true,
+        "outcome": "infra"
+      },
+      {
+        "runId": "run-fe9351e08d",
         "agent": "browser-use",
         "model": "gmi:google/gemini-3.8-flash",
         "status": "error",
         "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.8-flash, body: {'type': 'invalid_thinking_signature', 'message': 'Invalid thinking-block signature; retry on a compatible provider', 'backend_status': 400}",
-        "steps": 10,
-        "seconds": 32.41,
+        "steps": 20,
+        "seconds": 134.71,
         "costUsd": null,
-        "submitted": false,
-        "answeredNotSubmitted": null,
-        "attemptsStarted": 1,
-        "score": 0.0,
-        "answerChanges": {
-          "stats-inference-q1": 0,
-          "stats-inference-q2": 0,
-          "stats-inference-q3": 0,
-          "stats-inference-q4": 0,
-          "stats-inference-q5": 0,
-          "stats-inference-q6": 0
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider rejected request",
-        "infraError": true,
-        "isolated": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-e4f2a1403f",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.8-flash",
-        "status": "error",
-        "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.8-flash, body: {'type': 'upstream_error', 'message': \"Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\", 'backend_status': 400, 'details': \"upstream_error: Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\"}",
-        "steps": 7,
-        "seconds": 16.69,
-        "costUsd": null,
-        "submitted": false,
-        "answeredNotSubmitted": null,
-        "attemptsStarted": 1,
-        "score": 0.0,
-        "answerChanges": {
-          "stats-inference-q1": 0,
-          "stats-inference-q2": 0,
-          "stats-inference-q3": 0,
-          "stats-inference-q4": 0,
-          "stats-inference-q5": 0,
-          "stats-inference-q6": 0
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider rejected request",
-        "infraError": true,
-        "isolated": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-3ebb6abf6b",
-        "agent": "browser-use",
-        "model": "gemini:gemini-3.5-flash-lite",
-        "status": "error",
-        "error": "ModelRateLimitError: status_code: 429, model_name: gemini-3.5-flash-lite, body: {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://aistudio.google.com/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 15, model: gemini-3.5-flash-lite, description: Generate content requests per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.\\nPlease retry in 6.753839334s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://aistudio.google.com/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'description': 'Generate content requests per minute limit exceeded on Free Tier. See https://aistudio.google.com/docs/rate-limits.', 'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash-lite'}, 'quotaValue': '15'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '6s'}]}}",
-        "steps": 19,
-        "seconds": 55.02,
-        "costUsd": 0.030690449999999994,
         "submitted": true,
+        "wrongQuiz": null,
         "answeredNotSubmitted": null,
         "attemptsStarted": 1,
         "score": 1.0,
         "answerChanges": {
-          "stats-inference-q1": 0,
-          "stats-inference-q2": 0,
-          "stats-inference-q3": 0,
-          "stats-inference-q4": 0,
-          "stats-inference-q5": 0,
-          "stats-inference-q6": 0
+          "bio-cells-q1": 1,
+          "bio-cells-q2": 1,
+          "bio-cells-q3": 3,
+          "bio-cells-q4": 1,
+          "bio-cells-q5": 1,
+          "bio-cells-q6": 1
+        },
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": null,
+        "infraError": false,
+        "isolated": true,
+        "outcome": "submitted"
+      },
+      {
+        "runId": "run-01ac93725f",
+        "agent": "browser-use",
+        "model": "gmi:google/gemini-3.8-flash",
+        "status": "error",
+        "error": "fatal: CDP WS handshake failed: timed out during opening handshake -- remote browser WebSocket connection failed. This can happen when network policy blocks the connection, the WS URL is wrong or expired, or the remote endpoint is down. If you use Browser Use cloud, verify auth and get a fresh URL via start_remote_daemon().",
+        "steps": 0,
+        "seconds": 39.54,
+        "costUsd": 0.0,
+        "submitted": false,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 0,
+        "score": 0.0,
+        "answerChanges": {},
+        "target": "sandbox",
+        "probesTriggered": null,
+        "stuckAtProbe": false,
+        "infraReason": "local browser failed to start",
+        "infraError": true,
+        "isolated": true,
+        "outcome": "infra"
+      },
+      {
+        "runId": "run-06b401cf97",
+        "agent": "browser-use",
+        "model": "gemini:gemini-3.5-flash-lite",
+        "status": "completed",
+        "error": null,
+        "steps": 11,
+        "seconds": 145.8,
+        "costUsd": 0.018533719999999997,
+        "submitted": true,
+        "wrongQuiz": null,
+        "answeredNotSubmitted": null,
+        "attemptsStarted": 1,
+        "score": 1.0,
+        "answerChanges": {
+          "bio-cells-q1": 0,
+          "bio-cells-q2": 0,
+          "bio-cells-q3": 0,
+          "bio-cells-q4": 0,
+          "bio-cells-q5": 0,
+          "bio-cells-q6": 0
         },
         "target": "sandbox",
         "probesTriggered": null,
@@ -527,837 +1255,6 @@
       }
     ],
     "isolated": true
-  },
-  "calc-derivatives": {
-    "quizId": "calc-derivatives",
-    "itemRuns": 30,
-    "itemCorrect": 30,
-    "accuracy": 1.0,
-    "accuracyCI95": [
-      0.8865,
-      1.0
-    ],
-    "attempts": 5,
-    "attemptsCompleted": 5,
-    "meanAttemptScore": 1.0,
-    "byAgentModel": {
-      "browser-use|gmi:google/gemini-3.5-flash-lite": {
-        "itemRuns": 6,
-        "accuracy": 1.0
-      },
-      "browser-use|gmi:google/gemini-3.6-flash": {
-        "itemRuns": 12,
-        "accuracy": 1.0
-      },
-      "browser-use|gmi:google/gemini-3.8-flash": {
-        "itemRuns": 12,
-        "accuracy": 1.0
-      }
-    },
-    "infraErrors": 4,
-    "infraReasons": {
-      "provider content filter": 2,
-      "provider rejected request": 2
-    },
-    "runs": [
-      {
-        "runId": "run-850d879cac",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.5-flash-lite",
-        "status": "error",
-        "error": "ContentFilterError: Content filter triggered. Finish reason: 'content_filter', body:\n[\n  {\n    \"parts\": [],\n    \"usage\": {\n      \"input_tokens\": 2438,\n      \"cache_write_tokens\": 0,\n      \"cache_write_1h_tokens\": 0,\n      \"cache_read_tokens\": 0,\n      \"output_tokens\": 0,\n      \"output_reasoning_tokens\": 0,\n      \"input_audio_tokens\": 0,\n      \"cache_audio_read_tokens\": 0,\n      \"output_audio_tokens\": 0,\n      \"audio_seconds\": 0.0,\n      \"details\": {\n        \"claude_cache_creation_5_m_tokens\": 0,\n        \"claude_cache_creation_1_h_tokens\": 0,\n        \"audio_tokens\": 0,\n        \"reasoning_tokens\": 0,\n        \"text_tokens\": 0,\n        \"image_tokens\": 0,\n        \"video_tokens\": 0,\n        \"tool_tokens\": 0\n      },\n      \"cost\": null\n    },\n    \"model_name\": \"gemini-3.5-flash-lite\",\n    \"model_id\": \"openai:google/gemini-3.5-flash-lite\",\n    \"timestamp\": \"2026-11-15T01:03:07.631686Z\",\n    \"kind\": \"response\",\n    \"provider_name\": \"openai\",\n    \"provider_url\": \"https://api.gmi-serving.com/v1/\",\n    \"canonical_system\": \"openai\",\n    \"provider_details\": {\n      \"finish_reason\": \"content_filter\",\n      \"timestamp\": \"2026-11-15T01:03:07Z\"\n    },\n    \"provider_response_id\": \"chatcmpl-202611150103044363451598268d9d6mtFrtgfa\",\n    \"finish_reason\": \"content_filter\",\n    \"run_id\": \"01a1dcba-8c81-714e-aa38-575e5197daec\",\n    \"conversation_id\": \"01a1dcba-8c81-714e-aa38-575f29c2ad48\",\n    \"metadata\": null,\n    \"workspace_ref\": null,\n    \"history_digest\": null,\n    \"failed_attempts\": null,\n    \"state\": \"complete\"\n  }\n]",
-        "steps": 3,
-        "seconds": 12.64,
-        "costUsd": null,
-        "submitted": false,
-        "attemptsStarted": 0,
-        "score": 0.0,
-        "answerChanges": {},
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider content filter",
-        "infraError": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-75bc1d3948",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.5-flash-lite",
-        "status": "completed",
-        "error": null,
-        "steps": 11,
-        "seconds": 101.29,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "calc-derivatives-q1": 1,
-          "calc-derivatives-q2": 1,
-          "calc-derivatives-q3": 1,
-          "calc-derivatives-q4": 1,
-          "calc-derivatives-q5": 1,
-          "calc-derivatives-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-60f5dbf78d",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.5-flash-lite",
-        "status": "error",
-        "error": "ContentFilterError: Content filter triggered. Finish reason: 'content_filter', body:\n[\n  {\n    \"parts\": [],\n    \"usage\": {\n      \"input_tokens\": 2374,\n      \"cache_write_tokens\": 0,\n      \"cache_write_1h_tokens\": 0,\n      \"cache_read_tokens\": 0,\n      \"output_tokens\": 0,\n      \"output_reasoning_tokens\": 0,\n      \"input_audio_tokens\": 0,\n      \"cache_audio_read_tokens\": 0,\n      \"output_audio_tokens\": 0,\n      \"audio_seconds\": 0.0,\n      \"details\": {\n        \"claude_cache_creation_5_m_tokens\": 0,\n        \"claude_cache_creation_1_h_tokens\": 0,\n        \"audio_tokens\": 0,\n        \"reasoning_tokens\": 0,\n        \"text_tokens\": 0,\n        \"image_tokens\": 0,\n        \"video_tokens\": 0,\n        \"tool_tokens\": 0\n      },\n      \"cost\": null\n    },\n    \"model_name\": \"gemini-3.5-flash-lite\",\n    \"model_id\": \"openai:google/gemini-3.5-flash-lite\",\n    \"timestamp\": \"2026-11-15T01:05:37.272612Z\",\n    \"kind\": \"response\",\n    \"provider_name\": \"openai\",\n    \"provider_url\": \"https://api.gmi-serving.com/v1/\",\n    \"canonical_system\": \"openai\",\n    \"provider_details\": {\n      \"finish_reason\": \"content_filter\",\n      \"timestamp\": \"2026-11-15T01:05:37Z\"\n    },\n    \"provider_response_id\": \"chatcmpl-202611150105336986213578268d9d6Erl059qv\",\n    \"finish_reason\": \"content_filter\",\n    \"run_id\": \"01a1dcbc-d634-742e-afcc-d3ad9000f78a\",\n    \"conversation_id\": \"01a1dcbc-d639-766a-8b2d-84bbfd1a72c9\",\n    \"metadata\": null,\n    \"workspace_ref\": null,\n    \"history_digest\": null,\n    \"failed_attempts\": null,\n    \"state\": \"complete\"\n  }\n]",
-        "steps": 3,
-        "seconds": 11.8,
-        "costUsd": null,
-        "submitted": false,
-        "attemptsStarted": 0,
-        "score": 0.0,
-        "answerChanges": {},
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider content filter",
-        "infraError": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-6859d953f8",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.6-flash",
-        "status": "error",
-        "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.6-flash, body: {'type': 'upstream_error', 'message': \"Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\", 'backend_status': 400, 'details': \"upstream_error: Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\"}",
-        "steps": 6,
-        "seconds": 12.56,
-        "costUsd": null,
-        "submitted": false,
-        "attemptsStarted": 1,
-        "score": 0.0,
-        "answerChanges": {
-          "calc-derivatives-q1": 0,
-          "calc-derivatives-q2": 0,
-          "calc-derivatives-q3": 0,
-          "calc-derivatives-q4": 0,
-          "calc-derivatives-q5": 0,
-          "calc-derivatives-q6": 0
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider rejected request",
-        "infraError": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-27ab15adfa",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.6-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 18,
-        "seconds": 50.82,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "calc-derivatives-q1": 0,
-          "calc-derivatives-q2": 0,
-          "calc-derivatives-q3": 0,
-          "calc-derivatives-q4": 0,
-          "calc-derivatives-q5": 0,
-          "calc-derivatives-q6": 0
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-f24f0c35a0",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.6-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 13,
-        "seconds": 41.74,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "calc-derivatives-q1": 1,
-          "calc-derivatives-q2": 1,
-          "calc-derivatives-q3": 1,
-          "calc-derivatives-q4": 1,
-          "calc-derivatives-q5": 1,
-          "calc-derivatives-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-f74020219d",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.8-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 20,
-        "seconds": 41.99,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "calc-derivatives-q1": 1,
-          "calc-derivatives-q2": 1,
-          "calc-derivatives-q3": 1,
-          "calc-derivatives-q4": 1,
-          "calc-derivatives-q5": 1,
-          "calc-derivatives-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-2bd2bce54b",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.8-flash",
-        "status": "error",
-        "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.8-flash, body: {'type': 'invalid_thinking_signature', 'message': 'Invalid thinking-block signature; retry on a compatible provider', 'backend_status': 400}",
-        "steps": 9,
-        "seconds": 27.51,
-        "costUsd": null,
-        "submitted": false,
-        "attemptsStarted": 1,
-        "score": 0.0,
-        "answerChanges": {
-          "calc-derivatives-q1": 0,
-          "calc-derivatives-q2": 0,
-          "calc-derivatives-q3": 0,
-          "calc-derivatives-q4": 0,
-          "calc-derivatives-q5": 0,
-          "calc-derivatives-q6": 0
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider rejected request",
-        "infraError": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-27eee9cf1b",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.8-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 18,
-        "seconds": 62.36,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "calc-derivatives-q1": 1,
-          "calc-derivatives-q2": 1,
-          "calc-derivatives-q3": 1,
-          "calc-derivatives-q4": 1,
-          "calc-derivatives-q5": 1,
-          "calc-derivatives-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      }
-    ],
-    "didNotSubmit": 0,
-    "isolated": false,
-    "excludedByModel": {
-      "gmi:google/gemini-3.5-flash-lite": {
-        "runs": 3,
-        "excluded": 2,
-        "reasons": {
-          "provider content filter": 2
-        }
-      },
-      "gmi:google/gemini-3.6-flash": {
-        "runs": 3,
-        "excluded": 1,
-        "reasons": {
-          "provider rejected request": 1
-        }
-      },
-      "gmi:google/gemini-3.8-flash": {
-        "runs": 3,
-        "excluded": 1,
-        "reasons": {
-          "provider rejected request": 1
-        }
-      }
-    }
-  },
-  "python-basics": {
-    "quizId": "python-basics",
-    "itemRuns": 36,
-    "itemCorrect": 36,
-    "accuracy": 1.0,
-    "accuracyCI95": [
-      0.9036,
-      1.0
-    ],
-    "attempts": 6,
-    "attemptsCompleted": 6,
-    "meanAttemptScore": 1.0,
-    "byAgentModel": {
-      "browser-use|gmi:google/gemini-3.6-flash": {
-        "itemRuns": 18,
-        "accuracy": 1.0
-      },
-      "browser-use|gmi:google/gemini-3.8-flash": {
-        "itemRuns": 18,
-        "accuracy": 1.0
-      }
-    },
-    "infraErrors": 3,
-    "infraReasons": {
-      "provider content filter": 3
-    },
-    "runs": [
-      {
-        "runId": "run-f80de0cfec",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.5-flash-lite",
-        "status": "error",
-        "error": "ContentFilterError: Content filter triggered. Finish reason: 'content_filter', body:\n[\n  {\n    \"parts\": [],\n    \"usage\": {\n      \"input_tokens\": 2392,\n      \"cache_write_tokens\": 0,\n      \"cache_write_1h_tokens\": 0,\n      \"cache_read_tokens\": 0,\n      \"output_tokens\": 0,\n      \"output_reasoning_tokens\": 0,\n      \"input_audio_tokens\": 0,\n      \"cache_audio_read_tokens\": 0,\n      \"output_audio_tokens\": 0,\n      \"audio_seconds\": 0.0,\n      \"details\": {\n        \"claude_cache_creation_5_m_tokens\": 0,\n        \"claude_cache_creation_1_h_tokens\": 0,\n        \"audio_tokens\": 0,\n        \"reasoning_tokens\": 0,\n        \"text_tokens\": 0,\n        \"image_tokens\": 0,\n        \"video_tokens\": 0,\n        \"tool_tokens\": 0\n      },\n      \"cost\": null\n    },\n    \"model_name\": \"gemini-3.5-flash-lite\",\n    \"model_id\": \"openai:google/gemini-3.5-flash-lite\",\n    \"timestamp\": \"2026-11-15T01:10:21.710166Z\",\n    \"kind\": \"response\",\n    \"provider_name\": \"openai\",\n    \"provider_url\": \"https://api.gmi-serving.com/v1/\",\n    \"canonical_system\": \"openai\",\n    \"provider_details\": {\n      \"finish_reason\": \"content_filter\",\n      \"timestamp\": \"2026-11-15T01:10:21Z\"\n    },\n    \"provider_response_id\": \"chatcmpl-202611150110183990715418268d9d6cO7MUwjT\",\n    \"finish_reason\": \"content_filter\",\n    \"run_id\": \"01a1dcc1-25aa-7033-bc70-317c507dbc92\",\n    \"conversation_id\": \"01a1dcc1-25aa-7033-bc70-317d054fd852\",\n    \"metadata\": null,\n    \"workspace_ref\": null,\n    \"history_digest\": null,\n    \"failed_attempts\": null,\n    \"state\": \"complete\"\n  }\n]",
-        "steps": 4,
-        "seconds": 13.78,
-        "costUsd": null,
-        "submitted": false,
-        "attemptsStarted": 0,
-        "score": 0.0,
-        "answerChanges": {},
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider content filter",
-        "infraError": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-2fb8a9e3a6",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.5-flash-lite",
-        "status": "error",
-        "error": "ContentFilterError: Content filter triggered. Finish reason: 'content_filter', body:\n[\n  {\n    \"parts\": [],\n    \"usage\": {\n      \"input_tokens\": 2580,\n      \"cache_write_tokens\": 0,\n      \"cache_write_1h_tokens\": 0,\n      \"cache_read_tokens\": 0,\n      \"output_tokens\": 0,\n      \"output_reasoning_tokens\": 0,\n      \"input_audio_tokens\": 0,\n      \"cache_audio_read_tokens\": 0,\n      \"output_audio_tokens\": 0,\n      \"audio_seconds\": 0.0,\n      \"details\": {\n        \"claude_cache_creation_5_m_tokens\": 0,\n        \"claude_cache_creation_1_h_tokens\": 0,\n        \"audio_tokens\": 0,\n        \"reasoning_tokens\": 0,\n        \"text_tokens\": 0,\n        \"image_tokens\": 0,\n        \"video_tokens\": 0,\n        \"tool_tokens\": 0\n      },\n      \"cost\": null\n    },\n    \"model_name\": \"gemini-3.5-flash-lite\",\n    \"model_id\": \"openai:google/gemini-3.5-flash-lite\",\n    \"timestamp\": \"2026-11-15T01:10:43.976950Z\",\n    \"kind\": \"response\",\n    \"provider_name\": \"openai\",\n    \"provider_url\": \"https://api.gmi-serving.com/v1/\",\n    \"canonical_system\": \"openai\",\n    \"provider_details\": {\n      \"finish_reason\": \"content_filter\",\n      \"timestamp\": \"2026-11-15T01:10:43Z\"\n    },\n    \"provider_response_id\": \"chatcmpl-202611150110391351935178268d9d6wpov6g6x\",\n    \"finish_reason\": \"content_filter\",\n    \"run_id\": \"01a1dcc1-7186-712a-b8cb-b727232cc1fe\",\n    \"conversation_id\": \"01a1dcc1-7186-712a-b8cb-b72802ce1338\",\n    \"metadata\": null,\n    \"workspace_ref\": null,\n    \"history_digest\": null,\n    \"failed_attempts\": null,\n    \"state\": \"complete\"\n  }\n]",
-        "steps": 4,
-        "seconds": 16.53,
-        "costUsd": null,
-        "submitted": false,
-        "attemptsStarted": 0,
-        "score": 0.0,
-        "answerChanges": {},
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider content filter",
-        "infraError": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-4fa9dac812",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.5-flash-lite",
-        "status": "error",
-        "error": "ContentFilterError: Content filter triggered. Finish reason: 'content_filter', body:\n[\n  {\n    \"parts\": [],\n    \"usage\": {\n      \"input_tokens\": 2383,\n      \"cache_write_tokens\": 0,\n      \"cache_write_1h_tokens\": 0,\n      \"cache_read_tokens\": 0,\n      \"output_tokens\": 0,\n      \"output_reasoning_tokens\": 0,\n      \"input_audio_tokens\": 0,\n      \"cache_audio_read_tokens\": 0,\n      \"output_audio_tokens\": 0,\n      \"audio_seconds\": 0.0,\n      \"details\": {\n        \"claude_cache_creation_5_m_tokens\": 0,\n        \"claude_cache_creation_1_h_tokens\": 0,\n        \"audio_tokens\": 0,\n        \"reasoning_tokens\": 0,\n        \"text_tokens\": 0,\n        \"image_tokens\": 0,\n        \"video_tokens\": 0,\n        \"tool_tokens\": 0\n      },\n      \"cost\": null\n    },\n    \"model_name\": \"gemini-3.5-flash-lite\",\n    \"model_id\": \"openai:google/gemini-3.5-flash-lite\",\n    \"timestamp\": \"2026-11-15T01:10:56.298322Z\",\n    \"kind\": \"response\",\n    \"provider_name\": \"openai\",\n    \"provider_url\": \"https://api.gmi-serving.com/v1/\",\n    \"canonical_system\": \"openai\",\n    \"provider_details\": {\n      \"finish_reason\": \"content_filter\",\n      \"timestamp\": \"2026-11-15T01:10:56Z\"\n    },\n    \"provider_response_id\": \"chatcmpl-202611150110528295735968268d9d6IxDXzNc8\",\n    \"finish_reason\": \"content_filter\",\n    \"run_id\": \"01a1dcc1-bc07-756f-9e1c-9ea5243d4151\",\n    \"conversation_id\": \"01a1dcc1-bc07-756f-9e1c-9ea67a5c72fb\",\n    \"metadata\": null,\n    \"workspace_ref\": null,\n    \"history_digest\": null,\n    \"failed_attempts\": null,\n    \"state\": \"complete\"\n  }\n]",
-        "steps": 3,
-        "seconds": 9.78,
-        "costUsd": null,
-        "submitted": false,
-        "attemptsStarted": 0,
-        "score": 0.0,
-        "answerChanges": {},
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider content filter",
-        "infraError": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-28a00462ab",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.6-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 21,
-        "seconds": 52.65,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "python-basics-q1": 1,
-          "python-basics-q2": 1,
-          "python-basics-q3": 1,
-          "python-basics-q4": 1,
-          "python-basics-q5": 1,
-          "python-basics-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-9fc2b52cb8",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.6-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 15,
-        "seconds": 51.82,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "python-basics-q1": 1,
-          "python-basics-q2": 1,
-          "python-basics-q3": 1,
-          "python-basics-q4": 1,
-          "python-basics-q5": 1,
-          "python-basics-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-15b1d8b93b",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.6-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 13,
-        "seconds": 32.52,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "python-basics-q1": 1,
-          "python-basics-q2": 1,
-          "python-basics-q3": 1,
-          "python-basics-q4": 1,
-          "python-basics-q5": 1,
-          "python-basics-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-bf38d798bc",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.8-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 16,
-        "seconds": 41.96,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "python-basics-q1": 1,
-          "python-basics-q2": 1,
-          "python-basics-q3": 1,
-          "python-basics-q4": 1,
-          "python-basics-q5": 1,
-          "python-basics-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-e640901666",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.8-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 8,
-        "seconds": 26.95,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "python-basics-q1": 1,
-          "python-basics-q2": 1,
-          "python-basics-q3": 1,
-          "python-basics-q4": 1,
-          "python-basics-q5": 1,
-          "python-basics-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-07ed2de392",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.8-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 12,
-        "seconds": 35.41,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "python-basics-q1": 1,
-          "python-basics-q2": 1,
-          "python-basics-q3": 1,
-          "python-basics-q4": 1,
-          "python-basics-q5": 1,
-          "python-basics-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      }
-    ],
-    "didNotSubmit": 0,
-    "isolated": false,
-    "excludedByModel": {
-      "gmi:google/gemini-3.5-flash-lite": {
-        "runs": 3,
-        "excluded": 3,
-        "reasons": {
-          "provider content filter": 3
-        }
-      }
-    }
-  },
-  "bio-cells": {
-    "quizId": "bio-cells",
-    "itemRuns": 30,
-    "itemCorrect": 30,
-    "accuracy": 1.0,
-    "accuracyCI95": [
-      0.8865,
-      1.0
-    ],
-    "attempts": 5,
-    "attemptsCompleted": 5,
-    "meanAttemptScore": 1.0,
-    "byAgentModel": {
-      "browser-use|gmi:google/gemini-3.5-flash-lite": {
-        "itemRuns": 6,
-        "accuracy": 1.0
-      },
-      "browser-use|gmi:google/gemini-3.6-flash": {
-        "itemRuns": 12,
-        "accuracy": 1.0
-      },
-      "browser-use|gmi:google/gemini-3.8-flash": {
-        "itemRuns": 12,
-        "accuracy": 1.0
-      }
-    },
-    "infraErrors": 4,
-    "infraReasons": {
-      "provider content filter": 2,
-      "provider rejected request": 2
-    },
-    "runs": [
-      {
-        "runId": "run-4ee72114d7",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.5-flash-lite",
-        "status": "error",
-        "error": "ContentFilterError: Content filter triggered. Finish reason: 'content_filter', body:\n[\n  {\n    \"parts\": [],\n    \"usage\": {\n      \"input_tokens\": 2351,\n      \"cache_write_tokens\": 0,\n      \"cache_write_1h_tokens\": 0,\n      \"cache_read_tokens\": 0,\n      \"output_tokens\": 0,\n      \"output_reasoning_tokens\": 0,\n      \"input_audio_tokens\": 0,\n      \"cache_audio_read_tokens\": 0,\n      \"output_audio_tokens\": 0,\n      \"audio_seconds\": 0.0,\n      \"details\": {\n        \"claude_cache_creation_5_m_tokens\": 0,\n        \"claude_cache_creation_1_h_tokens\": 0,\n        \"audio_tokens\": 0,\n        \"reasoning_tokens\": 0,\n        \"text_tokens\": 0,\n        \"image_tokens\": 0,\n        \"video_tokens\": 0,\n        \"tool_tokens\": 0\n      },\n      \"cost\": null\n    },\n    \"model_name\": \"gemini-3.5-flash-lite\",\n    \"model_id\": \"openai:google/gemini-3.5-flash-lite\",\n    \"timestamp\": \"2026-11-15T01:15:25.560589Z\",\n    \"kind\": \"response\",\n    \"provider_name\": \"openai\",\n    \"provider_url\": \"https://api.gmi-serving.com/v1/\",\n    \"canonical_system\": \"openai\",\n    \"provider_details\": {\n      \"finish_reason\": \"content_filter\",\n      \"timestamp\": \"2026-11-15T01:15:25Z\"\n    },\n    \"provider_response_id\": \"chatcmpl-202611150115225728419308268d9d6KwPGqHri\",\n    \"finish_reason\": \"content_filter\",\n    \"run_id\": \"01a1dcc5-d4ab-778d-8cae-280dffa17096\",\n    \"conversation_id\": \"01a1dcc5-d4ab-778d-8cae-280ecb30f38d\",\n    \"metadata\": null,\n    \"workspace_ref\": null,\n    \"history_digest\": null,\n    \"failed_attempts\": null,\n    \"state\": \"complete\"\n  }\n]",
-        "steps": 3,
-        "seconds": 10.6,
-        "costUsd": null,
-        "submitted": false,
-        "attemptsStarted": 0,
-        "score": 0.0,
-        "answerChanges": {},
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider content filter",
-        "infraError": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-f983cf215d",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.5-flash-lite",
-        "status": "error",
-        "error": "ContentFilterError: Content filter triggered. Finish reason: 'content_filter', body:\n[\n  {\n    \"parts\": [],\n    \"usage\": {\n      \"input_tokens\": 2439,\n      \"cache_write_tokens\": 0,\n      \"cache_write_1h_tokens\": 0,\n      \"cache_read_tokens\": 0,\n      \"output_tokens\": 0,\n      \"output_reasoning_tokens\": 0,\n      \"input_audio_tokens\": 0,\n      \"cache_audio_read_tokens\": 0,\n      \"output_audio_tokens\": 0,\n      \"audio_seconds\": 0.0,\n      \"details\": {\n        \"claude_cache_creation_5_m_tokens\": 0,\n        \"claude_cache_creation_1_h_tokens\": 0,\n        \"audio_tokens\": 0,\n        \"reasoning_tokens\": 0,\n        \"text_tokens\": 0,\n        \"image_tokens\": 0,\n        \"video_tokens\": 0,\n        \"tool_tokens\": 0\n      },\n      \"cost\": null\n    },\n    \"model_name\": \"gemini-3.5-flash-lite\",\n    \"model_id\": \"openai:google/gemini-3.5-flash-lite\",\n    \"timestamp\": \"2026-11-15T01:15:40.692091Z\",\n    \"kind\": \"response\",\n    \"provider_name\": \"openai\",\n    \"provider_url\": \"https://api.gmi-serving.com/v1/\",\n    \"canonical_system\": \"openai\",\n    \"provider_details\": {\n      \"finish_reason\": \"content_filter\",\n      \"timestamp\": \"2026-11-15T01:15:40Z\"\n    },\n    \"provider_response_id\": \"chatcmpl-202611150115354490721458268d9d6gAloduOK\",\n    \"finish_reason\": \"content_filter\",\n    \"run_id\": \"01a1dcc6-0497-756a-a36e-511308010321\",\n    \"conversation_id\": \"01a1dcc6-0497-756a-a36e-51146731ef20\",\n    \"metadata\": null,\n    \"workspace_ref\": null,\n    \"history_digest\": null,\n    \"failed_attempts\": null,\n    \"state\": \"complete\"\n  }\n]",
-        "steps": 3,
-        "seconds": 13.44,
-        "costUsd": null,
-        "submitted": false,
-        "attemptsStarted": 0,
-        "score": 0.0,
-        "answerChanges": {},
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider content filter",
-        "infraError": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-0d6d65f749",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.5-flash-lite",
-        "status": "completed",
-        "error": null,
-        "steps": 12,
-        "seconds": 78.53,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "bio-cells-q1": 0,
-          "bio-cells-q2": 0,
-          "bio-cells-q3": 0,
-          "bio-cells-q4": 0,
-          "bio-cells-q5": 0,
-          "bio-cells-q6": 0
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-2850d8f121",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.6-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 12,
-        "seconds": 26.21,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "bio-cells-q1": 0,
-          "bio-cells-q2": 0,
-          "bio-cells-q3": 0,
-          "bio-cells-q4": 0,
-          "bio-cells-q5": 0,
-          "bio-cells-q6": 0
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-d457df5c1f",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.6-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 18,
-        "seconds": 43.48,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "bio-cells-q1": 1,
-          "bio-cells-q2": 1,
-          "bio-cells-q3": 3,
-          "bio-cells-q4": 1,
-          "bio-cells-q5": 1,
-          "bio-cells-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-dca9050964",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.6-flash",
-        "status": "error",
-        "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.6-flash, body: {'type': 'invalid_thinking_signature', 'message': 'Invalid thinking-block signature; retry on a compatible provider', 'backend_status': 400}",
-        "steps": 5,
-        "seconds": 15.17,
-        "costUsd": null,
-        "submitted": false,
-        "attemptsStarted": 0,
-        "score": 0.0,
-        "answerChanges": {},
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider rejected request",
-        "infraError": true,
-        "outcome": "infra"
-      },
-      {
-        "runId": "run-06f7a915ec",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.8-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 21,
-        "seconds": 62.66,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "bio-cells-q1": 1,
-          "bio-cells-q2": 1,
-          "bio-cells-q3": 3,
-          "bio-cells-q4": 1,
-          "bio-cells-q5": 1,
-          "bio-cells-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-abb55aa7ce",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.8-flash",
-        "status": "completed",
-        "error": null,
-        "steps": 25,
-        "seconds": 91.25,
-        "costUsd": null,
-        "submitted": true,
-        "attemptsStarted": 1,
-        "score": 1.0,
-        "answerChanges": {
-          "bio-cells-q1": 1,
-          "bio-cells-q2": 1,
-          "bio-cells-q3": 3,
-          "bio-cells-q4": 1,
-          "bio-cells-q5": 2,
-          "bio-cells-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": null,
-        "infraError": false,
-        "outcome": "submitted"
-      },
-      {
-        "runId": "run-667b09425b",
-        "agent": "browser-use",
-        "model": "gmi:google/gemini-3.8-flash",
-        "status": "error",
-        "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.8-flash, body: {'type': 'upstream_error', 'message': \"Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\", 'backend_status': 400, 'details': \"upstream_error: Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\"}",
-        "steps": 12,
-        "seconds": 38.09,
-        "costUsd": null,
-        "submitted": false,
-        "attemptsStarted": 1,
-        "score": 0.0,
-        "answerChanges": {
-          "bio-cells-q1": 1,
-          "bio-cells-q2": 1,
-          "bio-cells-q3": 3,
-          "bio-cells-q4": 1,
-          "bio-cells-q5": 1,
-          "bio-cells-q6": 1
-        },
-        "target": "sandbox",
-        "probesTriggered": null,
-        "stuckAtProbe": false,
-        "infraReason": "provider rejected request",
-        "infraError": true,
-        "outcome": "infra"
-      }
-    ],
-    "didNotSubmit": 0,
-    "isolated": false,
-    "excludedByModel": {
-      "gmi:google/gemini-3.5-flash-lite": {
-        "runs": 3,
-        "excluded": 2,
-        "reasons": {
-          "provider content filter": 2
-        }
-      },
-      "gmi:google/gemini-3.6-flash": {
-        "runs": 3,
-        "excluded": 1,
-        "reasons": {
-          "provider rejected request": 1
-        }
-      },
-      "gmi:google/gemini-3.8-flash": {
-        "runs": 3,
-        "excluded": 1,
-        "reasons": {
-          "provider rejected request": 1
-        }
-      }
-    }
   },
   "econ-micro": {
     "quizId": "econ-micro",

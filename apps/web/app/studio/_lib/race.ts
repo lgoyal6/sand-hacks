@@ -17,7 +17,9 @@ export interface RaceLane {
   checks: {
     sameAnswer: CheckState; // solver reproduced the key 3/3
     sameSkill: CheckState; // judge panel: same objective and unambiguous
-    agentsFail: CheckState & { correct?: number; runs?: number; ci95?: [number, number] };
+    notOnline: CheckState; // leak check on the rewritten stem (passed = not found online)
+    /** Information only, never a pass/fail: how often isolated agents solved this version. */
+    agentSolveRate: { measured: boolean; correct?: number; runs?: number; ci95?: [number, number]; note?: string };
   };
   reason?: string;
 }
@@ -38,6 +40,7 @@ const STRATEGY: Record<VariantStrategy, string> = {
   find_error: "find the error",
   figure_dependency: "table lookup",
   counterfactual: "what-if",
+  fresh_data: "today's data",
 };
 
 function wilson(k: number, n: number, z = 1.96): [number, number] {
@@ -60,7 +63,7 @@ export function buildRace(itemId: string, experiments: VariantExperiment[], bran
   const lanes: RaceLane[] = exps.map((e) => {
     const k = num(e.id);
     const last = e.reasons.at(-1);
-    const failedAt = e.checks.answerKeyConsistent === false ? "answer" : e.checks.objectivePreserved === false || e.checks.unambiguous === false ? "skill" : "agents";
+    const failedAt = e.checks.answerKeyConsistent === false ? "answer" : e.checks.objectivePreserved === false || e.checks.unambiguous === false ? "skill" : "other";
     const r = e.checks.newSolveRate;
     const agents = parseAgents(e.reasons);
     return {
@@ -80,14 +83,16 @@ export function buildRace(itemId: string, experiments: VariantExperiment[], bran
         ),
         // Only a decided version has an agent verdict. A "proposed" one (including a retake with no
         // valid runs, which may still carry newSolveRate 0 of 0) is unmeasured, never "failed".
-        agentsFail:
-          r === undefined || e.status === "proposed"
-            ? { state: e.status === "proposed" ? "pending" : "skipped", detail: e.status === "proposed" ? last?.replace(/^not verified: /, "") : undefined }
-            : {
-                state: e.status === "verified" || e.status === "approved" ? "passed" : "failed",
-                detail: last,
-                ...(agents ? { correct: agents.correct, runs: agents.runs, ci95: wilson(agents.correct, agents.runs) } : {}),
-              },
+        notOnline:
+          e.checks.leakFree === true
+            ? { state: "passed" }
+            : e.checks.leakFree === false
+              ? { state: "failed", detail: `found on ${(e.checks.leakSources ?? []).join(", ") || "the web"}` }
+              : { state: e.status === "rejected" ? "skipped" : "pending", detail: e.reasons.find((x) => x.startsWith("leak check unavailable")) },
+        agentSolveRate:
+          r !== undefined && agents
+            ? { measured: true, correct: agents.correct, runs: agents.runs, ci95: wilson(agents.correct, agents.runs) }
+            : { measured: false, note: e.reasons.find((x) => /agent solve rate not measured|retake/.test(x)) },
       },
       reason: last,
     };
@@ -97,8 +102,8 @@ export function buildRace(itemId: string, experiments: VariantExperiment[], bran
   const wAgents = w ? parseAgents(exps.find((e) => e.id === w.id)!.reasons) : null;
   return {
     itemId,
-    title: `${lanes.length} version${lanes.length === 1 ? "" : "s"} raced. ${winners.length} made it.`,
-    note: "Each version runs on its own Neon database branch. Only versions that pass every check are merged into the quiz.",
+    title: `${lanes.length} version${lanes.length === 1 ? "" : "s"} raced. ${winners.length} ready (same answer, same skill, not online).`,
+    note: "Each version runs on its own Neon database branch. A version is kept when it reproduces its answer key, tests the same skill, and isn't already online. The agent solve rate is shown for information.",
     lanes,
     survivor: w
       ? {
@@ -121,7 +126,8 @@ function num(id: string) {
 /** "... 0/5 valid agent runs ..." -> counts, from the decide() reason text. */
 function parseAgents(reasons: string[]): { correct: number; runs: number } | null {
   for (let i = reasons.length - 1; i >= 0; i--) {
-    const m = reasons[i]!.match(/(\d+)\/(\d+) (?:valid )?agent runs/);
+    const m = reasons[i]!.match(/(\d+)\/(\d+) (?:valid )?(?:isolated )?agent runs|agent solve rate (\d+)\/(\d+) valid runs/);
+    if (m && m[3]) return { correct: Number(m[3]), runs: Number(m[4]) };
     if (m) return { correct: Number(m[1]), runs: Number(m[2]) };
   }
   return null;

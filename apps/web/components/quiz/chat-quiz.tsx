@@ -824,6 +824,15 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           )}
           {phase === "checking" && <Thinking label="Tutor is checking your answer" />}
 
+          {/* Practice only: the Tutor builds a practice question on current official data (B's todaysPractice tool). */}
+          {mode === "practice" && attemptId && tutorLive === null && (phase === "question" || phase === "feedback" || phase === "done") && (
+            <div className="flex flex-wrap gap-2">
+              <Chip onClick={() => freeText("Can I practice with today's real data?")}>
+                <span id="chip-todays-data">Practice with today&apos;s data</span>
+              </Chip>
+            </div>
+          )}
+
           {phase === "feedback" && lastCorrect !== null && (
             <Message role="tutor">
               <p id="item-feedback" role="status" data-correct={lastCorrect}>

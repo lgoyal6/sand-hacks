@@ -4,6 +4,7 @@ import type { Item, Quiz, SolveRate, VariantStrategy } from "@unprompted/shared"
 import { z } from "zod";
 import { answerText, extractFinal } from "./answers.js";
 import { leakedNumbers, renderTablePng, tableText } from "./figure.js";
+import type { FreshDataset } from "./freshdata.js";
 import { InfraError, type GeminiModel, type JsonModel } from "./llm.js";
 import type { AttackResult, Attacker, Candidate, GeneratedCandidate, Generator, Judge, PanelVote, Solver, SolveResult } from "./types.js";
 
@@ -32,6 +33,7 @@ const STRATEGY_BRIEF: Record<VariantStrategy, string> = {
     "FIND THE ERROR: present a short worked solution (3-5 numbered steps) to a problem testing this skill, with exactly one step containing a conceptual or computational mistake. Ask which step is wrong, or what the corrected final answer is.",
   figure_dependency:
     "FIGURE ONLY: every number the student needs must appear ONLY in a small data table (2-5 rows) that will be shown as an IMAGE next to the question. Return that table in figureTable. The stem must refer to 'the table in the figure' and must NOT repeat any number from it. Require reading at least two values from the table.",
+  fresh_data: "FRESH DATA (practice): use the real data provided below.",
   counterfactual:
     "COUNTERFACTUAL: start from a stated baseline result, then ask what happens to it when one parameter changes (doubles, halves, flips sign, hits a boundary). The student must reason about the causal relationship, not recompute from scratch.",
 };
@@ -99,7 +101,12 @@ export function normalizeCandidate(out: z.infer<typeof CandidateSchema>, source:
       .filter(Boolean);
     if (keys.length === 0 || keys.some((k) => !ids.has(k))) throw new Error(`answer key "${out.answerKey}" is not one of the choices`);
     if (type === "mcq" && keys.length !== 1) throw new Error("mcq candidate has more than one key");
-    answerKey = type === "mcq" ? keys[0]! : keys;
+    // Canonical letters by position (models sometimes invent ids like "id_b" or "option2"),
+    // so the answer checker and graders compare like with like.
+    const letter = new Map(choices.map((c, i) => [c.id, String.fromCharCode(97 + i)]));
+    choices = choices.map((c) => ({ ...c, id: letter.get(c.id)! }));
+    const mapped = keys.map((k) => letter.get(k)!);
+    answerKey = type === "mcq" ? mapped[0]! : mapped;
   } else {
     choices = undefined;
   }
@@ -111,6 +118,42 @@ export function normalizeCandidate(out: z.infer<typeof CandidateSchema>, source:
     objective: source.objective,
     originalItemId: source.id,
   };
+}
+
+// ---------- practice variants on fresh official data ----------
+
+export class FreshDataGenerator implements Generator {
+  constructor(
+    private model: JsonModel,
+    private fetchData: (k: number) => Promise<FreshDataset>,
+  ) {}
+
+  async generate(source: Item, strategy: VariantStrategy, attempt: number): Promise<GeneratedCandidate> {
+    if (strategy !== "fresh_data") throw new Error(`FreshDataGenerator only handles fresh_data, got ${strategy}`);
+    const d = await this.fetchData(attempt);
+    const table = d.rows.map((r) => `${r.label}: ${r.value}`).join("\n");
+    const prompt = `Write a PRACTICE quiz question that tests exactly this learning objective, at the same difficulty, using the REAL data below.
+
+Learning objective (must be unchanged): ${source.objective}
+
+Original question (for the skill only; don't copy it):
+${renderItem(source)}
+
+Real data: ${d.sourceName}, ${d.unit}, last ${d.rows.length} months (fetched ${d.fetchedAt.slice(0, 10)}):
+${table}
+Computed from these values: n = ${d.stats.n}, mean = ${d.stats.mean}, sample standard deviation = ${d.stats.sd}, min = ${d.stats.min}, max = ${d.stats.max}.
+
+Rules:
+- Give the student exactly the numbers they need (you may state n, mean or SD above rather than listing every value). Use the computed statistics as given; don't recompute them differently.
+- Mention the source in the stem in a few words (e.g. "According to the BLS, ...").
+- Exactly one defensible answer. Prefer mcq with 4 options labelled a-d, or numeric with a clear rounding instruction.
+- Work the answer fully before you set the key.`;
+    const out = await this.model.json(prompt, CandidateSchema, { temperature: 0.7, salt: `${d.id}:${attempt}` });
+    const candidate = normalizeCandidate(out, source);
+    candidate.source = { name: d.sourceName, url: d.sourceUrl, apiUrl: d.apiUrl, fetchedAt: d.fetchedAt };
+    candidate.practice = true;
+    return { candidate, rationale: out.rationale, generator: this.model.name };
+  }
 }
 
 // ---------- solver (code interpreter) ----------

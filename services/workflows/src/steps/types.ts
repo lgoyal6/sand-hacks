@@ -5,6 +5,9 @@ export type Candidate = Omit<Item, "id" | "quizId"> & {
   figure?: { src: string; alt: string };
   /** The figure's data as text, for the answer checker and judges only. Stripped before any agent sees the item. */
   figureText?: string;
+  /** Practice variants on fresh official data: where the numbers came from (shown to students). */
+  source?: { name: string; url: string; apiUrl: string; fetchedAt: string };
+  practice?: true;
 };
 
 /** What the generator returns: a candidate plus its own explanation (kept for the professor). */
@@ -60,6 +63,8 @@ export interface TransformDeps {
   solver: Solver;
   judges: Judge[];
   attacker: Attacker;
+  /** Optional: checks whether the rewritten stem is already online (D's scan). */
+  leakChecker?: import("./leakcheck.js").LeakChecker;
 }
 
 export interface TransformTarget {
@@ -76,13 +81,19 @@ export interface TransformOptions {
   /** Survival rule (build plan 4.2 step 5). */
   maxNewSolveRate?: number; // default 0.3
   minDrop?: number; // default 0.4
+  /**
+   * Old rule: a variant is verified only if agents fail it (maxNewSolveRate/minDrop). Default false:
+   * stage-1 retakes showed agents solve every reasonable rewrite, so verification is key + same skill +
+   * not online, and the agent solve rate is recorded for information.
+   */
+  requireAgentResistance?: boolean;
   /** Delete branches of rejected candidates (Neon free plan caps branch count). Reasons stay on main. */
   pruneRejectedBranches?: boolean;
   concurrency?: number; // per-item parallelism for generate/solve/panel, default 2
   onEvent?: (e: TransformEvent) => void;
 }
 
-export type TransformStage = "generating" | "solving" | "judging" | "re-attacking" | "merging";
+export type TransformStage = "generating" | "solving" | "judging" | "leak-checking" | "re-attacking" | "merging";
 
 export type TransformEvent =
   /** A step started; lets a UI show live work ("Rewriter · generating") before a result exists. */

@@ -3,7 +3,9 @@
 // short-circuit. Then ONE batched re-attack for everything still alive, decide,
 // and merge rows into main (survivors bring their item).
 import type { Quiz, VariantExperiment, VariantStrategy } from "@unprompted/shared";
+import type { Candidate } from "./steps/types.js";
 import type { BranchStore } from "./db/types.js";
+import { wilson } from "./steps/answers.js";
 import {
   decide,
   generateCandidates,
@@ -71,6 +73,15 @@ export async function runTransform(
     emit({ type: "error", experimentId: row.experiment.id, message: `not verified: ${reason}` });
   };
 
+  const resistance = opts.requireAgentResistance ?? false;
+  const verify = async (row: ExperimentRow, reason: string) => {
+    row.experiment.status = "verified";
+    row.experiment.reasons.push(reason);
+    await saveExperiment((await store.branch(row.experiment.neonBranch)).db, row);
+    await mergeSurvivor(store, row.experiment.neonBranch, row.experiment.id, true);
+    emit({ type: "verified", experiment: structuredClone(row.experiment) });
+  };
+
   // Reserve variant numbers up front (sequentially) so parallel work never collides.
   // Also skip numbers that already have a branch: a re-executed step (e.g. Mastra restarting an
   // interrupted run) must not collide with branches its first execution created.
@@ -87,7 +98,7 @@ export async function runTransform(
     const source = target.item;
     const id = `${source.id}-v${k}`;
     const branchName = `exp/${source.id}/${k}`;
-    const stage = (st: "generating" | "solving" | "judging") => emit({ type: "stage", experimentId: id, itemId: source.id, strategy, stage: st });
+    const stage = (st: "generating" | "solving" | "judging" | "leak-checking") => emit({ type: "stage", experimentId: id, itemId: source.id, strategy, stage: st });
     let gen;
     stage("generating");
     try {
@@ -126,6 +137,35 @@ export async function runTransform(
       if (!panel.objectivePreserved) return reject(row, `changed the learning objective: ${panel.detail}`);
       if (!panel.unambiguous) return reject(row, `ambiguous or wrong key: ${panel.detail}`);
 
+      // Practice variants on fresh data: learning material, so no leak or agent claim. Ready after key + skill.
+      if (strategy === "fresh_data") {
+        const src = (row.experiment.candidate as Candidate).source;
+        return verify(row, `practice variant on real data (${src?.name ?? "official source"}, fetched ${src?.fetchedAt.slice(0, 10) ?? "today"}); learning material, not an agent-resistance claim`);
+      }
+
+      // Leak check: is the REWRITTEN question already online? (What a rewrite demonstrably fixes.)
+      if (deps.leakChecker) {
+        stage("leak-checking");
+        try {
+          const lc = await deps.leakChecker.check(gen.candidate.stem, id);
+          row.experiment.checks.leakFree = lc.leakFree;
+          if (!lc.leakFree) row.experiment.checks.leakSources = lc.sources;
+          emit({
+            type: "check",
+            experimentId: id,
+            check: "leakFree",
+            passed: lc.leakFree,
+            detail: lc.leakFree ? `not found online (${lc.queries} exact-phrase searches)` : `found online: ${lc.sources.join(", ")}`,
+          });
+          if (!lc.leakFree) return reject(row, `already online: ${lc.sources.join(", ")}`);
+        } catch (e) {
+          // No search result is not "leak-free": record it as unchecked and keep going.
+          const msg = `leak check unavailable: ${String((e as Error).message ?? e).slice(0, 160)}`;
+          row.experiment.reasons.push(msg);
+          emit({ type: "error", experimentId: id, message: msg });
+        }
+      }
+
       await saveExperiment(branch.db, row);
       alive.push({ row, target });
     } catch (e) {
@@ -151,22 +191,37 @@ export async function runTransform(
       rates = res.solveRates;
       emit({ type: "attack_done", quizId: res.variantQuiz.id, solveRates: [...rates.values()], ...(res.excluded ? { excluded: res.excluded } : {}) });
     } catch (e) {
-      // Without a re-attack we can't claim agent resistance: leave them proposed, say why.
       const raw = String((e as Error).message ?? e);
       const msg = /re-attack disabled/.test(raw)
         ? "agent retake not run yet (checks passed; the retake runs separately)"
-        : `re-attack failed, candidates left unverified: ${raw.slice(0, 300)}`;
+        : `re-attack failed: ${raw.slice(0, 300)}`;
       emit({ type: "error", message: msg });
       for (const { row } of alive) {
-        row.experiment.reasons.push(msg);
-        await saveExperiment((await store.branch(row.experiment.neonBranch)).db, row);
-        await mergeSurvivor(store, row.experiment.neonBranch, row.experiment.id, false);
+        if (resistance) {
+          // Old rule: without a retake we can't claim agent resistance, so leave them proposed.
+          row.experiment.reasons.push(`not verified: ${msg}`);
+          await saveExperiment((await store.branch(row.experiment.neonBranch)).db, row);
+          await mergeSurvivor(store, row.experiment.neonBranch, row.experiment.id, false);
+        } else {
+          await verify(row, `agent solve rate not measured: ${msg}`);
+        }
       }
       rates = null;
     }
     if (rates) {
       for (const { row, target } of alive) {
         const next = rates.get(row.candidateItemId);
+        if (!resistance) {
+          // Default: the agent solve rate is reported as information, never as a resistance claim.
+          if (next && next.runs > 0) {
+            row.experiment.checks.newSolveRate = next.solveRate;
+            const [lo, hi] = wilson(next.correct, next.runs);
+            await verify(row, `agent solve rate ${next.correct}/${next.runs} valid runs (95% CI ${Math.round(lo * 100)}%-${Math.round(hi * 100)}%), for information`);
+          } else {
+            await verify(row, "agent solve rate not measured (no valid agent runs)");
+          }
+          continue;
+        }
         if (!next || next.runs === 0) {
           // Every agent run failed for provider reasons: no evidence either way.
           await leaveUnverified(row, "the agent retake produced no valid runs (provider errors), so agent resistance is unmeasured");
@@ -178,11 +233,7 @@ export async function runTransform(
           await reject(row, d.reason);
           continue;
         }
-        row.experiment.status = "verified";
-        row.experiment.reasons.push(d.reason);
-        await saveExperiment((await store.branch(row.experiment.neonBranch)).db, row);
-        await mergeSurvivor(store, row.experiment.neonBranch, row.experiment.id, true);
-        emit({ type: "verified", experiment: structuredClone(row.experiment) });
+        await verify(row, d.reason);
       }
     }
   }

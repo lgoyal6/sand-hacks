@@ -92,6 +92,7 @@ const STRATEGY_LABEL: Record<VariantStrategy, string> = {
   find_error: "find the error",
   figure_dependency: "table lookup",
   counterfactual: "what-if",
+  fresh_data: "today's data",
 };
 export function strategyLabel(s?: VariantStrategy) {
   return s ? STRATEGY_LABEL[s] : "variant";

@@ -2,8 +2,8 @@
  "title": "The State of Leaked Homework (Nov 2026)",
  "collected": "2026-11-15",
  "exercises": 92,
- "found_on_study_sites": 78,
- "pct_found": 84.8,
+ "found_on_study_sites": 77,
+ "pct_found": 83.7,
  "answer_mentioned_in_snippet": 39,
  "queries": 114,
  "query_errors": 4,
@@ -15,8 +15,8 @@
   },
   "calculus": {
    "exercises": 12,
-   "foundOnStudySites": 12,
-   "pct": 100
+   "foundOnStudySites": 11,
+   "pct": 91.7
   },
   "biology": {
    "exercises": 20,
@@ -40,16 +40,16 @@
    "results": 34
   },
   "Brainly": {
-   "exercises": 33,
-   "results": 34
+   "exercises": 32,
+   "results": 33
   },
   "Vaia": {
    "exercises": 30,
    "results": 31
   },
   "Chegg": {
-   "exercises": 21,
-   "results": 26
+   "exercises": 20,
+   "results": 25
   },
   "Studocu": {
    "exercises": 3,
@@ -631,23 +631,11 @@
    "subject": "calculus",
    "book": "Calculus Volume 1",
    "exercise_url": "https://openstax.org/books/calculus-volume-1/pages/4-review-exercises",
-   "site": "Brainly",
-   "result_url": "https://brainly.com/question/38212776",
-   "match_type": "exact",
-   "match_score": 1,
-   "answer_mentioned_in_snippet": false,
-   "query_error": false
-  },
-  {
-   "exercise_id": "openstax-calculus-4.552",
-   "subject": "calculus",
-   "book": "Calculus Volume 1",
-   "exercise_url": "https://openstax.org/books/calculus-volume-1/pages/4-review-exercises",
-   "site": "Chegg",
-   "result_url": "https://www.chegg.com/homework-help/questions-and-answers/5-airline-sells-tickets-tokyo-detroit-1200--500-seats-avallable-troical-twight-books-350-s-q113066438",
-   "match_type": "exact",
-   "match_score": 1,
-   "answer_mentioned_in_snippet": true,
+   "site": "",
+   "result_url": "",
+   "match_type": "not_found",
+   "match_score": "",
+   "answer_mentioned_in_snippet": "",
    "query_error": false
   },
   {
@@ -1850,5 +1838,6 @@
    "answer_mentioned_in_snippet": true,
    "query_error": false
   }
- ]
+ ],
+ "correction": "Exercise text re-collected by a plain, robots.txt-respecting script; an earlier AI-assisted fetch was discarded. 3 exercises differed and were searched again; 1 (openstax-calculus-4.552) is no longer found. Totals updated from 78 to 77."
 }

@@ -9,16 +9,11 @@ import type { CheckState, RaceData, RaceLane } from "../_lib/race";
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
-function Cell({ c, survivor, last }: { c: CheckState & { correct?: number; runs?: number; ci95?: [number, number] }; survivor?: boolean; last?: boolean }) {
+function Cell({ c, survivor, last }: { c: CheckState; survivor?: boolean; last?: boolean }) {
   if (c.state === "passed") {
     return (
       <div className="flex flex-col gap-1">
         <span className={cn("h-2 w-full rounded-full", survivor && last ? "bg-brand" : "bg-verified")} aria-label="passed" />
-        {c.runs != null ? (
-          <span className="num text-[11px] text-muted-foreground">
-            {c.correct}/{c.runs} solved{c.ci95 ? ` · CI ${pct(c.ci95[0])}-${pct(c.ci95[1])}` : ""}
-          </span>
-        ) : null}
       </div>
     );
   }
@@ -46,11 +41,20 @@ function shorten(s?: string) {
   return s.replace(/^not verified:\s*/i, "").replace(/\s*\|.*$/, "").slice(0, 90);
 }
 
+function SolveRate({ r }: { r: RaceLane["checks"]["agentSolveRate"] }) {
+  if (!r.measured) return <span className="text-[11px] text-muted-foreground/70">{r.note ? "not measured" : "not run"}</span>;
+  return (
+    <span className="num text-[11px] text-muted-foreground">
+      {r.correct}/{r.runs} solved{r.ci95 ? ` · CI ${pct(r.ci95[0])}-${pct(r.ci95[1])}` : ""}
+    </span>
+  );
+}
+
 function Lane({ lane, survivorId }: { lane: RaceLane; survivorId?: string }) {
   const isSurvivor = lane.id === survivorId;
   const lost = lane.status === "rejected";
   return (
-    <div className={cn("grid grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] items-center gap-3 px-4 py-2.5", lost && "opacity-45")}>
+    <div className={cn("grid grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))] items-center gap-3 px-4 py-2.5", lost && "opacity-45")}>
       <div className="min-w-0">
         <p className="truncate text-sm font-medium">{lane.label}</p>
         <p className="flex items-center gap-1 truncate font-mono text-[11px] text-muted-foreground">
@@ -61,7 +65,8 @@ function Lane({ lane, survivorId }: { lane: RaceLane; survivorId?: string }) {
       </div>
       <Cell c={lane.checks.sameAnswer} />
       <Cell c={lane.checks.sameSkill} />
-      <Cell c={lane.checks.agentsFail} survivor={isSurvivor} last />
+      <Cell c={lane.checks.notOnline} survivor={isSurvivor} last />
+      <SolveRate r={lane.checks.agentSolveRate} />
     </div>
   );
 }
@@ -74,11 +79,12 @@ export function RaceCard({ data, onMerge }: { data: RaceData; onMerge?: (id: str
         <p className="text-[15px] font-medium">{data.title}</p>
         <p className="text-xs text-muted-foreground">{data.note}</p>
       </div>
-      <div className="grid grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,1fr))] gap-3 border-y border-border bg-muted/30 px-4 py-1.5 text-[11px] font-medium text-muted-foreground">
+      <div className="grid grid-cols-[minmax(0,1.4fr)_repeat(4,minmax(0,1fr))] gap-3 border-y border-border bg-muted/30 px-4 py-1.5 text-[11px] font-medium text-muted-foreground">
         <span>Version</span>
         <span>Same answer ×3</span>
         <span>Same skill</span>
-        <span>Agents fail it</span>
+        <span>Not online</span>
+        <span>Agent solve rate</span>
       </div>
       <div className="divide-y divide-border">
         {data.lanes.map((l) => (
@@ -91,10 +97,11 @@ export function RaceCard({ data, onMerge }: { data: RaceData; onMerge?: (id: str
           <div className="mt-2 flex flex-wrap items-center gap-3">
             {s.agents ? (
               <p className="num text-xs text-muted-foreground">
-                Agents: {s.agents}
-                {s.was ? `, was ${s.was}` : ""}
+                Agent solve rate {s.agents}
+                {s.was ? ` (original ${s.was})` : ""}, for information
               </p>
             ) : null}
+            {s.status === "verified" ? <span className="text-xs font-medium text-verified">Ready: same answer, same skill, not online</span> : null}
             {s.status === "verified" && onMerge ? (
               <PillButton variant="primary" className="ml-auto" onClick={() => onMerge(s.id)}>
                 Merge into the quiz

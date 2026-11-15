@@ -19,3 +19,4 @@ test-results/
 *.rrweb.jsonl
 *.pem
 *.key
+services/leakscan/testsets/private/

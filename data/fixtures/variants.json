@@ -384,5 +384,84 @@
     "reasons": [
       "re-attack failed, candidates left unverified: re-attack disabled"
     ]
+  },
+  {
+    "id": "sample-stats-q2-v1",
+    "itemId": "sample-stats-q2",
+    "neonBranch": "exp/sample-stats-q2/1",
+    "strategy": "isomorphic",
+    "candidate": {
+      "stem": "A research team wants to narrow the margin of error of a confidence interval for a population mean so that its total width is reduced to one-third of its original value. Assuming the population standard deviation and confidence level remain unchanged, how must the sample size be adjusted?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It must be multiplied by 3."
+        },
+        {
+          "id": "b",
+          "text": "It must be multiplied by 9."
+        },
+        {
+          "id": "c",
+          "text": "It must be multiplied by 27."
+        },
+        {
+          "id": "d",
+          "text": "It must be divided by 9."
+        }
+      ],
+      "answerKey": "b",
+      "objective": "relationship between n and CI width",
+      "originalItemId": "sample-stats-q2"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "sample-stats-q2-v2",
+    "itemId": "sample-stats-q2",
+    "neonBranch": "exp/sample-stats-q2/2",
+    "strategy": "application",
+    "candidate": {
+      "stem": "A marine biologist calculates a 95% confidence interval for the mean weight of adult green sea turtles in a sanctuary. Using a sample of 100 turtles, she finds a standard deviation of 15 kg and a total interval width of 12 kg (with a margin of error of 6 kg). To improve precision, she increases her sample size to 400 turtles under identical environmental conditions. Assuming the sample standard deviation remains unchanged, what will be the width of the new 95% confidence interval?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "3 kg"
+        },
+        {
+          "id": "id_b",
+          "text": "6 kg"
+        },
+        {
+          "id": "c",
+          "text": "12 kg"
+        },
+        {
+          "id": "d",
+          "text": "24 kg"
+        }
+      ],
+      "answerKey": "id_b",
+      "objective": "relationship between n and CI width",
+      "originalItemId": "sample-stats-q2"
+    },
+    "status": "rejected",
+    "checks": {
+      "answerKeyConsistent": false
+    },
+    "reasons": [
+      "answer key \"id_b\" not reproduced: solver gave id_b, b, b"
+    ]
   }
 ]
