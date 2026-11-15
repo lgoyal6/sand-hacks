@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -155,6 +156,7 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
         meta["infraReason"] = infra_reason(meta["status"], meta["error"], meta["submitted"])
         meta["infraError"] = meta["infraReason"] is not None
         meta["isolated"] = isolated()
+        meta["voiceRequired"] = sandbox.kind == "runtime" and os.environ.get("RUNTIME_VOICE_REQUIRED") == "1"
         meta["outcome"] = ("submitted" if meta["submitted"] else "wrong_quiz" if meta["wrongQuiz"]
                            else "infra" if meta["infraError"] else "did_not_submit")
         n_ok = sum(r["correct"] for r in runs)

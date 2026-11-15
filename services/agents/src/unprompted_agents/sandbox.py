@@ -76,7 +76,9 @@ class Runtime(Sandbox):
         return self.start_url("check")
 
     def start_url(self, run_id: str) -> str:
-        return f"{self.base_url}/quiz/{self.quiz_id}?mode=graded&student=agent-{run_id}"
+        # RUNTIME_VOICE_REQUIRED=1: graded think-alouds offer only voice or an accommodation request (C's flag).
+        voice = "&voice=required" if os.environ.get("RUNTIME_VOICE_REQUIRED") == "1" else ""
+        return f"{self.base_url}/quiz/{self.quiz_id}?mode=graded{voice}&student=agent-{run_id}"
 
     def task(self, run_id: str, quiz_title: str) -> str:
         # Pages need a session (Neon Auth). The demo student needs no password; ?student=agent-... still tags the run.

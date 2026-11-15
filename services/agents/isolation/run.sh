@@ -20,7 +20,7 @@ import sys
 from dotenv import dotenv_values
 v = dotenv_values(sys.argv[1])
 import os
-for k in ("GMI_REASONING_EFFORT", "ATTACK_MAX_STEPS"):
+for k in ("GMI_REASONING_EFFORT", "ATTACK_MAX_STEPS", "RUNTIME_VOICE_REQUIRED"):
     if os.environ.get(k): print(f"{k}={os.environ[k]}")
 for k in ("GEMINI_API_KEY", "GMI_API_KEY", "GMI_BASE_URL", "SANDBOX_RUNNER_TOKEN"):
     if v.get(k): print(f"{k}={v[k]}")
@@ -46,5 +46,7 @@ sandboxed() {
 if (( STREAM )); then sandboxed "$@"; rc=$?; grep DENY $WORK/egress.log >&2 || true; exit $rc; fi
 sandboxed "$@" > $WORK/result.json
 grep DENY $WORK/egress.log >&2 && echo "[isolation] egress attempts above were blocked" >&2 || true
+# Voice-required runtime runs are a separate condition: keep them beside, not over, the typed-allowed runs.
+[[ ${RUNTIME_VOICE_REQUIRED:-} == 1 ]] && QUIZ_ID="$QUIZ_ID@voice-required"
 # 3. Outside again: merge into the fixtures.
 .venv/bin/attack-merge $WORK/result.json --quiz-id $QUIZ_ID --target $TARGET
