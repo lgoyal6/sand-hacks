@@ -66,3 +66,19 @@ export async function signOut() {
   if (authConfigured()) await auth().signOut();
   redirect("/signin");
 }
+
+// Demo accounts only: flip between the demo student and the demo professor without a manual sign-out.
+export async function switchDemoRole() {
+  const { getViewer } = await import("@/lib/auth/server");
+  const viewer = await getViewer();
+  if (!viewer?.demo) redirect("/");
+  const to = viewer.role === "professor" ? "student" : "professor";
+  await attempt("demo switch sign-out", async () => {
+    await auth().signOut();
+    return {};
+  });
+  const fd = new FormData();
+  fd.set("role", to);
+  fd.set("next", to === "professor" ? "/professor/students" : "/");
+  await demoSignIn(fd);
+}
