@@ -79,6 +79,7 @@ export async function switchDemoRole() {
   });
   const fd = new FormData();
   fd.set("role", to);
-  fd.set("next", to === "professor" ? "/professor/students" : "/");
+  // Land on the new role's home, the same place the logo and sign-in go.
+  fd.set("next", to === "professor" ? "/studio" : "/");
   await demoSignIn(fd);
 }

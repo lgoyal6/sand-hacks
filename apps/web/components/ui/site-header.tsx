@@ -11,8 +11,10 @@ export function SiteHeader() {
           <Logo size={24} />
         </Link>
         <nav aria-label="Public" className="flex shrink-0 items-center gap-0.5 text-sm">
-          <Link href="/check" className="hidden rounded-full px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground sm:inline-flex">
-            Check a question
+          {/* Visible on phones too (short label), so /check is never unreachable from the public pages. */}
+          <Link href="/check" className="inline-flex rounded-full px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+            <span className="sm:hidden">Check</span>
+            <span className="hidden sm:inline">Check a question</span>
           </Link>
           <Link href="/study" className="rounded-full px-3 py-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
             The study

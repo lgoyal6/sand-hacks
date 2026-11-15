@@ -21,8 +21,39 @@ function withPublicOrigin(req: NextRequest): NextRequest {
   return new NextRequest(new URL(req.nextUrl.pathname + req.nextUrl.search, publicOrigin), { method: req.method, headers: req.headers });
 }
 
-export default function proxy(req: NextRequest) {
-  return protect ? protect(withPublicOrigin(req)) : passthrough();
+// Only the app's real signed-in pages need a session. Anything else (an unknown path, a typo) falls through
+// to Next, so it gets the normal 404 page instead of a bounce to /signin.
+const PROTECTED = [
+  /^\/$/,
+  /^\/quiz\/[^/]+\/?$/,
+  /^\/progress\/?$/,
+  /^\/course\/?$/,
+  /^\/studio\/?$/,
+  /^\/studio\/api\//,
+  /^\/professor\/?$/,
+  /^\/professor\/students(\/[^/]+)?\/?$/,
+  /^\/professor\/design(\/(agents|cards|student))?\/?$/,
+  /^\/professor\/(api|screens)\//,
+];
+const isProtectedPath = (pathname: string) => PROTECTED.some((r) => r.test(pathname));
+
+export default async function proxy(req: NextRequest) {
+  if (!protect || !isProtectedPath(req.nextUrl.pathname)) return passthrough();
+  const res = await protect(withPublicOrigin(req));
+  // Neon Auth's redirect to /signin keeps the query string but drops the page. Add ?next= so sign-in
+  // returns to the page that was asked for (the sign-in actions only accept same-site paths).
+  const location = res.headers.get("location");
+  if (res.status >= 300 && res.status < 400 && location) {
+    const to = new URL(location, req.nextUrl.origin);
+    if (to.pathname === "/signin" && !to.searchParams.has("next")) {
+      // The page's own query (?quiz=, ?mode=) belongs inside next, not on /signin itself.
+      const asked = req.nextUrl.pathname + req.nextUrl.search;
+      to.search = "";
+      if (asked !== "/") to.searchParams.set("next", asked);
+      res.headers.set("location", to.toString());
+    }
+  }
+  return res;
 }
 
 export const config = {
