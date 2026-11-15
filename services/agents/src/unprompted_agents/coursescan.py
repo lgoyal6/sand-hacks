@@ -185,7 +185,9 @@ def extract_problems(page: Page, *, model: str | None = None, client: httpx.Clie
     content = r.json()["choices"][0]["message"]["content"]
     m = re.search(r"\{.*\}", content, re.S)
     problems = json.loads(m.group(0) if m else content).get("problems", [])
-    return [p.strip() for p in problems if isinstance(p, str) and len(p.strip()) >= 25]
+    # Drop list numbering ("1.", "2)", "Q3:") so the same problem hashes the same wherever it's posted.
+    out = [re.sub(r"^\s*(?:Q(?:uestion)?\s*)?\d+\s*[.):]\s*", "", p).strip() for p in problems if isinstance(p, str)]
+    return [p for p in out if len(p) >= 25]
 
 
 def scan(url: str, *, owner_confirmed: bool, extract=extract_problems, leakcheck=None, max_pages: int = MAX_PAGES,
@@ -219,7 +221,9 @@ def scan(url: str, *, owner_confirmed: bool, extract=extract_problems, leakcheck
         "problems": len(rows),
         "leaked": leaked,
         "leakCheck": "done" if leakcheck else "not run",
-        "headline": (f"{leaked} of your {len(rows)} posted problems are already on homework sites" if leakcheck
+        # "online", not "on homework sites": matches include Q&A sites, social posts and course pages, not only
+        # study sites. Each row's leaks carry sourceType so the card can say where.
+        "headline": (f"{leaked} of your {len(rows)} posted problems are already posted online" if leakcheck
                      else f"Found {len(rows)} posted problems; leak check not run"),
         "rows": rows,
     }

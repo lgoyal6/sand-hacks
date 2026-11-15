@@ -37,8 +37,20 @@
   (subpath (string-append (param "REPO") "/node_modules"))
   (literal (string-append (param "REPO") "/package.json"))
   (literal (param "REPO")) (literal (param "PROJECTS")))
+;; The whole home folder is off limits except what the agent process needs to run (found the hard way: an agent stuck
+;; at the voice probe listed and walked the home folder looking for the app's code).
+(deny file-read* (subpath (param "HOME")))
+(allow file-read*
+  (subpath (string-append (param "REPO") "/services/agents"))
+  (subpath (string-append (param "REPO") "/node_modules"))
+  (subpath (string-append (param "HOME") "/.local/share/uv"))
+  (subpath (string-append (param "HOME") "/.cache/uv"))
+  (subpath (string-append (param "HOME") "/.config/browser-harness"))
+  (subpath (string-append (param "HOME") "/.config/browseruse"))
+  (subpath (string-append (param "HOME") "/Library/Caches/ms-playwright"))
+  (subpath (string-append (param "HOME") "/Library/Application Support/Google/Chrome/Crashpad")))
 ;; stat() on ancestors (node's realpath) reveals no file contents and no directory listings.
-(allow file-read-metadata (subpath (param "PROJECTS")))
+(allow file-read-metadata (subpath (param "PROJECTS")) (literal (param "HOME")) (literal (string-append (param "HOME") "/Desktop")))
 ;; Rule order: later rules win in SBPL, so re-deny secrets inside the allowed agent dir too, and run.sh's work dir
 ;; (it holds the quiz JSON with answer keys; the attack receives that over stdin, opened before the sandbox starts).
 (deny file-read* (regex #"/\.env(\.[^/]*)?$"))
