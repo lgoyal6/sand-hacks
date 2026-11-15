@@ -180,7 +180,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     setBusy(true);
     setError(null);
     try {
-      const d = await post<{ attemptId: string }>("/api/attempts", { quizId: target.id, mode: m, studentPseudonym: student });
+      const d = await post<{ attemptId: string }>("/api/attempts", { quizId: target.id, mode: m, studentPseudonym: student, itemIds: target.items.map((i) => i.id) });
       setQuizId(target.id);
       setMode(m);
       setAttemptId(d.attemptId);
@@ -209,7 +209,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const finishQuiz = async () => {
     if (!attemptId) return;
     emitAgentStatus("tutor", "adding up your results");
-    const s = await post<NonNullable<typeof summary>>(`/api/attempts/${attemptId}/finish`);
+    const s = await post<NonNullable<typeof summary>>(`/api/attempts/${attemptId}/finish`, { itemIds: quiz.items.map((i) => i.id) });
     setSummary(s);
     setPhase("done");
     emitAgentStatus("tutor", "results ready", "done");
@@ -328,6 +328,8 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     for (const l of r.lines) say(l.role === "agent" ? "tutor" : "student", l.text, l.role === "agent" ? { agent: "Explain coach" } : {});
     if (r.conversationId && probeIdRef.current) post(`/api/probes/${probeIdRef.current}`, { conversationId: r.conversationId }, "PATCH").catch(() => {});
     setChannel("typed");
+    // The coach already asked the opening out loud; don't ask it twice.
+    if (r.lines.some((l) => l.role === "agent")) setOpening("Go ahead and type it instead. Same question, your own words.");
     if (r.counterfactualPrompt) {
       setCfPrompt(r.counterfactualPrompt);
       setPhase("probe_cf");

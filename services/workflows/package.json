@@ -14,6 +14,7 @@
     "@electric-sql/pglite": "^0.5.16",
     "@google/genai": "3.3.0",
     "@mastra/core": "1.83.0",
+    "@mastra/mcp": "2.9.0",
     "@mastra/pg": "1.36.0",
     "@neondatabase/serverless": "^1.2.1",
     "@unprompted/shared": "workspace:^",

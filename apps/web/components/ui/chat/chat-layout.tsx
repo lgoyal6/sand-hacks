@@ -24,9 +24,14 @@ export interface ChatLayoutProps {
   composerNote?: React.ReactNode;
   /** Optional top bar content in the center column (e.g. session title). */
   title?: React.ReactNode;
+  /**
+   * A focused scene (the think-aloud: ThinkAloudScene from "@/components/ui/quiz"). When set, the center
+   * column dims and the scene replaces the thread and composer; the sidebar and Agents panel stay.
+   */
+  scene?: React.ReactNode;
 }
 
-export function ChatLayout({ sidebar, agents, activeAgentId, children, empty, home, composer, composerNote, title }: ChatLayoutProps) {
+export function ChatLayout({ sidebar, agents, activeAgentId, children, empty, home, composer, composerNote, title, scene }: ChatLayoutProps) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [agentsOpen, setAgentsOpen] = React.useState(true);
 
@@ -49,7 +54,17 @@ export function ChatLayout({ sidebar, agents, activeAgentId, children, empty, ho
             )}
           </div>
 
-          {empty ? (
+          {scene ? (
+            <motion.div
+              key="scene"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="flex flex-1 justify-center overflow-y-auto bg-muted/50 px-4 py-6"
+            >
+              {scene}
+            </motion.div>
+          ) : empty ? (
             <div className="flex flex-1 flex-col items-center justify-center px-4 pb-[12vh]">
               <div className="w-full max-w-[720px]">
                 {home && (

@@ -8,6 +8,16 @@ const pct = (v: number | null) => (v == null ? "-" : `${Math.round(v * 100)}%`);
 
 const columns: DataColumn<SessionRow>[] = [
   { accessorKey: "attemptId", header: "Session", cell: ({ getValue }) => <span className="num text-xs">{getValue() as string}</span> },
+  {
+    accessorKey: "who",
+    header: "Who",
+    size: 110,
+    cell: ({ getValue }) => {
+      const v = getValue() as SessionRow["who"];
+      const cls = v === "agent run" ? "bg-agent-soft text-agent" : v === "human" ? "bg-understood-soft text-understood" : "bg-muted text-muted-foreground";
+      return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>{v}</span>;
+    },
+  },
   { accessorKey: "answers", header: "Answers", size: 80, cell: ({ getValue }) => <span className="num">{getValue() as number}</span> },
   { accessorKey: "keys", header: "Keys", size: 70, cell: ({ getValue }) => <span className="num">{getValue() as number}</span> },
   { accessorKey: "clickNoMoveRatio", header: "Clicks w/o move", size: 110, cell: ({ getValue }) => <span className="num">{pct(getValue() as number | null)}</span> },

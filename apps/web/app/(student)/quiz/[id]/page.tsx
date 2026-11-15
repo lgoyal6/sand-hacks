@@ -6,9 +6,14 @@ import { listQuizzes, toPublic } from "../_lib/quizzes";
 
 async function QuizBody({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [{ id }, sp] = await Promise.all([params, searchParams]);
-  const quizzes = (await listQuizzes()).map(toPublic);
-  const pub = quizzes.find((q) => q.id === id);
-  if (!pub) notFound();
+  const all = (await listQuizzes()).map(toPublic);
+  const found = all.find((q) => q.id === id);
+  if (!found) notFound();
+  // "Practice this" from /progress: a short session on just those items.
+  const focus = typeof sp.focus === "string" ? new Set(sp.focus.split(",")) : null;
+  const focused = focus ? found.items.filter((i) => focus.has(i.id)) : [];
+  const pub = focused.length ? { ...found, items: focused } : found;
+  const quizzes = all.map((q) => (q.id === pub.id ? pub : q));
   const student = typeof sp.student === "string" && /^[\w-]{1,64}$/.test(sp.student) ? sp.student : undefined;
   return (
     <>

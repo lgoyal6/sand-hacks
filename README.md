@@ -45,6 +45,9 @@ flowchart TB
         EC["Explain coach"]
         R["Researcher"]
         QC["Quiz checker"]
+        RW["Rewriter"]
+        JP["Judge panel<br/><small>3 Gemini models</small>"]
+        LSC["Leak scout"]
     end
 
     subgraph ENG["Engines"]
@@ -64,9 +67,11 @@ flowchart TB
     end
 
     UI --> APP --> SUP
-    SUP --- T & EC & R & QC
-    QC --> WF & ATK
-    WF --> LS
+    SUP --- T & EC & R & QC & RW & JP & LSC
+    QC --> ATK
+    RW --> WF
+    JP --> WF
+    LSC --> LS
     EC --> EL
     R --> BD
     LS --> BD
@@ -78,7 +83,7 @@ flowchart TB
     classDef agent fill:#eef2ff,stroke:#c7d2fe,color:#1e1b4b
     classDef sponsor fill:#f0fdf4,stroke:#bbf7d0,color:#14532d
     classDef engine fill:#fff7ed,stroke:#fed7aa,color:#431407
-    class SUP,T,EC,R,QC agent
+    class SUP,T,EC,R,QC,RW,JP,LSC agent
     class GEM,EL,BD,NEON,TIG sponsor
     class WF,ATK,LS engine
 ```
@@ -135,7 +140,7 @@ sequenceDiagram
 | | Sponsor | What it does in Unprompted |
 |---|---|---|
 | 🧠 | **Gemini** | Every model call: browser-agent attackers, variant generation, the 3-judge panel, follow-up questions. Direct key, or GMI as a quota-free route to the same Gemini models |
-| 🤖 | **Mastra** | The agent team and the transform workflow, with human-in-the-loop `suspend()` / `resume()` for professor approval |
+| 🤖 | **Mastra** | An 8-agent team (Supervisor, Tutor, Explain coach, Researcher, Quiz checker, Rewriter, Judge panel, Leak scout), each with real tools, and the transform workflow with human-in-the-loop `suspend()` / `resume()` for professor approval |
 | 🌿 | **Neon** | App data, **one copy-on-write branch per question experiment** (only survivors merge), attempt audit trail |
 | 🐯 | **Tiger Data** | Telemetry hypertables, continuous aggregates, `state_agg` / `heartbeat_agg` features that separate agents from humans by behavior |
 | 🌐 | **Bright Data** | Leak scan (SERP), evidence screenshots (Browser API), daily leak watch (Web Archive), cited sources for the Researcher |
