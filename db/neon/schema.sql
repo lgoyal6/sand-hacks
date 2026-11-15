@@ -34,3 +34,5 @@ alter table probe add column if not exists retried boolean default false;
 create unique index if not exists response_attempt_item on response (attempt_id, item_id);  -- one response per item; a re-submit upserts
 alter table probe add column if not exists counterfactual_latency_source text;  -- 'scribe' | 'vad' | 'typed'
 alter table probe add column if not exists scribe_words_json jsonb;             -- compact [{t, s, e, spk}] for the student's answer turns (appeal + judge view)
+-- C: roles in the DB instead of an env allowlist (Neon Auth user ids).
+create table if not exists user_role (user_id text primary key, role text not null check (role in ('student','professor')));
