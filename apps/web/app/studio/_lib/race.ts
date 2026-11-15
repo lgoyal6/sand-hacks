@@ -40,6 +40,7 @@ const STRATEGY: Record<VariantStrategy, string> = {
   find_error: "find the error",
   figure_dependency: "table lookup",
   counterfactual: "what-if",
+  fresh_data: "today's data",
 };
 
 function wilson(k: number, n: number, z = 1.96): [number, number] {
