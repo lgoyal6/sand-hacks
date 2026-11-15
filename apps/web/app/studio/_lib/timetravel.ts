@@ -39,7 +39,8 @@ export interface AppealData {
   mode: string;
   snapshotAt: string | null;
   snapshotLsn: string;
-  branch: { name: string; deleted: boolean };
+  /** The temporary branch: Neon id, and the branch it was created from at snapshotLsn. */
+  branch: { name: string; deleted: boolean; id?: string; parent?: string };
   items: AppealItem[];
   changedCount: number;
   timings: { branchMs: number; readMs: number; totalMs: number };
@@ -186,7 +187,7 @@ export async function appealSnapshot(attemptId: string): Promise<AppealData> {
       mode: a.mode,
       snapshotAt: a.quiz_snapshot_at ? new Date(a.quiz_snapshot_at).toISOString() : null,
       snapshotLsn: a.lsn,
-      branch: { name, deleted: false },
+      branch: { name, deleted: false, id: created.branch.id, parent: parent.name },
       items,
       changedCount: items.filter((i) => i.changedSince).length,
       timings: { branchMs, readMs, totalMs: 0 },
@@ -207,7 +208,7 @@ export async function appeal(attemptId: string): Promise<AppealData> {
   const t0 = Date.now();
   const d = await appealSnapshot(attemptId);
   const branches = await api<{ branches: { name: string }[] }>("GET", "/branches").catch(() => ({ branches: [] }));
-  const out = { ...d, branch: { name: d.branch.name, deleted: !branches.branches.some((b) => b.name === d.branch.name) }, timings: { ...d.timings, totalMs: Date.now() - t0 } };
+  const out = { ...d, branch: { ...d.branch, deleted: !branches.branches.some((b) => b.name === d.branch.name) }, timings: { ...d.timings, totalMs: Date.now() - t0 } };
   // Record it for the experiment tree (best effort: an appeal must not fail because of the log).
   await neon()
     ?.query("insert into appeal_log (attempt_id, quiz_id, branch, snapshot_lsn, branch_ms, total_ms, deleted) values ($1,$2,$3,$4,$5,$6,$7)", [

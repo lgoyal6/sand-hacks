@@ -109,6 +109,8 @@ export interface AgentPanelProps {
   /** Listen for "unprompted:agent-status" window events (default true). */
   listen?: boolean;
   className?: string;
+  /** Optional quiet footer under the agents (e.g. the studio's Database line). */
+  footer?: React.ReactNode;
 }
 
 function StaticMark({ state }: { state: AgentStatus }) {
@@ -123,7 +125,7 @@ function StaticMark({ state }: { state: AgentStatus }) {
   return <span aria-hidden className={cn("size-2 rounded-full", color[state])} />;
 }
 
-export function AgentPanel({ agents: base, activeId, title = "Agents", onClose, listen = true, className }: AgentPanelProps) {
+export function AgentPanel({ agents: base, activeId, title = "Agents", onClose, listen = true, className, footer }: AgentPanelProps) {
   const live = useAgentStatusEvents(base);
   const agents = listen ? live : base;
   const active = activeId ?? agents.find((a) => a.state === "thinking" || a.state === "working")?.id;
@@ -193,6 +195,7 @@ export function AgentPanel({ agents: base, activeId, title = "Agents", onClose, 
           );
         })}
       </ul>
+      {footer}
     </aside>
   );
 }

@@ -2,7 +2,7 @@
 // "Rewrite race" card (owner: B), per D's direction-A spec: one lane per version, each on its own
 // Neon branch; passed checks are green bars, a failed check is an X icon plus the reason in muted ink, losers fade,
 // the survivor's block offers the merge. No red anywhere.
-import { GitBranch, X } from "lucide-react";
+import { ExternalLink, GitBranch, X } from "lucide-react";
 import { PillButton } from "@/components/ui/chat";
 import { cn } from "@/lib/utils";
 import type { CheckState, RaceData, RaceLane } from "../_lib/race";
@@ -60,8 +60,19 @@ function Lane({ lane, survivorId }: { lane: RaceLane; survivorId?: string }) {
         <p className="flex items-center gap-1 truncate font-mono text-[11px] text-muted-foreground">
           <GitBranch className="size-3 shrink-0" />
           {lane.branch}
+          {lane.branchId ? <span className="text-muted-foreground/70"> · {lane.branchId}</span> : null}
           {lane.branchLive ? "" : lost ? " · pruned" : ""}
         </p>
+        {lane.parent || lane.consoleUrl ? (
+          <p className="num flex items-center gap-2 truncate text-[11px] text-muted-foreground">
+            {lane.parent ? <span className="truncate">from {lane.parent.name}{lane.parent.lsn ? ` @ ${lane.parent.lsn}` : ""}</span> : null}
+            {lane.consoleUrl ? (
+              <a href={lane.consoleUrl} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-0.5 underline-offset-2 hover:text-foreground hover:underline">
+                Neon console <ExternalLink className="size-3" aria-hidden />
+              </a>
+            ) : null}
+          </p>
+        ) : null}
       </div>
       <Cell c={lane.checks.sameAnswer} />
       <Cell c={lane.checks.sameSkill} />

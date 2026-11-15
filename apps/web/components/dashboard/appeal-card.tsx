@@ -70,12 +70,27 @@ function ItemThen({ item, index }: { item: AppealItem; index: number }) {
       )}
 
       {changed && !changed.removed && (
-        <div className="rounded-xl bg-gap-soft/60 px-3 py-2 text-sm">
-          <span className="font-medium">Today: </span>
-          {[changed.stem && "the wording changed", changed.choices && "the choices changed", changed.key && `the key is now ${asList(changed.key).join(", ")}`]
-            .filter(Boolean)
-            .join("; ")}
-          .
+        <div className="space-y-2 rounded-xl bg-gap-soft/60 px-3 py-2 text-sm">
+          <p className="text-xs font-medium text-muted-foreground">Changed since (branch at the attempt&apos;s start vs main today)</p>
+          {changed.stem ? (
+            <div className="grid gap-1.5 sm:grid-cols-2">
+              <span>
+                <span className="block text-xs text-muted-foreground">Question then</span>
+                {item.stem}
+              </span>
+              <span>
+                <span className="block text-xs text-muted-foreground">Question today</span>
+                {changed.stem}
+              </span>
+            </div>
+          ) : null}
+          {changed.key ? (
+            <p>
+              <span className="text-xs text-muted-foreground">Answer key: </span>
+              <span className="num">{key.join(", ")}</span> then, <span className="num font-medium">{asList(changed.key).join(", ")}</span> today
+            </p>
+          ) : null}
+          {changed.choices ? <p className="text-xs text-muted-foreground">The answer choices changed too.</p> : null}
         </div>
       )}
     </div>
@@ -131,11 +146,27 @@ export function AppealCard({
 
       <div className="flex items-start gap-2 border-t border-border bg-muted/30 px-[18px] py-2.5 text-xs leading-relaxed text-muted-foreground">
         <GitBranch className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-        <p className="min-w-0 flex-1">
-          Read from a Neon branch at the moment the attempt started (LSN <span className="num">{data.snapshotLsn}</span>)
-          {data.branch.deleted ? ", then deleted" : ""}.{" "}
-          {data.changedCount === 0 ? "Nothing has changed since." : `${data.changedCount} question${data.changedCount > 1 ? "s have" : " has"} changed since.`}
-        </p>
+        <div className="min-w-0 flex-1">
+          <p className="mb-1 font-medium text-foreground/80">Where this came from (Neon time travel)</p>
+          <ol className="list-decimal space-y-0.5 pl-4">
+            <li>
+              The attempt started {data.snapshotAt ? `at ${when(data.snapshotAt)}, ` : ""}when the database was at LSN <span className="num">{data.snapshotLsn}</span>.
+            </li>
+            <li>
+              A temporary branch <span className="font-mono">{data.branch.name}</span>
+              {data.branch.id ? <span className="num"> ({data.branch.id})</span> : null} was created from {data.branch.parent ?? "main"} at that LSN
+              {data.timings.branchMs ? ` in ${(data.timings.branchMs / 1000).toFixed(1)} s` : ""}.
+            </li>
+            <li>
+              The quiz and answer key were read there ({data.items.length} question{data.items.length === 1 ? "" : "s"}
+              {data.servedFrom === "delivered_item_ids" ? ", exactly as served" : ""}); the student&apos;s answers come from main.
+            </li>
+            <li>
+              Compared with main today: {data.changedCount === 0 ? "nothing has changed." : `${data.changedCount} question${data.changedCount > 1 ? "s" : ""} changed.`}
+            </li>
+            <li>{data.branch.deleted ? "The branch was deleted after the read." : "Branch deletion not confirmed yet."}</li>
+          </ol>
+        </div>
         <span className="num shrink-0">{(data.timings.totalMs / 1000).toFixed(1)} s</span>
       </div>
     </section>
