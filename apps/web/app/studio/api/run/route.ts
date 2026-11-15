@@ -67,7 +67,14 @@ async function replay(url: URL, send: (d: unknown) => void, closed: () => boolea
     prevT = e.t ?? prevT;
     send(e);
   }
-  send({ type: "run_finished", ok: true, message: "Replay finished. This recording stopped early (quota), so nothing in it was re-attacked." });
+  // Say why nothing was re-attacked from what the recording itself shows, not a fixed guess.
+  const text = lines.join("\n");
+  const why = /"attack_done"/.test(text)
+    ? "Replay finished."
+    : /agent retake not run yet/.test(text)
+      ? "Replay finished. The agent retake was not part of this run, so the agent solve rate is not measured here."
+      : "Replay finished. This recording stopped early (quota), so nothing in it was re-attacked.";
+  send({ type: "run_finished", ok: true, message: why });
 }
 
 async function live(url: URL, send: (d: unknown) => void, closed: () => boolean, signal: AbortSignal) {
