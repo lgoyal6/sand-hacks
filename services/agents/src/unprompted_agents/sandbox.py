@@ -11,6 +11,10 @@ LOCAL_HOSTS = {"localhost", "127.0.0.1"}
 
 
 class Sandbox:
+    """Target: apps/sandbox (:3101), the minimal LMS-like quiz site."""
+
+    kind = "sandbox"
+
     def __init__(self, base_url: str | None = None, token: str | None = None):
         self.base_url = (base_url or os.environ.get("SANDBOX_URL") or "http://localhost:3101").rstrip("/")
         host = urlparse(self.base_url).hostname
@@ -37,3 +41,68 @@ class Sandbox:
 
     def login_url(self, run_id: str) -> str:
         return f"{self.base_url}/login?run={run_id}"
+
+    def task(self, run_id: str, quiz_title: str) -> str:
+        # Phrased the way a student would ask an agent to do their quiz. No hints about answers.
+        return (
+            f"Go to {self.login_url(run_id)} and log in with username student1 and password sandbox. "
+            f'Open the quiz titled "{quiz_title}". Answer every question as correctly as you can, then press '
+            '"Submit quiz". You are done when the page says "Quiz submitted".'
+        )
+
+
+class Runtime(Sandbox):
+    """Target: C's real student runtime in apps/web (:3100), with telemetry and think-aloud probes on.
+
+    Attempts are tagged with ?student=agent-<runId> and read back from C's token-guarded GET /api/attempts?student=.
+    Runs here are the agent class of D's training data, so the agent is run plainly: no detection evasion.
+    """
+
+    kind = "runtime"
+
+    def __init__(self, base_url: str | None = None, token: str | None = None):
+        super().__init__(base_url or os.environ.get("RUNTIME_URL") or "http://localhost:3100", token)
+
+    def register(self, quiz: dict) -> str:
+        # The runtime serves its own quizzes; we can only attack ones it already has (no variant registration yet).
+        r = self.http.get(f"/quiz/{quiz['id']}")
+        if r.status_code != 200:
+            raise ValueError(f"runtime has no quiz {quiz['id']!r} (HTTP {r.status_code})")
+        return self.start_url("check")
+
+    def start_url(self, run_id: str) -> str:
+        return f"{self.base_url}/quiz/{self.quiz_id}?mode=graded&student=agent-{run_id}"
+
+    quiz_id = "sample-stats"
+
+    def task(self, run_id: str, quiz_title: str) -> str:
+        return (
+            f"Go to {self.start_url(run_id)} and take the graded quiz. Press \"Start graded quiz\", answer every "
+            "question as correctly as you can, and complete anything the page asks of you along the way, until the quiz "
+            "is submitted and your results are shown."
+        )
+
+    def run_results(self, run_id: str) -> list[dict]:
+        """C's attempts -> the sandbox's result shape that attack.to_agent_runs reads."""
+        r = self.http.get("/api/attempts", params={"student": f"agent-{run_id}"}).raise_for_status().json()
+        out = []
+        for a in r.get("attempts", []):
+            got = {x["itemId"]: x for x in a.get("responses", [])}
+            out.append({
+                "attemptId": a["attemptId"],
+                "quizId": a["quizId"],
+                "startedAt": a["startedAt"],
+                # A graded attempt counts once it's finished; answered items still count if the agent stalled.
+                "submittedAt": a.get("finishedAt") or (max((x["answeredAt"] for x in got.values()), default=None)),
+                "finished": bool(a.get("finishedAt")),
+                "probesTriggered": a.get("probesTriggered", []),
+                "userAgent": a.get("userAgent"),
+                "items": [
+                    {"itemId": i, "answered": i in got, "correct": bool(got.get(i, {}).get("correct")),
+                     "seconds": got.get(i, {}).get("seconds"), "answerChanges": None}
+                    for i in self.item_ids
+                ],
+            })
+        return out
+
+    item_ids: list[str] = []

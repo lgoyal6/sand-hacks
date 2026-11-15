@@ -65,6 +65,10 @@ def to_agent_runs(quiz: dict, outcome: RunOutcome, attempts: list[dict], item_id
         "attemptsStarted": len(attempts),
         "score": (sum(r["correct"] for r in runs) / n) if n else None,
         "answerChanges": {k: v.get("answerChanges") for k, v in by_item.items()},
+        "target": "runtime" if attempt and "finished" in attempt else "sandbox",
+        "probesTriggered": (attempt or {}).get("probesTriggered"),
+        # Runtime only: answered something but never finished, with a probe opened -> most likely stalled at the probe.
+        "stuckAtProbe": bool(attempt and "finished" in attempt and not attempt["finished"] and attempt.get("probesTriggered")),
     }
     return runs, meta
 
@@ -85,8 +89,10 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
         quiz["id"] = f'{quiz["id"]}--{uuid.uuid4().hex[:6]}'
     if not quiz["items"]:
         raise ValueError("no items to attack")
-    sandbox.register(quiz)
     item_ids = [i["id"] for i in quiz["items"]]
+    if sandbox.kind == "runtime":
+        sandbox.quiz_id, sandbox.item_ids = quiz["id"], item_ids
+    sandbox.register(quiz)
 
     all_runs: list[dict] = []
     metas: list[dict] = []

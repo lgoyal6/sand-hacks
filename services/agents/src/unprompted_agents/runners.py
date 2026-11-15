@@ -19,13 +19,8 @@ from .sandbox import Sandbox
 GMI_BASE_URL = os.environ.get("GMI_BASE_URL", "https://api.gmi-serving.com/v1")
 
 
-def task_prompt(sandbox: Sandbox, run_id: str, quiz_title: str) -> str:
-    # Phrased the way a student would ask an agent to do their quiz. No hints about answers.
-    return (
-        f"Go to {sandbox.login_url(run_id)} and log in with username student1 and password sandbox. "
-        f'Open the quiz titled "{quiz_title}". Answer every question as correctly as you can, then press '
-        '"Submit quiz". You are done when the page says "Quiz submitted".'
-    )
+def task_prompt(target: Sandbox, run_id: str, quiz_title: str) -> str:
+    return target.task(run_id, quiz_title)
 
 
 @dataclass
@@ -137,6 +132,8 @@ def run_stagehand(sandbox: Sandbox, run_id: str, quiz_title: str, model: str, *,
     """Runs stagehand/run.mjs (Node) and reads its JSON result from the last stdout line."""
     import subprocess
 
+    if sandbox.kind != "sandbox":
+        raise NotImplementedError("the stagehand script only knows the sandbox flow; use browser-use for the runtime")
     payload = {"loginUrl": sandbox.login_url(run_id), "quizTitle": quiz_title, "headless": headless,
                "model": None if dry_run else stagehand_model(model)}
     t0 = time.monotonic()

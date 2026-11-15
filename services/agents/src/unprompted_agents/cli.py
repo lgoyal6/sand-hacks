@@ -27,6 +27,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--quiz", required=True, help="Quiz JSON (packages/shared Quiz), or - for stdin")
     ap.add_argument("--items", default="", help="comma-separated item ids to attack (default: all)")
     ap.add_argument("--sandbox-url", default=os.environ.get("SANDBOX_URL", "http://localhost:3101"))
+    ap.add_argument("--target", choices=["sandbox", "runtime"], default="sandbox",
+                    help="sandbox = apps/sandbox :3101; runtime = C's apps/web :3100 with telemetry and probes on")
+    ap.add_argument("--runtime-url", default=os.environ.get("RUNTIME_URL", "http://localhost:3100"))
     ap.add_argument("--agents", default="browser-use")
     ap.add_argument("--models", default="gemini:gemini-3.5-flash",
                     help="comma-separated; gemini:<id>, gmi:<id> (GMI Cloud, OpenAI-compatible)")
@@ -37,7 +40,7 @@ def main(argv: list[str] | None = None) -> int:
     a = ap.parse_args(argv)
 
     from .attack import attack
-    from .sandbox import Sandbox
+    from .sandbox import Runtime, Sandbox
 
     quiz = json.load(sys.stdin if a.quiz == "-" else open(a.quiz))
     log = (lambda m: print(m, file=sys.stderr)) if a.json else print
@@ -47,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
         agents=[x for x in a.agents.split(",") if x],
         models=[x for x in a.models.split(",") if x],
         repeats=a.repeats,
-        sandbox=Sandbox(a.sandbox_url),
+        sandbox=Runtime(a.runtime_url) if a.target == "runtime" else Sandbox(a.sandbox_url),
         traces_dir=Path(a.traces_dir),
         log=log,
     )

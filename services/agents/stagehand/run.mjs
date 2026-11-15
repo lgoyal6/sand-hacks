@@ -24,6 +24,16 @@ const done = (status, error = null) => {
   process.stdout.write("\n" + JSON.stringify({ status, steps, seconds: (Date.now() - t0) / 1000, error, trace }) + "\n");
 };
 
+// Poll until the selector matches (this Page API has no waitForLoadState).
+async function waitFor(page, selector, ms = 15000) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    if ((await page.locator(selector).count().catch(() => 0)) > 0) return page.locator(selector);
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  throw new Error(`timed out waiting for ${selector}`);
+}
+
 let browser, stagehand;
 try {
   browser = await localBrowser.launch({ headless: input.headless !== false });
@@ -36,15 +46,14 @@ try {
 
   await page.goto(input.loginUrl);
   log("goto", { url: input.loginUrl });
-  await page.locator('input[name="username"]').fill("student1");
+  await (await waitFor(page, 'input[name="username"]')).fill("student1");
   await page.locator('input[type="password"]').fill("sandbox");
   await page.locator('button[type="submit"]').click();
-  await page.waitForLoadState?.("load");
   log("login", {});
 
   if (dryRun) {
-    await page.locator(`xpath=//a[contains(normalize-space(.), ${JSON.stringify(input.quizTitle)})]`).click();
-    await page.waitForLoadState?.("load");
+    await (await waitFor(page, `xpath=//a[contains(normalize-space(.), ${JSON.stringify(input.quizTitle)})]`)).click();
+    await waitFor(page, ".question");
     const n = await page.locator(".question").count();
     log("dry-run", { questions: n });
     done(n > 0 ? "completed" : "error", n > 0 ? null : "no questions found");
@@ -57,6 +66,7 @@ try {
     };
 
     await act(`click the link to the quiz titled "${input.quizTitle}"`);
+    await waitFor(page, ".question");
     steps++;
     const { data } = await stagehand.extract(
       "How many numbered questions are on this quiz page?",

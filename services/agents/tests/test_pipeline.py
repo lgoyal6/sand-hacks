@@ -104,3 +104,32 @@ def test_stagehand_dry_run_logs_in_and_opens_quiz(sandbox):
     assert out.status == "completed", out.error
     assert out.steps == 0  # no model calls
     assert any(e["kind"] == "dry-run" and e["questions"] == 5 for e in out.trace)
+
+
+def test_runtime_results_mapping_and_stuck_at_probe():
+    """C's GET /api/attempts shape -> AgentRun[]; an unfinished attempt with a probe open is flagged stuck."""
+    from unprompted_agents.attack import to_agent_runs
+    from unprompted_agents.sandbox import Runtime
+
+    payload = {"attempts": [{
+        "attemptId": "att_1", "quizId": "sample-stats", "mode": "graded", "startedAt": "2026-11-14T10:00:00Z",
+        "finishedAt": None, "userAgent": "x", "probesTriggered": ["sample-stats-q2"],
+        "responses": [
+            {"itemId": "sample-stats-q1", "correct": True, "seconds": 4.2, "answeredAt": "2026-11-14T10:00:05Z"},
+            {"itemId": "sample-stats-q2", "correct": True, "seconds": 3.1, "answeredAt": "2026-11-14T10:00:09Z"},
+        ],
+    }]}
+
+    def handler(req: httpx.Request):
+        assert req.headers["x-runner-token"] and req.url.params["student"] == "agent-run-1"
+        return httpx.Response(200, json=payload)
+
+    rt = Runtime("http://localhost:3100")
+    rt.http = httpx.Client(base_url=rt.base_url, transport=httpx.MockTransport(handler), headers=rt.http.headers)
+    rt.item_ids = [f"sample-stats-q{i}" for i in range(1, 6)]
+    attempts = rt.run_results("run-1")
+    outcome = RunOutcome("run-1", "browser-use", "gemini:x", "max_steps", 40, 300.0)
+    runs, meta = to_agent_runs({"id": "sample-stats"}, outcome, attempts, rt.item_ids)
+    assert [r["correct"] for r in runs] == [True, True, False, False, False]
+    assert runs[0]["seconds"] == 4.2
+    assert meta["target"] == "runtime" and meta["stuckAtProbe"] is True

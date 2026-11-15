@@ -15,6 +15,14 @@ uv run attack --quiz ../../apps/sandbox/quizzes/sample-stats.json \
 Writes `data/fixtures/agent_runs.json` (AgentRun[]), `solve_rates.json` (SolveRate[], `agentSolvable` at >= 0.6) and
 `attack_summary.json` (accuracy with a 95% Wilson CI, plus per-run status/steps/cost). Full traces go to `traces/` (gitignored).
 
+Agents: `--agents browser-use,stagehand`. Stagehand v4 has no autonomous mode, so its runner is the script a student
+would write: plain-code login, then one `act("answer question N correctly")` per question (sandbox only, Gemini only).
+
+Targets: `--target sandbox` (default, :3101) or `--target runtime` (C's real quiz at `:3100/quiz/<id>?mode=graded`,
+telemetry and think-aloud probes on). Runtime attempts are tagged `student=agent-<runId>`, so D can label them as the
+agent class, and are graded from C's token-guarded `GET /api/attempts?student=`. Agents run plainly, with no detection
+evasion. `attack_summary.json` marks `stuckAtProbe` when an attempt never finished after a probe opened.
+
 Models: `gemini:<id>` (Gemini), `gmi:<id>` (GMI Cloud, OpenAI-compatible; `GMI_API_KEY`, `GMI_BASE_URL`).
 
 ## For B's workflow: `attack(quiz, items)`
