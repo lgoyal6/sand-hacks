@@ -14,18 +14,27 @@ export type StudioEvent = { t?: number } & (
   | { type: "attack_done"; quizId: string; solveRates: SolveRate[] }
   | { type: "error"; experimentId?: string; message: string }
   /** Sent by the studio run route, not the runner. */
-  | { type: "run_started"; mode: "live" | "replay"; label: string }
+  | { type: "run_started"; mode: "live" | "replay"; label: string; runId?: string }
+  /** The Mastra workflow suspended: these verified variants wait for the professor. */
+  | { type: "awaiting_approval"; runId: string; verified: string[] }
   | { type: "run_finished"; ok: boolean; message?: string }
 );
 
 /** The four "agents" shown in the right panel, in plain words. */
-export type AgentName = "Rewriter" | "Quiz checker" | "Judge panel" | "Attack agents";
-export const AGENT_ORDER: AgentName[] = ["Rewriter", "Quiz checker", "Judge panel", "Attack agents"];
+export type AgentName = "Rewriter" | "Answer checker" | "Judge panel" | "Quiz checker";
+export const AGENT_ORDER: AgentName[] = ["Quiz checker", "Rewriter", "Answer checker", "Judge panel"];
+/** Shared AgentIds (packages/shared) so D's AgentPanel and avatars recognize each agent. */
+export const AGENT_IDS: Record<AgentName, string> = {
+  "Quiz checker": "quiz-checker",
+  Rewriter: "rewriter",
+  "Answer checker": "answer-checker",
+  "Judge panel": "judge-panel",
+};
 export const AGENT_ROLE: Record<AgentName, string> = {
   Rewriter: "Writes question variants",
-  "Quiz checker": "Solves each variant 3 times with code",
-  "Judge panel": "3 models check the skill and wording",
-  "Attack agents": "Browser agents retake the variants",
+  "Answer checker": "Solves each variant 3 times with code",
+  "Judge panel": "3 Gemini models check the skill and wording",
+  "Quiz checker": "Browser agents take the quiz",
 };
 
 export type AgentStatus = "idle" | "thinking" | "working" | "needs-input" | "complete" | "error";
@@ -61,6 +70,10 @@ export interface RunState {
   cards: Record<string, VariantCard>;
   order: string[];
   attack?: { itemIds: string[]; solveRates?: SolveRate[] };
+  /** Mastra workflow run id, when the run went through Mastra. */
+  runId?: string;
+  /** Set while the workflow is suspended for the professor's decision. */
+  awaiting?: string[];
   errors: string[];
 }
 
@@ -116,7 +129,11 @@ export function reduceRun(prev: RunState, e: StudioEvent): RunState {
   };
   switch (e.type) {
     case "run_started":
-      return { ...initialRun(), mode: e.mode, label: e.label, running: true };
+      return { ...initialRun(), mode: e.mode, label: e.label, running: true, runId: e.runId };
+    case "awaiting_approval":
+      s.runId = e.runId;
+      s.awaiting = e.verified;
+      return s;
     case "run_finished":
       s.running = false;
       s.finished = { ok: e.ok, message: e.message };
@@ -139,7 +156,7 @@ export function reduceRun(prev: RunState, e: StudioEvent): RunState {
         set("Rewriter", "thinking", `Writing ${short(e.experimentId)} (${strategyLabel(e.strategy)})`);
       } else if (e.stage === "solving") {
         c.status = "checking";
-        set("Quiz checker", "working", `Solving ${short(e.experimentId)} 3 times`);
+        set("Answer checker", "working", `Solving ${short(e.experimentId)} 3 times`);
       } else if (e.stage === "judging") {
         c.status = "checking";
         set("Judge panel", "working", `Reviewing ${short(e.experimentId)}`);
@@ -161,7 +178,7 @@ export function reduceRun(prev: RunState, e: StudioEvent): RunState {
       if (!c) return s;
       c.checks.push({ label: CHECK_LABEL[e.check] ?? e.check, passed: e.passed, detail: e.detail });
       if (e.check === "answerKeyConsistent") {
-        set("Quiz checker", e.passed ? "complete" : "complete", `${short(e.experimentId)}: ${e.passed ? "key reproduced 3/3" : "key not reproduced"}`);
+        set("Answer checker", e.passed ? "complete" : "complete", `${short(e.experimentId)}: ${e.passed ? "key reproduced 3/3" : "key not reproduced"}`);
       } else {
         // Older recordings have no vote counts; their detail reads "panel 3/3: ...".
         const m = e.detail.match(/panel (\d+)\/(\d+)/);
@@ -173,12 +190,12 @@ export function reduceRun(prev: RunState, e: StudioEvent): RunState {
     }
     case "attack_started":
       s.attack = { itemIds: e.itemIds };
-      set("Attack agents", "working", `Re-testing ${e.itemIds.length} variant${e.itemIds.length === 1 ? "" : "s"}`);
+      set("Quiz checker", "working", `Re-testing ${e.itemIds.length} variant${e.itemIds.length === 1 ? "" : "s"}`);
       return s;
     case "attack_done":
       s.attack = { itemIds: s.attack?.itemIds ?? [], solveRates: e.solveRates };
       set(
-        "Attack agents",
+        "Quiz checker",
         "complete",
         e.solveRates.map((r) => `${short(r.itemId)}: ${r.correct}/${r.runs}`).join(", ") || "No runs",
       );

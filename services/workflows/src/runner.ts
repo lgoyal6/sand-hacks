@@ -159,7 +159,12 @@ export async function runTransform(
     if (rates) {
       for (const { row, target } of alive) {
         const next = rates.get(row.candidateItemId);
-        row.experiment.checks.newSolveRate = next?.solveRate;
+        if (!next || next.runs === 0) {
+          // Every agent run failed for provider reasons: no evidence either way.
+          await leaveUnverified(row, "the agent retake produced no valid runs (provider errors), so agent resistance is unmeasured");
+          continue;
+        }
+        row.experiment.checks.newSolveRate = next.solveRate;
         const d = decide(target.solveRate, next, opts);
         if (!d.survives) {
           await reject(row, d.reason);

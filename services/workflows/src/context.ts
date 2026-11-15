@@ -38,7 +38,8 @@ export async function buildContext(opts: ContextOptions = {}, env = process.env)
 
   const solverId = envVal("GEMINI_SOLVER_MODEL", env) ?? "gemini-3.6-flash";
   const direct = directGemini(solverId, env);
-  const solver = new FallbackSolver(direct ? new GeminiCodeSolver(direct) : null, gmiGemini(solverId, env));
+  const noCode = gmiGemini(solverId, env);
+  const solver = new FallbackSolver(direct ? new GeminiCodeSolver(direct, noCode != null) : null, noCode);
 
   const panelIds = (envVal("PANEL_MODELS", env) ?? "gemini-3.8-flash,gemini-3.6-flash,gemini-3.1-pro-preview").split(",").map((m) => m.trim());
   const seats = panelIds.map(pick).filter((m): m is NonNullable<typeof m> => m != null);

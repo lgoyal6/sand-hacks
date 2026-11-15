@@ -8,16 +8,16 @@ import { APP_LINKS } from "@/components/ui/app-shell";
 import type { StudioData } from "../_lib/data";
 import {
   AGENT_ORDER,
+  AGENT_IDS,
   AGENT_ROLE,
   cardsFromExperiments,
   initialRun,
   reduceRun,
-  type AgentName,
   type RunState,
   type StudioEvent,
   type VariantCard as Card,
 } from "../_lib/agents";
-import { VariantCard } from "./variant-card";
+import { VariantCard, type Decision } from "./variant-card";
 
 type Action = { label: string; run: () => void; primary?: boolean };
 type Msg =
@@ -32,7 +32,6 @@ const pct = (x: number) => `${Math.round(x * 100)}%`;
 let seq = 0;
 const nid = () => `m${++seq}`;
 const qNum = (itemId: string) => itemId.match(/-q(\d+)$/)?.[1] ?? itemId;
-const AGENT_ID: Record<AgentName, string> = { Rewriter: "rewriter", "Quiz checker": "checker", "Judge panel": "panel", "Attack agents": "attack" };
 
 /** "Sample quiz: Intro Statistics (OpenStax-style, written by us)" -> "Intro Statistics". */
 function displayTitle(t: string) {
@@ -43,7 +42,9 @@ export function StudioChat({ data }: { data: StudioData }) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [runs, setRuns] = useState<Record<string, RunState>>({});
   const [activeRun, setActiveRun] = useState<string | null>(null);
-  const [approved, setApproved] = useState<Record<string, boolean>>({});
+  const [decided, setDecided] = useState<Record<string, Card["status"]>>({});
+  const [resumed, setResumed] = useState<Record<string, boolean>>({});
+  const [decideError, setDecideError] = useState<string | null>(null);
   const sourceRef = useRef<EventSource | null>(null);
 
   const quiz = data.quiz;
@@ -118,7 +119,7 @@ export function StudioChat({ data }: { data: StudioData }) {
 
   const showAttack = useCallback(() => {
     push({ id: nid(), role: "user", text: "Attack my quiz" });
-    push({ id: nid(), role: "assistant", agent: "Attack agents", kind: "attack" });
+    push({ id: nid(), role: "assistant", agent: "Quiz checker", kind: "attack" });
     if (solvable.length) {
       say(`Agents can answer ${solvable.length} of ${quiz?.items.length ?? 0} questions. Want me to rewrite them so agents fail but the skill being tested stays the same?`, {
         actions: [{ label: "Rewrite agent-solvable questions", primary: true, run: () => offerRewrite(solvable.map((s) => s.itemId)) }],
@@ -154,35 +155,44 @@ export function StudioChat({ data }: { data: StudioData }) {
     [data.experiments.length, importQuiz, offerRewrite, push, quiz, replay, say, showAttack, solvable],
   );
 
-  const approve = useCallback(async (id: string, yes: boolean) => {
-    const res = await fetch(`/studio/api/variants/${encodeURIComponent(id)}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: yes ? "approve" : "unapprove" }),
-    });
-    if (res.ok) setApproved((a) => ({ ...a, [id]: yes }));
-  }, []);
-  const withApproval = useCallback(
-    (c: Card): Card => (approved[c.id] === undefined ? c : { ...c, status: approved[c.id] ? "approved" : c.status === "approved" ? "verified" : c.status }),
-    [approved],
+  const decide = useCallback(
+    async (id: string, d: Decision, runId?: string) => {
+      setDecideError(null);
+      // While the Mastra run is paused, the first decision resumes it; later ones write directly.
+      const viaRun = runId && !resumed[runId] && d !== "unapprove" ? runId : undefined;
+      const res = await fetch(`/studio/api/variants/${encodeURIComponent(id)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: d, runId: viaRun }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { status?: string; error?: string };
+      if (!res.ok) return setDecideError(body.error ?? "That didn't go through.");
+      if (viaRun) setResumed((r) => ({ ...r, [viaRun]: true }));
+      setDecided((m) => ({ ...m, [id]: d === "approve" ? "approved" : d === "reject" ? "rejected" : "verified" }));
+    },
+    [resumed],
+  );
+  const withDecision = useCallback(
+    (c: Card): Card => (decided[c.id] ? { ...c, status: decided[c.id]!, reason: decided[c.id] === "rejected" ? "Rejected by you." : c.reason } : c),
+    [decided],
   );
 
   // ---- right panel: real run state, else a calm summary of what's known ----
   const run = activeRun ? (runs[activeRun] ?? null) : null;
   const agents: AgentInfo[] = AGENT_ORDER.map((name) => {
     const row = run?.agents[name];
-    if (row && row.status !== "idle") return { id: AGENT_ID[name], name, status: row.activity, state: row.status, steps: row.steps };
-    if (row?.steps.length) return { id: AGENT_ID[name], name, status: row.activity, state: "idle", steps: row.steps };
-    if (name === "Attack agents" && data.attack) {
+    if (row && row.status !== "idle") return { id: AGENT_IDS[name], name, status: row.activity, state: row.status, steps: row.steps };
+    if (row?.steps.length) return { id: AGENT_IDS[name], name, status: row.activity, state: "idle", steps: row.steps };
+    if (name === "Quiz checker" && data.attack) {
       return {
-        id: AGENT_ID[name],
+        id: AGENT_IDS[name],
         name,
         status: `answered ${data.attack.itemCorrect}/${data.attack.itemRuns} on the original quiz`,
         state: "complete",
         steps: [{ text: data.attack.models.map((m) => m.replace("|", " on ")).join(", ") }],
       };
     }
-    return { id: AGENT_ID[name], name, status: AGENT_ROLE[name].toLowerCase(), state: "idle" };
+    return { id: AGENT_IDS[name], name, status: AGENT_ROLE[name].toLowerCase(), state: "idle" };
   });
 
   const sidebar = {
@@ -255,7 +265,7 @@ export function StudioChat({ data }: { data: StudioData }) {
           <p>Saved variants for this quiz:</p>
           <div className="mt-3 space-y-2">
             {cardsFromExperiments(data.experiments).map((c) => (
-              <VariantCard key={c.id} card={withApproval(c)} onApprove={approve} />
+              <VariantCard key={c.id} card={withDecision(c)} onDecide={(id, d) => decide(id, d)} />
             ))}
           </div>
         </Message>
@@ -265,7 +275,7 @@ export function StudioChat({ data }: { data: StudioData }) {
       const r = runs[m.runId];
       return r ? (
         <Message key={m.id} role="assistant" agentName={nameFor(m)}>
-          <RunResult run={r} withApproval={withApproval} onApprove={approve} />
+          <RunResult run={r} withDecision={withDecision} onDecide={decide} />
         </Message>
       ) : null;
     }
@@ -307,7 +317,10 @@ export function StudioChat({ data }: { data: StudioData }) {
       composer={composer}
       composerNote={sourceNote}
     >
-      <Thread>{msgs.map(renderMsg)}</Thread>
+      <Thread>
+        {msgs.map(renderMsg)}
+        {decideError ? <p className="text-sm text-rejected">{decideError}</p> : null}
+      </Thread>
     </ChatLayout>
   );
 }
@@ -370,8 +383,8 @@ function AttackSummary({ data }: { data: StudioData }) {
   );
 }
 
-function RunResult({ run, withApproval, onApprove }: { run: RunState; withApproval: (c: Card) => Card; onApprove: (id: string, yes: boolean) => Promise<void> }) {
-  const cards = run.order.map((id) => withApproval(run.cards[id]!));
+function RunResult({ run, withDecision, onDecide }: { run: RunState; withDecision: (c: Card) => Card; onDecide: (id: string, d: Decision, runId?: string) => Promise<void> }) {
+  const cards = run.order.map((id) => withDecision(run.cards[id]!));
   const count = (...s: Card["status"][]) => cards.filter((c) => s.includes(c.status)).length;
   const busy = AGENT_ORDER.map((n) => run.agents[n]).find((a) => a.status === "working" || a.status === "thinking");
   return (
@@ -380,7 +393,12 @@ function RunResult({ run, withApproval, onApprove }: { run: RunState; withApprov
       {cards.length ? (
         <div className="mt-3 space-y-2">
           {cards.map((c) => (
-            <VariantCard key={c.id} card={c} onApprove={run.mode === "replay" ? undefined : onApprove} />
+            <VariantCard
+              key={c.id}
+              card={c}
+              waiting={run.awaiting?.includes(c.id)}
+              onDecide={run.mode === "replay" ? undefined : (id, d) => onDecide(id, d, run.awaiting?.includes(id) ? run.runId : undefined)}
+            />
           ))}
         </div>
       ) : null}

@@ -53,7 +53,7 @@ async function rateLimit(name: string) {
   if (at > now) await new Promise((r) => setTimeout(r, at - now));
 }
 
-export async function withRetry<T>(fn: () => Promise<T>, label: string, tries = 6): Promise<T> {
+export async function withRetry<T>(fn: () => Promise<T>, label: string, tries = 6, opts: { failFastOnQuota?: boolean } = {}): Promise<T> {
   let last: unknown;
   for (let i = 0; i < tries; i++) {
     await rateLimit(label.replace(/ \(code\)$/, ""));
@@ -65,6 +65,8 @@ export async function withRetry<T>(fn: () => Promise<T>, label: string, tries = 
       const quota = /\b429\b|RESOURCE_EXHAUSTED|rate.?limit/i.test(msg);
       // Fail fast on auth/bad requests/unknown models; retry quota, server errors, timeouts, bad JSON.
       if (!quota && /\b(400|401|403|404)\b/.test(msg)) break;
+      // Callers with a fallback (e.g. the code solver) would rather switch than wait out a quota window.
+      if (quota && opts.failFastOnQuota) break;
       // Google puts the wait in the 429 body: "retryDelay": "37s".
       const hinted = Number(msg.match(/retryDelay"?\s*[:=]\s*"?(\d+(?:\.\d+)?)s/)?.[1] ?? NaN);
       const wait = quota ? (Number.isFinite(hinted) ? hinted * 1000 + 1000 : 15_000 * (i + 1)) : 1000 * 2 ** i;
@@ -107,7 +109,7 @@ export class GeminiModel implements JsonModel {
    * Free-form answer with Gemini's built-in Python code execution tool.
    * Returns the response text and whether the model actually ran code.
    */
-  async withCode(prompt: string, opts: { temperature?: number; salt?: string } = {}): Promise<{ text: string; usedCode: boolean }> {
+  async withCode(prompt: string, opts: { temperature?: number; salt?: string; failFastOnQuota?: boolean } = {}): Promise<{ text: string; usedCode: boolean }> {
     return cached([this.name, "code", prompt, opts.temperature, opts.salt], () => withRetry(async () => {
       const res = await this.ai.models.generateContent({
         model: this.model,
@@ -118,7 +120,7 @@ export class GeminiModel implements JsonModel {
       const usedCode = parts.some((p) => p.executableCode || p.codeExecutionResult);
       const text = parts.map((p) => p.text ?? "").join("\n");
       return { text, usedCode };
-    }, `${this.name} (code)`));
+    }, `${this.name} (code)`, 6, { failFastOnQuota: opts.failFastOnQuota }));
   }
 }
 

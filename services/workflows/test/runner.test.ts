@@ -156,6 +156,17 @@ describe("transform runner (fake models, PGlite branches)", () => {
     await store.close();
   }, 60_000);
 
+  it("a retake with no valid agent runs leaves candidates unverified, not rejected", async () => {
+    const store = await PGliteBranchStore.create(await loadSchema());
+    const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
+    await saveQuiz((await store.main()).db, quiz);
+    const allProviderErrors: Attacker = { attack: async (q) => ({ solveRates: q.items.map((i) => ({ itemId: i.id, runs: 0, correct: 0, solveRate: 0, agentSolvable: false })) }) };
+    const res = await runTransform(store, quiz, [{ item: quiz.items[0]!, solveRate: 1 }], { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker: allProviderErrors }, { candidatesPerItem: 1, strategies: ["isomorphic"] });
+    expect(res.experiments[0]!.status).toBe("proposed");
+    expect(res.experiments[0]!.reasons.at(-1)).toMatch(/^not verified: the agent retake produced no valid runs/);
+    await store.close();
+  }, 60_000);
+
   it("decide() applies both halves of the survival rule", () => {
     const r = (correct: number, runs = 10): SolveRate => ({ itemId: "x", runs, correct, solveRate: correct / runs, agentSolvable: false });
     expect(decide(1, r(3)).survives).toBe(true);

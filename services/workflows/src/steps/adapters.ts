@@ -102,7 +102,11 @@ export function normalizeCandidate(out: z.infer<typeof CandidateSchema>, source:
 // ---------- solver (code interpreter) ----------
 
 export class GeminiCodeSolver implements Solver {
-  constructor(private model: GeminiModel) {}
+  constructor(
+    private model: GeminiModel,
+    /** Set when a fallback solver exists: switch on quota instead of waiting. */
+    private failFastOnQuota = false,
+  ) {}
 
   /** Same prompt, for a model without the code tool (fallback path). */
   static prompt(candidate: Candidate, withCode: boolean) {
@@ -117,7 +121,7 @@ where <answer> is the option letter${candidate.type === "multi" ? "s, comma-sepa
 
   async solve(candidate: Candidate, run = 0): Promise<SolveResult> {
     const prompt = GeminiCodeSolver.prompt(candidate, true);
-    const { text, usedCode } = await this.model.withCode(prompt, { temperature: 0.7, salt: `run${run}` });
+    const { text, usedCode } = await this.model.withCode(prompt, { temperature: 0.7, salt: `run${run}`, failFastOnQuota: this.failFastOnQuota });
     const answer = extractFinal(text);
     if (!answer) throw new Error("solver reply had no FINAL: line");
     return { answer, usedCode, model: this.model.name };

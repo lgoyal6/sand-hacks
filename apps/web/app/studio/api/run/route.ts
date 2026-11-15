@@ -6,7 +6,8 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { FIXTURES_DIR, REPO_ROOT } from "@/lib/db/fixtures";
+import { FIXTURES_DIR, readJson, REPO_ROOT } from "@/lib/db/fixtures";
+import { mastraAvailable, streamTransform } from "../../_lib/mastra";
 
 const g = globalThis as unknown as { __studioLiveRun?: ChildProcess | null };
 
@@ -36,6 +37,7 @@ export async function GET(req: Request) {
 
       try {
         if (mode === "replay") await replay(url, send, () => closed);
+        else if (url.searchParams.get("engine") !== "cli" && (await mastraAvailable())) await viaMastra(url, send, () => closed, req.signal);
         else await live(url, send, () => closed, req.signal);
       } catch (e) {
         send({ type: "run_finished", ok: false, message: String((e as Error).message ?? e) });
@@ -109,4 +111,45 @@ async function live(url: URL, send: (d: unknown) => void, closed: () => boolean,
   await fs.rm(eventsFile, { force: true });
   const summary = tail.split("\n").filter((l) => /candidates:|refusing|No solve rate|Error/.test(l)).slice(-2).join(" ");
   send({ type: "run_finished", ok: code === 0, message: summary || (code === 0 ? "Run finished." : `Run exited with code ${code}.`) });
+}
+
+/**
+ * Live run through the Mastra workflow (select-targets -> transform -> professor-approval).
+ * Runner events arrive as workflow-step-output chunks; a suspend means "waiting for the professor".
+ */
+async function viaMastra(url: URL, send: (d: unknown) => void, closed: () => boolean, signal: AbortSignal) {
+  const items = (url.searchParams.get("items") ?? "").split(",").filter((s) => /^[\w-]+$/.test(s));
+  if (!items.length) throw new Error("Pick at least one question to transform.");
+  const n = Math.min(5, Math.max(1, Number(url.searchParams.get("n") ?? 2)));
+  const quiz = url.searchParams.get("quiz") ?? "sample-stats";
+  if (!/^[\w-]+$/.test(quiz)) throw new Error("bad quiz id");
+  const solveRates = await readJson<unknown[] | null>(path.join(FIXTURES_DIR, "solve_rates.json"), null);
+
+  const { runId, chunks } = await streamTransform(
+    { quizId: quiz, itemIds: items, solveRates, leakedItemIds: [], assumeSolveRate: null, candidatesPerItem: n },
+    signal,
+  );
+  send({ type: "run_started", mode: "live", label: `Mastra workflow run ${runId.slice(0, 8)} on ${items.join(", ")} (${n} candidate${n === 1 ? "" : "s"} each)`, runId });
+  let finished = false;
+  for await (const c of chunks) {
+    if (closed()) return;
+    const p = c.payload ?? {};
+    if (c.type === "workflow-step-output" && p.output && typeof p.output === "object") send(p.output);
+    else if (c.type === "workflow-step-suspended" || (c.type === "workflow-step-result" && p.status === "suspended")) {
+      const verified = ((p.suspendPayload as { verified?: { id: string }[] } | undefined)?.verified ?? []).map((v) => v.id);
+      send({ type: "awaiting_approval", runId, verified });
+    } else if (c.type === "workflow-step-result" && p.status === "failed") {
+      const err = (p as { error?: { message?: string } }).error?.message ?? "step failed";
+      send({ type: "error", message: `${p.stepName ?? "step"}: ${err}` });
+    } else if (c.type === "workflow-finish") {
+      finished = true;
+      const st = p.workflowStatus as string | undefined;
+      send({
+        type: "run_finished",
+        ok: st === "success" || st === "suspended",
+        message: st === "suspended" ? "Paused for your decision. Approve or reject each verified variant." : st === "success" ? "Run finished." : `Run ${st ?? "ended"}.`,
+      });
+    }
+  }
+  if (!finished) send({ type: "run_finished", ok: false, message: "The workflow stream ended early." });
 }

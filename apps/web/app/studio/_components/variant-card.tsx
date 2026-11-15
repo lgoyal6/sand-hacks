@@ -22,14 +22,23 @@ function questionLabel(itemId: string) {
   return q ? `Q${q}` : itemId;
 }
 
-export function VariantCard({ card, onApprove }: { card: Card; onApprove?: (id: string, approve: boolean) => Promise<void> }) {
+export type Decision = "approve" | "reject" | "unapprove";
+
+export function VariantCard({ card, onDecide, waiting }: { card: Card; onDecide?: (id: string, d: Decision) => Promise<void>; waiting?: boolean }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const s = STATUS[card.status];
   const c = card.experiment?.candidate;
   const key = c ? (Array.isArray(c.answerKey) ? c.answerKey : [c.answerKey]) : [];
   const newRate = card.experiment?.checks.newSolveRate;
-  const decidable = card.status === "verified" || card.status === "approved";
+  const decide = async (d: Decision) => {
+    setBusy(true);
+    try {
+      await onDecide?.(card.id, d);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <div className="rounded-2xl border border-border bg-background">
@@ -44,24 +53,23 @@ export function VariantCard({ card, onApprove }: { card: Card; onApprove?: (id: 
           </p>
           <p className="mt-1 text-xs">
             <span className={cn("rounded-full px-2 py-0.5 font-medium", s.pill)}>{s.label}</span>
+            {waiting && card.status === "verified" ? <span className="ml-1 text-muted-foreground">· the workflow is paused for you</span> : null}
             {newRate != null ? <span className="num font-normal text-muted-foreground"> · agents solved {Math.round(newRate * 100)}%</span> : null}
           </p>
           {card.reason ? <p className="mt-1 text-[13px] leading-snug text-muted-foreground">{card.reason}</p> : null}
         </div>
-        {decidable ? (
-          <PillButton
-            variant={card.status === "approved" ? "secondary" : "primary"}
-            disabled={busy || !onApprove}
-            onClick={async () => {
-              setBusy(true);
-              try {
-                await onApprove?.(card.id, card.status === "verified");
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            {card.status === "approved" ? "Undo" : "Approve"}
+        {card.status === "verified" && onDecide ? (
+          <div className="flex shrink-0 gap-2">
+            <PillButton variant="secondary" disabled={busy} onClick={() => decide("reject")}>
+              Reject
+            </PillButton>
+            <PillButton variant="primary" disabled={busy} onClick={() => decide("approve")}>
+              Approve
+            </PillButton>
+          </div>
+        ) : card.status === "approved" && onDecide ? (
+          <PillButton variant="ghost" disabled={busy} onClick={() => decide("unapprove")}>
+            Undo
           </PillButton>
         ) : null}
       </div>
