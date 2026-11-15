@@ -35,7 +35,7 @@ export function NeonStatus() {
             ) : (
               "main"
             )}{" "}
-            + {s.experiments} experiment branch{s.experiments === 1 ? "" : "es"}
+            + {s.experiments} live experiment branch{s.experiments === 1 ? "" : "es"} (all quizzes)
             {s.appeals ? `, ${s.appeals} appeal${s.appeals === 1 ? "" : "s"}` : ""}
             <span className="block text-[11px] text-muted-foreground/80">One branch per rewrite candidate. Listed from the Neon API, refreshed every minute.</span>
           </span>

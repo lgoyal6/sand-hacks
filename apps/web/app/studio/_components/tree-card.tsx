@@ -95,16 +95,17 @@ function Lane({ lane, last }: { lane: TreeLane; last: boolean }) {
 
 export function TreeCard({ data }: { data: TreeData }) {
   const exp = data.lanes.filter((l) => l.kind === "experiment");
-  const liveCount = data.lanes.filter((l) => l.live).length;
+  const liveCount = exp.filter((l) => l.live).length;
   return (
     <div className="overflow-hidden rounded-[20px] border border-border bg-background">
       <div className="px-4 pb-2 pt-3.5">
         <p className="text-[15px] font-medium">
-          {exp.length} experiment branch{exp.length === 1 ? "" : "es"} on Neon
+          {exp.length} rewrite experiment{exp.length === 1 ? "" : "s"} on this quiz
+          {data.source.neonApi ? ` (${liveCount} branch${liveCount === 1 ? "" : "es"} still live on Neon)` : ""}
           {data.source.appeals ? `, ${data.source.appeals} appeal${data.source.appeals === 1 ? "" : "s"}` : ""}
         </p>
         <p className="text-xs text-muted-foreground">
-          Every rewrite candidate runs on its own copy-on-write Neon branch of the quiz database, forked from main. Kept candidates are merged back into main; every result is recorded on main. {liveCount} branch{liveCount === 1 ? "" : "es"} still exist; the rest were pruned after their result was recorded. Click a branch for the checks that decided it.
+          Every rewrite candidate runs on its own copy-on-write Neon branch of the quiz database, forked from main. Kept candidates are merged back into main; every result is recorded on main. Branches that no longer exist were pruned after their result was recorded. Kept candidates are listed first; click one for the checks that decided it.
           {data.source.neonApi ? "" : " Live branch details are unavailable (no Neon API key)."}
         </p>
       </div>
