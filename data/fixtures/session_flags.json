@@ -1,0 +1,164 @@
+[
+  {
+    "attemptId": "att_c1f8a32a-200",
+    "agentLikelihood": 0.95,
+    "topFeatures": [
+      {
+        "name": "seconds_away_per_item",
+        "value": 9.53
+      },
+      {
+        "name": "click_no_move_ratio",
+        "value": 1.0
+      },
+      {
+        "name": "dead_range_answer_ratio",
+        "value": 0.333
+      }
+    ]
+  },
+  {
+    "attemptId": "att_0ecea8a8-3ce",
+    "agentLikelihood": 0.95,
+    "topFeatures": [
+      {
+        "name": "click_no_move_ratio",
+        "value": 1.0
+      },
+      {
+        "name": "keys_per_answer",
+        "value": 0.25
+      },
+      {
+        "name": "answer_no_input_ratio",
+        "value": 0.0
+      }
+    ]
+  },
+  {
+    "attemptId": "att_e4574c36-70d",
+    "agentLikelihood": 0.95,
+    "topFeatures": [
+      {
+        "name": "click_no_move_ratio",
+        "value": 1.0
+      },
+      {
+        "name": "keys_per_answer",
+        "value": 0.375
+      },
+      {
+        "name": "key_dt_cv",
+        "value": 0.129
+      }
+    ]
+  },
+  {
+    "attemptId": "att_c31b69b0-8de",
+    "agentLikelihood": 0.95,
+    "topFeatures": [
+      {
+        "name": "click_no_move_ratio",
+        "value": 1.0
+      },
+      {
+        "name": "keys_per_answer",
+        "value": 0.375
+      },
+      {
+        "name": "key_dt_cv",
+        "value": 0.098
+      }
+    ]
+  },
+  {
+    "attemptId": "att_5ad2ac6a-876",
+    "agentLikelihood": 0.95,
+    "topFeatures": [
+      {
+        "name": "click_no_move_ratio",
+        "value": 1.0
+      },
+      {
+        "name": "answer_no_input_ratio",
+        "value": 0.0
+      },
+      {
+        "name": "dead_range_answer_ratio",
+        "value": 0.0
+      }
+    ]
+  },
+  {
+    "attemptId": "att_604223b8-b1e",
+    "agentLikelihood": 0.95,
+    "topFeatures": [
+      {
+        "name": "click_no_move_ratio",
+        "value": 1.0
+      },
+      {
+        "name": "keys_per_answer",
+        "value": 0.25
+      },
+      {
+        "name": "key_dt_cv",
+        "value": 0.177
+      }
+    ]
+  },
+  {
+    "attemptId": "att_6a0fc2fd-1fe",
+    "agentLikelihood": 0.875,
+    "topFeatures": [
+      {
+        "name": "keys_per_answer",
+        "value": 23.125
+      },
+      {
+        "name": "key_dt_cv",
+        "value": 2.107
+      },
+      {
+        "name": "move_points_per_click",
+        "value": 1.312
+      }
+    ]
+  },
+  {
+    "attemptId": "att_2a934136-46a",
+    "agentLikelihood": 0.95,
+    "topFeatures": [
+      {
+        "name": "click_no_move_ratio",
+        "value": 1.0
+      },
+      {
+        "name": "keys_per_answer",
+        "value": 0.25
+      },
+      {
+        "name": "key_dt_cv",
+        "value": 0.065
+      }
+    ]
+  },
+  {
+    "attemptId": "att_f7d60f68-fc7",
+    "agentLikelihood": 0.0,
+    "topFeatures": [
+      {
+        "name": "click_no_move_ratio",
+        "value": 0.0
+      },
+      {
+        "name": "answer_no_input_ratio",
+        "value": 0.0
+      },
+      {
+        "name": "dead_range_answer_ratio",
+        "value": 0.0
+      }
+    ]
+  }
+]

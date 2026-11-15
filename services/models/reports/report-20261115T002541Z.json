@@ -1,0 +1,19 @@
+{
+  "report": {
+    "n_sessions": 4,
+    "n_agent": 0,
+    "n_human": 4,
+    "n_agent_groups": 0,
+    "n_human_groups": 4,
+    "status": "insufficient_data",
+    "auc": null,
+    "auc_ci95": null,
+    "fpr_at_0_5": null,
+    "tpr_at_0_5": null,
+    "coefficients": {},
+    "note": "Need at least 3 distinct agent runs and 3 distinct consenting people; have 0 and 4. No AUC reported."
+  },
+  "tigerSessions": 9,
+  "labelledSessions": 4,
+  "scorer": "behaviour-rule"
+}
