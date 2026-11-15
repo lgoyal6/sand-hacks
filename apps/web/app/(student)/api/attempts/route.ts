@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { createAttempt, listAttempts, type AttemptMode } from "../../quiz/_lib/attempts";
-import { getQuiz } from "../../quiz/_lib/quizzes";
+import { getQuiz, quizVoiceRequired } from "../../quiz/_lib/quizzes";
 import { planProbes } from "../../_lib/policy";
 import { getViewer } from "@/lib/auth/server";
 
 export async function POST(req: Request) {
-  const body = (await req.json().catch(() => ({}))) as { quizId?: string; mode?: AttemptMode; studentPseudonym?: string; consentAudio?: boolean; itemIds?: string[] };
+  const body = (await req.json().catch(() => ({}))) as { quizId?: string; mode?: AttemptMode; studentPseudonym?: string; consentAudio?: boolean; itemIds?: string[]; voiceRequired?: boolean };
   if (body.studentPseudonym !== undefined && !/^[\w-]{1,64}$/.test(body.studentPseudonym)) body.studentPseudonym = undefined;
   // Signed in: the pseudonym comes from the user id, never from the browser. The demo student may tag
   // runs (agent-/e2e-/test-) so the red-team runner and QA can label their sessions.
@@ -20,6 +20,8 @@ export async function POST(req: Request) {
   // A focused session ("Practice this") plans probes over just its items.
   const focus = Array.isArray(body.itemIds) ? quiz.items.filter((i) => body.itemIds!.includes(i.id)).map((i) => i.id) : [];
   const { plan } = await planProbes(focus.length ? focus : quiz.items.map((i) => i.id), mode);
+  // "Explanations: voice required" (graded only): the quiz setting, or the runner's ?voice=required (can only turn it ON).
+  if (mode === "graded" && (body.voiceRequired === true || (await quizVoiceRequired(quiz.id)))) plan.push("voice:required");
   const attempt = await createAttempt({
     probePlan: plan,
     quiz,

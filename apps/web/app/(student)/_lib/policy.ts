@@ -62,7 +62,7 @@ export async function shouldProbe(args: {
   if (0.2 * anomaly >= 0.15) return { probe: true, anomaly, reason: "session anomaly" };
   // Guarantee the minimum before the quiz ends (planned items may have been skipped).
   const min = MIN_PROBES[mode];
-  const plannedLeft = plan.filter((p) => !p.startsWith("acc:") && !triggered.includes(p) && p !== itemId).length;
+  const plannedLeft = plan.filter((p) => !p.includes(":") && !triggered.includes(p) && p !== itemId).length;
   if (remainingItems === 0 && triggered.length < min && plannedLeft === 0) return { probe: true, anomaly, reason: "minimum" };
   return { probe: false, anomaly, reason: "not selected" };
 }

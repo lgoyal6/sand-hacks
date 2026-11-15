@@ -124,6 +124,8 @@ interface ChatQuizProps {
   student?: string;
   /** Home page: start in the empty state (greeting, centered composer, chips). */
   startEmpty?: boolean;
+  /** Runner/test flag: ask the server to require voice explanations in graded mode (?voice=required). */
+  voiceRequired?: boolean;
   /** Signed-in viewer (name and role only; never the email). */
   viewer?: { name: string; role: "student" | "professor" } | null;
 }
@@ -155,7 +157,7 @@ function matchQuiz(quizzes: PublicQuiz[], text: string): PublicQuiz | null {
   return best?.q ?? null;
 }
 
-function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", student, startEmpty = false, viewer }: ChatQuizProps) {
+function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", student, startEmpty = false, viewer, voiceRequired: voiceRequiredParam }: ChatQuizProps) {
   const [phase, setPhase] = useState<Phase>(startEmpty ? "home" : "intro");
   const [quizId, setQuizId] = useState(initialQuizId ?? quizzes[0]?.id);
   const quiz = quizzes.find((q) => q.id === quizId) ?? quizzes[0];
@@ -193,6 +195,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const [summary, setSummary] = useState<{ score: number; total: number; results: { itemId: string; answered: boolean; correct: boolean }[] } | null>(null);
   // probe state
   const [voiceAvailable, setVoiceAvailable] = useState(false);
+  const [voiceRequired, setVoiceRequired] = useState(false); // this attempt requires voice (server decides)
   const [consent, setConsent] = useState(false);
   const [channel, setChannel] = useState<"typed" | "voice">("typed");
   const [before, setBefore] = useState<number | null>(null);
@@ -221,11 +224,14 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   }, []);
 
   useEffect(() => {
-    fetch("/api/probes")
+    fetch(`/api/probes${attemptId ? `?attempt=${encodeURIComponent(attemptId)}` : ""}`)
       .then((r) => r.json())
-      .then((d) => setVoiceAvailable(Boolean(d.voiceAvailable)))
+      .then((d) => {
+        setVoiceAvailable(Boolean(d.voiceAvailable));
+        setVoiceRequired(Boolean(d.voiceRequired));
+      })
       .catch(() => {});
-  }, []);
+  }, [attemptId]);
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [entries.length, phase]);
@@ -244,7 +250,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     setBusy(true);
     setError(null);
     try {
-      const d = await post<{ attemptId: string }>("/api/attempts", { quizId: target.id, mode: m, studentPseudonym: student, itemIds: target.items.map((i) => i.id) });
+      const d = await post<{ attemptId: string }>("/api/attempts", { quizId: target.id, mode: m, studentPseudonym: student, itemIds: target.items.map((i) => i.id), voiceRequired: voiceRequiredParam || undefined });
       setQuizId(target.id);
       setMode(m);
       setAttemptId(d.attemptId);
@@ -289,6 +295,19 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     setPhase("question");
     telemetry.emit("answer", { type: "item_shown", index: index + 2 }, quiz.items[index + 1]?.id);
     emitAgentStatus("tutor", `presenting question ${index + 2} of ${quiz.items.length}`);
+  };
+
+  // Voice-required quizzes: typing is an accommodation (recorded, never penalized, excluded from detection).
+  const requestTypedAccommodation = async () => {
+    if (!attemptId || !item) return;
+    try {
+      await post(`/api/attempts/${attemptId}/accommodation`, { itemId: item.id, kind: "typed_explanation" });
+      telemetry.emit("focus", { type: "accommodation", accommodation: "typed_explanation", excludeFromDetection: true });
+      setChannel("typed");
+      setPhase("probe_before");
+    } catch (e) {
+      setError((e as Error).message);
+    }
   };
 
   // Accommodation (CONTRACTS): the accessible version is never penalized; this item's think-aloud always runs.
@@ -400,7 +419,10 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     }
   };
 
-  const switchToTyping = () => {
+  const switchToTyping = async () => {
+    // Voice-required quizzes: switching to typing is a recorded accommodation (never penalized).
+    if (mode === "graded" && voiceRequired && attemptId && item)
+      await post(`/api/attempts/${attemptId}/accommodation`, { itemId: item.id, kind: "typed_explanation" }).catch(() => {});
     const r = voice.abandon();
     for (const l of r.lines) say(l.role === "agent" ? "tutor" : "student", l.text, l.role === "agent" ? { agent: "Explain coach" } : {});
     if (r.conversationId && probeIdRef.current) post(`/api/probes/${probeIdRef.current}`, { conversationId: r.conversationId, mode: "typed" }, "PATCH").catch(() => {});
@@ -642,13 +664,20 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           footer={
             phase === "probe_after" && before !== null
               ? `Before you explained, you said ${before} of 7 sure.`
-              : phase === "probe_choice" && mode === "graded"
+              : phase === "probe_choice" && mode === "graded" && voiceRequired
+                ? "This quiz asks you to explain out loud. Need another way? Request an accommodation."
+                : phase === "probe_choice" && mode === "graded"
                 ? "Typed answers are fine; your teacher may follow up in person."
                 : "Graded on your reasoning, never on wording or accent."
           }
           actions={
             phase === "probe_choice" ? (
-              mode === "graded" && voiceAvailable ? (
+              mode === "graded" && voiceRequired ? (
+                <>
+                  <PillButton id="probe-voice" disabled={!voiceAvailable} onClick={() => { setChannel("voice"); setPhase("probe_consent"); }}>Talk it through</PillButton>
+                  <PillButton id="probe-accommodation" variant="ghost" onClick={requestTypedAccommodation}>Request an accommodation</PillButton>
+                </>
+              ) : mode === "graded" && voiceAvailable ? (
                 <>
                   <PillButton id="probe-voice" onClick={() => { setChannel("voice"); setPhase("probe_consent"); }}>Talk it through</PillButton>
                   <PillButton id="probe-type" variant="secondary" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>Type it instead</PillButton>
@@ -669,7 +698,9 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
             ) : phase === "probe_consent" ? (
               <>
                 <PillButton id="probe-consent-continue" onClick={() => setPhase("probe_before")} disabled={!consent}>Continue</PillButton>
-                <PillButton id="probe-consent-type" variant="ghost" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>Type instead</PillButton>
+                <PillButton id="probe-consent-type" variant="ghost" onClick={() => { if (mode === "graded" && voiceRequired) requestTypedAccommodation(); else { setChannel("typed"); setPhase("probe_before"); } }}>
+                  {mode === "graded" && voiceRequired ? "Request an accommodation" : "Type instead"}
+                </PillButton>
               </>
             ) : phase === "probe_before" ? (
               <PillButton id="probe-begin" onClick={beginProbe} disabled={before === null || busy}>Continue</PillButton>
