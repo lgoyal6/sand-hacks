@@ -66,3 +66,6 @@ left join lateral (
 where o.original_item_id is null;
 -- C: the exact item ids served in an attempt (variants included), next to quiz_version.
 alter table attempt add column if not exists delivered_item_ids jsonb default '[]';
+-- B: one row per time-travel appeal, so the experiment tree can show these short-lived branches after deletion.
+create table if not exists appeal_log (id bigserial primary key, attempt_id text, quiz_id text, branch text, snapshot_lsn text,
+  created_at timestamptz default now(), branch_ms int, total_ms int, deleted boolean);

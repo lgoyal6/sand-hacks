@@ -152,7 +152,10 @@ export async function runTransform(
       emit({ type: "attack_done", quizId: res.variantQuiz.id, solveRates: [...rates.values()], ...(res.excluded ? { excluded: res.excluded } : {}) });
     } catch (e) {
       // Without a re-attack we can't claim agent resistance: leave them proposed, say why.
-      const msg = `re-attack failed, candidates left unverified: ${String((e as Error).message ?? e).slice(0, 300)}`;
+      const raw = String((e as Error).message ?? e);
+      const msg = /re-attack disabled/.test(raw)
+        ? "agent retake not run yet (checks passed; the retake runs separately)"
+        : `re-attack failed, candidates left unverified: ${raw.slice(0, 300)}`;
       emit({ type: "error", message: msg });
       for (const { row } of alive) {
         row.experiment.reasons.push(msg);

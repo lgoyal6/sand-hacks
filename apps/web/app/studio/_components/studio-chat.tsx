@@ -2,7 +2,9 @@
 // Studio as a conversation (owner: B), on D's chat shell. No LLM behind the composer: it maps
 // plain requests to actions (attack results, rewrite, replay, import), so it spends no quota.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileUp, Globe, History, PlayCircle, Target, Wand2 } from "lucide-react";
+import { FileUp, GitBranch, Globe, History, PlayCircle, Target, Wand2 } from "lucide-react";
+import { TreeCard } from "./tree-card";
+import type { TreeData } from "../_lib/tree";
 import type { LeakFinding } from "@unprompted/shared";
 import { LeakRadar } from "@/components/dashboard/leak-radar";
 import { buildLeakRadar, type LeakRadarData } from "@/components/dashboard/leak-radar-data";
@@ -33,7 +35,8 @@ type Msg =
   | { id: string; role: "assistant"; agent?: string; kind: "saved" }
   | { id: string; role: "assistant"; agent?: string; kind: "run"; runId: string }
   | { id: string; role: "assistant"; agent?: string; kind: "import" }
-  | { id: string; role: "assistant"; agent?: string; kind: "leaks"; text: string; radar: LeakRadarData | null; done: boolean; error?: string };
+  | { id: string; role: "assistant"; agent?: string; kind: "leaks"; text: string; radar: LeakRadarData | null; done: boolean; error?: string }
+  | { id: string; role: "assistant"; agent?: string; kind: "tree" };
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 let seq = 0;
@@ -201,6 +204,7 @@ export function StudioChat({ data }: { data: StudioData }) {
       push({ id: nid(), role: "user", text: t });
       if (/replay|recorded/i.test(t)) return replay();
       if (/leak|online|published|posted|quizlet|chegg|reddit/i.test(t)) return void checkLeaks();
+      if (/tree|branch|neon/i.test(t)) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "tree" });
       if (/saved|past|previous/i.test(t) && data.experiments.length) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "saved" });
       const qs = [...t.matchAll(/\bq(\d+)\b/gi)].map((m) => `${quiz?.id}-q${m[1]}`).filter((id) => quiz?.items.some((i) => i.id === id));
       if (/rewrite|transform|variant|fix|harden/i.test(t)) return offerRewrite(qs.length ? qs : solvable.map((s) => s.itemId));
@@ -331,6 +335,16 @@ export function StudioChat({ data }: { data: StudioData }) {
         </Message>
       );
     }
+    if (m.kind === "tree") {
+      return (
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
+          <p>Here is every rewrite tried on this quiz, as branches of the quiz database:</p>
+          <div className="mt-3">
+            <TreeLoader quizId={quiz!.id} />
+          </div>
+        </Message>
+      );
+    }
     if (m.kind === "saved") {
       return (
         <Message key={m.id} role="assistant" agentName={nameFor(m)}>
@@ -385,6 +399,11 @@ export function StudioChat({ data }: { data: StudioData }) {
             <Chip icon={<Globe />} onClick={() => void checkLeaks()}>
               Is any of this online?
             </Chip>
+            {data.experiments.length ? (
+              <Chip icon={<GitBranch />} onClick={() => handle("show me the experiment tree")}>
+                Experiment tree
+              </Chip>
+            ) : null}
             {data.experiments.length ? (
               <Chip icon={<History />} onClick={() => handle("show saved variants")}>
                 Saved variants
@@ -537,4 +556,22 @@ function SavedRaces({ itemIds, onMerge }: { itemIds: string[]; onMerge: (id: str
       ))}
     </div>
   );
+}
+
+function TreeLoader({ quizId }: { quizId: string }) {
+  const [tree, setTree] = useState<TreeData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch(`/studio/api/tree?quiz=${encodeURIComponent(quizId)}`)
+      .then((r) => (r.ok ? (r.json() as Promise<TreeData>) : Promise.reject(new Error(String(r.status)))))
+      .then((t) => live && setTree(t))
+      .catch(() => live && setError("Couldn't load the experiment tree."));
+    return () => {
+      live = false;
+    };
+  }, [quizId]);
+  if (error) return <p className="text-sm text-muted-foreground">{error}</p>;
+  if (!tree) return <Thinking label="Reading branches from Neon" />;
+  return <TreeCard data={tree} />;
 }
