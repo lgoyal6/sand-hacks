@@ -12,6 +12,7 @@ import argparse
 import json
 import os
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -72,10 +73,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out-dir", default=str(REPO / "data" / "fixtures"))
     ap.add_argument("--traces-dir", default=str(REPO / "traces"))
     ap.add_argument("--json", action="store_true", help="print result JSON to stdout, don't write fixtures")
+    ap.add_argument("--events", action="store_true",
+                    help="stream NDJSON agent events to stdout (shared agent-event shape, agentId quiz-checker); "
+                         "the last line is status 'done' with the full result. Implies --json; logs go to stderr")
     a = ap.parse_args(argv)
-
-    from .attack import attack
-    from .sandbox import Runtime, Sandbox
 
     if a.quiz.endswith(".md"):
         from .quiz_md import parse_quiz_md
@@ -83,8 +84,40 @@ def main(argv: list[str] | None = None) -> int:
         quiz = parse_quiz_md(a.quiz)
     else:
         quiz = json.load(sys.stdin if a.quiz == "-" else open(a.quiz))
+    a.json = a.json or a.events
     log = (lambda m: print(m, file=sys.stderr)) if a.json else print
-    result = attack(
+
+    def emit(status: str, label: str, tool_call: dict | None = None, **extra) -> None:
+        ev = {"agentId": "quiz-checker", "status": status, "label": label,
+              "ts": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}
+        if tool_call:
+            ev["toolCall"] = tool_call
+        print(json.dumps({**ev, **extra}), flush=True)
+    try:
+        result = _run(a, quiz, log, emit if a.events else None)
+    except Exception as e:
+        if a.events:
+            emit("error", f"Attack failed: {e}"[:300])
+            return 1
+        raise
+    if a.events:
+        s = result["summary"]
+        label = (f"Agents solved {s['itemCorrect']}/{s['itemRuns']} answers ({s['accuracy']:.0%}, 95% CI "
+                 f"{s['accuracyCI95'][0]:.0%}-{s['accuracyCI95'][1]:.0%}), {s['infraErrors']} provider errors excluded"
+                 if s["accuracy"] is not None else f"No usable runs ({s['infraErrors']} provider errors)")
+        emit("done", label, result=result)
+        return 0
+    if a.json:
+        json.dump(result, sys.stdout, indent=2)
+        return 0
+    return _report(a, quiz, result)
+
+
+def _run(a, quiz, log, on_event):
+    from .attack import attack
+    from .sandbox import Runtime, Sandbox
+
+    return attack(
         quiz,
         [i for i in a.items.split(",") if i] or None,
         agents=[x for x in a.agents.split(",") if x],
@@ -93,11 +126,11 @@ def main(argv: list[str] | None = None) -> int:
         sandbox=Runtime(a.runtime_url) if a.target == "runtime" else Sandbox(a.sandbox_url),
         traces_dir=Path(a.traces_dir),
         log=log,
+        on_event=on_event,
     )
-    if a.json:
-        json.dump(result, sys.stdout, indent=2)
-        return 0
 
+
+def _report(a, quiz, result) -> int:
     out = Path(a.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     s = result["summary"]

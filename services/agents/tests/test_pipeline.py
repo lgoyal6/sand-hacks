@@ -158,3 +158,17 @@ def test_per_model_repeat_override(sandbox):
 
     attack(QUIZ, sandbox=sandbox, repeats=2, models=["a:x", "b:y@1"], runners={"browser-use": rec}, log=lambda m: None)
     assert seen == ["a:x", "a:x", "b:y"]
+
+
+def test_cli_events_stream(sandbox, capsys, monkeypatch, tmp_path):
+    """--events: NDJSON agent events on stdout, last line status done with the full result."""
+    from unprompted_agents import cli, runners
+
+    answers = {f"sample-stats-q{i}": a for i, a in enumerate(["b", "b", "1/6", "b", "b"], 1)}
+    monkeypatch.setitem(runners.RUNNERS, "browser-use", scripted_runner(answers))
+    rc = cli.main(["--quiz", str(REPO / "apps/sandbox/quizzes/sample-stats.json"), "--sandbox-url", sandbox.base_url,
+                   "--models", "test:scripted", "--repeats", "1", "--events", "--traces-dir", str(tmp_path)])
+    lines = [json.loads(ln) for ln in capsys.readouterr().out.splitlines() if ln.strip()]
+    assert rc == 0 and all(e["agentId"] == "quiz-checker" and e["ts"] and e["label"] for e in lines)
+    assert [e["status"] for e in lines][-1] == "done" and lines[-1]["result"]["summary"]["accuracy"] == 1.0
+    assert any(e.get("toolCall", {}).get("name") == "attack.run" for e in lines)

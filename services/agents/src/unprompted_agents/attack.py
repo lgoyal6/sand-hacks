@@ -74,11 +74,13 @@ def to_agent_runs(quiz: dict, outcome: RunOutcome, attempts: list[dict], item_id
 
 def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",), models=("gemini:gemini-3.5-flash",),
            repeats: int = 3, sandbox: Sandbox | None = None, traces_dir: Path | None = None, runners=None,
-           log=print) -> dict:
+           log=print, on_event=None) -> dict:
     """Run every agent x model x repeat on `quiz` (optionally only `items`) in fresh browsers.
 
     Returns {"agentRuns": AgentRun[], "solveRates": SolveRate[], "summary": {...}, "runs": [per-run meta]}.
+    on_event(status, label, toolCall=None) gets live progress for the Agents panel (see cli --events).
     """
+    emit = on_event or (lambda *a, **k: None)
     sandbox = sandbox or Sandbox()
     runners = runners or RUNNERS
     if items:
@@ -101,11 +103,15 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
         for spec in models:
             model, _, n = spec.partition("@")
             plan += [(agent, model, rep, int(n) if n else repeats) for rep in range(int(n) if n else repeats)]
-    for agent, model, rep, reps in plan:
+    emit("running", f"Attacking {quiz['title']}: {len(plan)} agent runs on {len(item_ids)} questions")
+    for i, (agent, model, rep, reps) in enumerate(plan, 1):
         if agent not in runners:
             raise ValueError(f"unknown agent {agent!r}; have {sorted(runners)}")
         run_id = f"run-{uuid.uuid4().hex[:10]}"
         log(f"[attack] {agent} / {model} / repeat {rep + 1}/{reps}  run={run_id}")
+        short = model.split("/")[-1].split(":")[-1]
+        emit("running", f"Run {i}/{len(plan)}: {agent} with {short} is taking the quiz",
+             {"name": "attack.run", "args": {"agent": agent, "model": model, "runId": run_id, "repeat": rep + 1}})
         outcome = runners[agent](sandbox, run_id, quiz["title"], model)
         if traces_dir:
             save_trace(outcome, traces_dir)
@@ -113,6 +119,11 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
         log(f"[attack]   status={meta['status']} submitted={meta['submitted']} score={meta['score']} "
             f"steps={meta['steps']} {meta['seconds']}s" + (f" error={meta['error']}" if meta["error"] else ""))
         meta["infraError"] = is_infra_error(meta["error"]) and not meta["submitted"]
+        n_ok = sum(r["correct"] for r in runs)
+        emit("running", f"Run {i}/{len(plan)}: provider error, excluded" if meta["infraError"]
+             else f"Run {i}/{len(plan)}: {short} got {n_ok}/{len(item_ids)} right in {meta['seconds']:.0f}s",
+             {"name": "attack.run", "args": {"runId": run_id}, "result": {"correct": n_ok, "total": len(item_ids),
+              "submitted": meta["submitted"], "providerError": meta["infraError"]}})
         if meta["infraError"]:
             log("[attack]   provider error, run excluded from solve rates")
         else:
