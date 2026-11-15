@@ -143,7 +143,7 @@ export function importQti(zip: Uint8Array, opts: { quizId: string; courseId: str
       const conds = findAll(raw.resprocessing, "respcondition") as any[];
       const scoring = conds.find((c) => Number(text(c.setvar)) >= 100) ?? conds[0];
       const n = items.length + 1;
-      const base = { id: `${opts.quizId}-q${n}`, quizId: opts.quizId, stem, objective: itemTitle !== "Question" ? itemTitle : `Imported from Canvas: ${stem.slice(0, 60)}`, originalItemId: null };
+      const base = { id: `${opts.quizId}-q${n}`, quizId: opts.quizId, stem, objective: itemTitle !== "Question" ? itemTitle : `Imported from Canvas: ${stem.slice(0, 60)}`, objectiveSource: "inferred" as const, originalItemId: null };
       try {
         if (type === "multiple_choice_question" || type === "true_false_question" || type === "multiple_answers_question") {
           const labels = findAll(raw.presentation, "response_label") as any[];

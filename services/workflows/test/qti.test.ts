@@ -50,6 +50,8 @@ describe("Canvas QTI 1.2", () => {
     expect(quiz.items[0]!.choices).toEqual([{ id: "a", text: "0.4" }, { id: "b", text: "2" }, { id: "c", text: "10" }]);
     expect(quiz.items[0]!.objective).toBe("Standard error");
     expect(quiz.items[1]!.objective).toMatch(/^Imported from Canvas: Which increase power/);
+    // Both are guesses (a Canvas title, a stem excerpt), so the professor confirms them before a rewrite.
+    expect(quiz.items.every((i) => i.objectiveSource === "inferred")).toBe(true);
     expect(skipped).toEqual([{ title: "Explain", type: "essay_question", reason: "question type not supported yet" }]);
   });
 

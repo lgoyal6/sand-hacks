@@ -156,7 +156,7 @@ export function canvasToQuiz(
   for (const q of sorted) {
     const title = q.question_name && q.question_name !== "Question" ? q.question_name : "";
     const stem = plain(q.question_text);
-    const base = { id: `${meta.quizId}-q${items.length + 1}`, quizId: meta.quizId, stem, objective: title || `Imported from Canvas: ${stem.slice(0, 60)}`, originalItemId: null };
+    const base = { id: `${meta.quizId}-q${items.length + 1}`, quizId: meta.quizId, stem, objective: title || `Imported from Canvas: ${stem.slice(0, 60)}`, objectiveSource: "inferred" as const, originalItemId: null };
     const answers = q.answers ?? [];
     const letters = answers.map((_, i) => String.fromCharCode(97 + i));
     const choices = answers.map((a, i) => ({ id: letters[i]!, text: plain(a.html || a.text || "") }));

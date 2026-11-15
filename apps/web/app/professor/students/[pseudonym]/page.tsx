@@ -125,6 +125,7 @@ function ProbeView({ p }: { p: NonNullable<AttemptDetail["items"][number]["probe
         <span className="num">confidence {p.confidenceBefore}/7{p.confidenceAfter != null ? ` then ${p.confidenceAfter}/7` : ""}</span>
       </p>
       <blockquote className="border-l-2 border-border pl-3 text-sm whitespace-pre-wrap">{said || <span className="text-muted-foreground">No explanation recorded.</span>}</blockquote>
+      {p.mode === "voice" && <p className="text-xs text-muted-foreground">Transcript only: the audio is deleted once the explanation is transcribed.</p>}
       {p.counterfactualPrompt && (
         <div className="space-y-1">
           <p className="text-xs font-medium">Follow-up: {p.counterfactualPrompt}</p>

@@ -8,6 +8,7 @@ import { CanvasCard } from "./canvas-card";
 import { CourseScanCard } from "./course-scan-card";
 import { replayCookieOn, studioFetch, syncReplayCookie } from "../_lib/replay-client";
 import { AppealPicker } from "./appeal-picker";
+import { ObjectiveConfirm } from "./objective-confirm";
 import { TreeCard } from "./tree-card";
 import type { TreeData } from "../_lib/tree";
 import type { LeakFinding } from "@unprompted/shared";
@@ -47,7 +48,8 @@ type Msg =
   | { id: string; role: "assistant"; agent?: string; kind: "tree" }
   | { id: string; role: "assistant"; agent?: string; kind: "canvas" }
   | { id: string; role: "assistant"; agent?: string; kind: "coursescan" }
-  | { id: string; role: "assistant"; agent?: string; kind: "appeal" };
+  | { id: string; role: "assistant"; agent?: string; kind: "appeal" }
+  | { id: string; role: "assistant"; agent?: string; kind: "objective"; quizId: string; itemId: string; label: string };
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 let seq = 0;
@@ -284,10 +286,15 @@ export function StudioChat({ data }: { data: StudioData }) {
   );
   const writeNewVersion = useCallback(
     (quizId: string, itemId: string, label: string) => {
+      // The objective is confirmed first (imports only guess it); ObjectiveConfirm starts the run.
       push({ id: nid(), role: "user", text: `Write a new version of ${label}` });
-      startRun(`mode=live&quiz=${encodeURIComponent(quizId)}&items=${encodeURIComponent(itemId)}&n=2&attack=0&leaked=1`);
+      push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "objective", quizId, itemId, label });
     },
-    [push, startRun],
+    [push],
+  );
+  const runRewrite = useCallback(
+    (quizId: string, itemId: string) => startRun(`mode=live&quiz=${encodeURIComponent(quizId)}&items=${encodeURIComponent(itemId)}&n=2&attack=0&leaked=1`),
+    [startRun],
   );
 
   // Canvas QTI round trip: import an export zip, export the delivered quiz (approved variants in place).
@@ -489,6 +496,13 @@ export function StudioChat({ data }: { data: StudioData }) {
               <Thinking label="Leak scout is checking the web" />
             </div>
           ) : null}
+        </Message>
+      );
+    }
+    if (m.kind === "objective") {
+      return (
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
+          <ObjectiveConfirm itemId={m.itemId} label={m.label} onConfirmed={() => runRewrite(m.quizId, m.itemId)} />
         </Message>
       );
     }
