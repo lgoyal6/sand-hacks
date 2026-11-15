@@ -26,7 +26,8 @@ def reclassify(out: Path) -> dict:
         for m in metas:
             m["infraReason"] = infra_reason(m["status"], m.get("error"), m["submitted"])
             m["infraError"] = m["infraReason"] is not None
-            m["outcome"] = "submitted" if m["submitted"] else ("infra" if m["infraError"] else "did_not_submit")
+            m["outcome"] = ("submitted" if m["submitted"] else "wrong_quiz" if m.get("wrongQuiz")
+                            else "infra" if m["infraError"] else "did_not_submit")
         bad = {m["runId"] for m in metas if m["outcome"] != "submitted"}
         mine = [r for r in runs if r["quizId"] == quiz_id]
         item_ids = list(dict.fromkeys(r["itemId"] for r in mine))
@@ -40,6 +41,7 @@ def reclassify(out: Path) -> dict:
                 reasons[m["infraReason"]] = reasons.get(m["infraReason"], 0) + 1
         summaries[quiz_id] = {**s, **summary(kept, good), "quizId": quiz_id, "infraErrors": sum(m["infraError"] for m in metas),
                               "didNotSubmit": sum(m["outcome"] == "did_not_submit" for m in metas),
+                              "wrongQuiz": sum(m["outcome"] == "wrong_quiz" for m in metas),
                               "infraReasons": reasons, "excludedByModel": excluded_by_model(metas), "runs": metas}
         report[quiz_id] = {k: summaries[quiz_id][k] for k in ("itemRuns", "itemCorrect", "accuracy", "accuracyCI95", "infraErrors")}
     _dump(out / "agent_runs.json", runs)

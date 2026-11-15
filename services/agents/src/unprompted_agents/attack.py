@@ -49,6 +49,9 @@ def to_agent_runs(quiz: dict, outcome: RunOutcome, attempts: list[dict], item_id
     that counts the first try. If the agent never submitted, the caller drops these AgentRuns (outcome
     "did_not_submit" is reported separately, never as wrong answers); meta.answeredNotSubmitted keeps whatever the
     agent had selected, graded, for diagnosis."""
+    # Only attempts on THIS quiz count. A run that submitted some other quiz is "wrong_quiz", never graded here.
+    wrong = [a for a in attempts if a.get("submittedAt") and a.get("quizId") != quiz["id"]]
+    attempts = [a for a in attempts if a.get("quizId", quiz["id"]) == quiz["id"]]
     submitted = [a for a in attempts if a.get("submittedAt")]
     attempt = submitted[0] if submitted else (attempts[0] if attempts else None)
     by_item = {i["itemId"]: i for i in (attempt["items"] if attempt else [])}
@@ -89,6 +92,7 @@ def to_agent_runs(quiz: dict, outcome: RunOutcome, attempts: list[dict], item_id
         "seconds": round(outcome.seconds, 2),
         "costUsd": outcome.cost_usd,
         "submitted": bool(submitted),
+        "wrongQuiz": sorted({a["quizId"] for a in wrong}) if wrong and not submitted else None,
         "answeredNotSubmitted": pending or None,
         "attemptsStarted": len(attempts),
         "score": (sum(r["correct"] for r in runs) / n) if n else None,
@@ -120,8 +124,9 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
     if not quiz["items"]:
         raise ValueError("no items to attack")
     item_ids = [i["id"] for i in quiz["items"]]
+    sandbox.quiz_id = quiz["id"]
     if sandbox.kind == "runtime":
-        sandbox.quiz_id, sandbox.item_ids = quiz["id"], item_ids
+        sandbox.item_ids = item_ids
     sandbox.register(quiz)
 
     all_runs: list[dict] = []
@@ -150,7 +155,8 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
         meta["infraReason"] = infra_reason(meta["status"], meta["error"], meta["submitted"])
         meta["infraError"] = meta["infraReason"] is not None
         meta["isolated"] = isolated()
-        meta["outcome"] = "submitted" if meta["submitted"] else ("infra" if meta["infraError"] else "did_not_submit")
+        meta["outcome"] = ("submitted" if meta["submitted"] else "wrong_quiz" if meta["wrongQuiz"]
+                           else "infra" if meta["infraError"] else "did_not_submit")
         n_ok = sum(r["correct"] for r in runs)
         emit("running", f"Run {i}/{len(plan)}: excluded ({meta['infraReason']})" if meta["infraError"]
              else f"Run {i}/{len(plan)}: {short} did not submit ({meta['status']}), not scored" if not meta["submitted"]
@@ -159,6 +165,8 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
               "submitted": meta["submitted"], "providerError": meta["infraError"]}})
         if meta["infraError"]:
             log(f"[attack]   excluded from solve rates: {meta['infraReason']}")
+        elif meta["wrongQuiz"]:
+            log(f"[attack]   submitted a different quiz {meta['wrongQuiz']}: not scored")
         elif not meta["submitted"]:
             log(f"[attack]   did not submit ({meta['status']}): not scored; selected={meta['answeredNotSubmitted']}")
         else:
@@ -172,6 +180,7 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
             "quizId": quiz["id"],
             **summary(all_runs, [m for m in metas if m["outcome"] == "submitted"]),
             "didNotSubmit": sum(m["outcome"] == "did_not_submit" for m in metas),
+            "wrongQuiz": sum(m["outcome"] == "wrong_quiz" for m in metas),
             "excludedByModel": excluded_by_model(metas),
             "infraErrors": sum(m["infraError"] for m in metas),
             "infraReasons": {r: sum(m.get("infraReason") == r for m in metas) for r in {m.get("infraReason") for m in metas} if r},
