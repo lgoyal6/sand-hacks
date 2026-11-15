@@ -1,9 +1,10 @@
 // Think-aloud probes (build plan 2.2 step 6, 4.4). Fixture-backed: data/fixtures/probes.json.
 // Timing phases go to Tiger probe_timing, falling back to data/fixtures/probe_timing.jsonl.
 import "server-only";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import path from "node:path";
 import type { Item, Probe } from "@unprompted/shared";
-import { appendJsonl, fixturePath, readJson, updateJson } from "@/lib/db/fixtures";
+import { appendJsonl, DATA_DIR, fixturePath, readJson, updateJson } from "@/lib/db/fixtures";
 import { tiger } from "@/lib/db/tiger";
 import { geminiAvailable, geminiJson } from "./gemini";
 
@@ -80,13 +81,24 @@ export function openingPrompt(item: Item, answer: string | string[] | undefined)
   return `You answered ${describeAnswer(item, answer)}. Walk me through how you got there, as if you were explaining it to a friend.`;
 }
 
+// Gemini is on a shared free tier (~20 requests/model/day), so generations are cached locally
+// (data/sessions/ is gitignored). Exact key: item + answer + explanation. In development, any cached
+// question for the same item + answer is reused unless GEMINI_LIVE=1.
+const CF_CACHE = path.join(DATA_DIR, "sessions", "counterfactual-cache.json");
+type CfCache = Record<string, { prompt: string; model?: string; itemAnswer: string; at: string }>;
+
 // A counterfactual follow-up (4.4): perturb one thing so the answer follows from the same causal model.
 export async function counterfactualFor(item: Item, answer: string | string[] | undefined, explanation: string) {
   const fallback = {
     prompt: "Good. Now suppose one number in the problem changed, say it doubled. What would happen to your answer, and why?",
     source: "template" as const,
   };
-  if (!geminiAvailable()) return fallback;
+  if (!geminiAvailable() || process.env.PROBE_COUNTERFACTUAL === "template") return fallback;
+  const itemAnswer = `${item.id}|${JSON.stringify(answer ?? null)}`;
+  const exactKey = createHash("sha256").update(`${itemAnswer}|${explanation.trim().toLowerCase()}`).digest("hex").slice(0, 24);
+  const cache = await readJson<CfCache>(CF_CACHE, {});
+  const hit = cache[exactKey] ?? (process.env.NODE_ENV !== "production" && process.env.GEMINI_LIVE !== "1" ? Object.values(cache).find((c) => c.itemAnswer === itemAnswer) : undefined);
+  if (hit) return { prompt: hit.prompt, source: "gemini" as const, model: hit.model ? `${hit.model} (cached)` : "cached" };
   const prompt = [
     "You write ONE spoken follow-up question for a short think-aloud check in an intro course.",
     "Goal: test whether the student holds a working model of the problem, not whether they memorized the answer.",
@@ -114,6 +126,7 @@ export async function counterfactualFor(item: Item, answer: string | string[] | 
     });
     const q = out.question?.trim();
     if (!q || q.length > 400) return fallback;
+    await updateJson<CfCache>(CF_CACHE, {}, (c) => ({ ...c, [exactKey]: { prompt: q, model: out._model, itemAnswer, at: new Date().toISOString() } }));
     return { prompt: q, source: "gemini" as const, model: out._model };
   } catch (err) {
     console.error("[probe] counterfactual generation failed, using template:", (err as Error).message);
