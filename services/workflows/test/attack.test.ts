@@ -21,7 +21,25 @@ describe("variant re-attack evidence", () => {
       ["v1"],
     );
     expect(res.solveRates).toEqual([{ itemId: "v1", runs: 1, correct: 0, solveRate: 0, agentSolvable: false }]);
-    expect(res.excluded).toEqual({ unsubmitted: 1, providerErrors: 1, total: 3 });
+    expect(res.excluded).toEqual({ unsubmitted: 1, providerErrors: 1, unisolated: 0, total: 3 });
+  });
+
+  it("never counts a run that ran outside the sandbox", () => {
+    const res = validSolveRates(
+      {
+        runs: [
+          { runId: "A", outcome: "submitted", submitted: true, isolated: false },
+          { runId: "B", outcome: "submitted", submitted: true, isolated: true },
+        ],
+        agentRuns: [
+          { id: "A:v1", itemId: "v1", correct: true },
+          { id: "B:v1", itemId: "v1", correct: false },
+        ],
+      },
+      ["v1"],
+    );
+    expect(res.solveRates[0]).toMatchObject({ runs: 1, correct: 0 });
+    expect(res.excluded?.unisolated).toBe(1);
   });
 
   it("Wilson interval matches known values", () => {

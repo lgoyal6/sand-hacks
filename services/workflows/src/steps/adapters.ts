@@ -203,12 +203,14 @@ export class CliAttacker implements Attacker {
   ) {}
 
   attack(quiz: Quiz, itemIds: string[]): Promise<AttackResult> {
-    const args = ["run", "--directory", path.join(this.opts.repoRoot, "services/agents"), "attack", "--quiz", "-", "--json"];
-    args.push("--items", itemIds.join(","), "--repeats", String(this.opts.repeats ?? 3));
+    // Always through A's sandbox (macOS sandbox-exec): the browser agent runs model-written Python,
+    // so it must not be able to read .env files, worktrees, quizzes/fixtures (answer keys) or run ps.
+    const runner = path.join(this.opts.repoRoot, "services/agents/isolation/run.sh");
+    const args = ["-", "--json", "--items", itemIds.join(","), "--repeats", String(this.opts.repeats ?? 3)];
     if (this.opts.models) args.push("--models", this.opts.models);
     if (this.opts.agents) args.push("--agents", this.opts.agents);
     return new Promise((resolve, reject) => {
-      const child = spawn("uv", args, { stdio: ["pipe", "pipe", "pipe"] });
+      const child = spawn(runner, args, { cwd: this.opts.repoRoot, stdio: ["pipe", "pipe", "pipe"] });
       let out = "";
       let err = "";
       const timer = setTimeout(() => {
@@ -240,7 +242,7 @@ export class CliAttacker implements Attacker {
 
 interface AttackJson {
   agentRuns: { id: string; itemId: string; correct: boolean }[];
-  runs?: { runId: string; submitted?: boolean; infraError?: boolean }[];
+  runs?: { runId: string; outcome?: "submitted" | "did_not_submit" | "infra"; submitted?: boolean; infraError?: boolean; isolated?: boolean }[];
   solveRates?: SolveRate[];
 }
 
@@ -253,9 +255,14 @@ interface AttackJson {
 export function validSolveRates(res: AttackJson, itemIds: string[]): AttackResult {
   const runs = res.runs ?? [];
   if (!runs.length) return { solveRates: res.solveRates ?? [] }; // older runner output: nothing to filter on
-  const valid = new Set(runs.filter((r) => r.submitted && !r.infraError).map((r) => r.runId));
-  const unsubmitted = runs.filter((r) => !r.infraError && !r.submitted).length;
-  const providerErrors = runs.filter((r) => r.infraError).length;
+  const infra = (r: (typeof runs)[number]) => r.outcome === "infra" || r.infraError === true;
+  const submitted = (r: (typeof runs)[number]) => (r.outcome ? r.outcome === "submitted" : r.submitted === true);
+  // A run outside the sandbox could have read answer keys from disk: never evidence.
+  const isolated = (r: (typeof runs)[number]) => r.isolated !== false;
+  const valid = new Set(runs.filter((r) => submitted(r) && !infra(r) && isolated(r)).map((r) => r.runId));
+  const unsubmitted = runs.filter((r) => !infra(r) && !submitted(r)).length;
+  const providerErrors = runs.filter(infra).length;
+  const unisolated = runs.filter((r) => !isolated(r)).length;
   const by = new Map<string, { runs: number; correct: number }>(itemIds.map((id) => [id, { runs: 0, correct: 0 }]));
   for (const ar of res.agentRuns) {
     const runId = ar.id.split(":")[0]!;
@@ -265,5 +272,5 @@ export function validSolveRates(res: AttackJson, itemIds: string[]): AttackResul
     if (ar.correct) b.correct += 1;
   }
   const solveRates = [...by].map(([itemId, b]) => ({ itemId, runs: b.runs, correct: b.correct, solveRate: b.runs ? b.correct / b.runs : 0, agentSolvable: b.runs > 0 && b.correct / b.runs >= 0.6 }));
-  return { solveRates, excluded: { unsubmitted, providerErrors, total: runs.length } };
+  return { solveRates, excluded: { unsubmitted, providerErrors, unisolated, total: runs.length } };
 }

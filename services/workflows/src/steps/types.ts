@@ -47,7 +47,7 @@ export interface AttackResult {
   /** Solve rates over VALID runs only: the agent submitted, and no provider error. */
   solveRates: SolveRate[];
   /** Runs left out, so nobody mistakes "didn't finish" or "provider failed" for "couldn't solve". */
-  excluded?: { unsubmitted: number; providerErrors: number; total: number };
+  excluded?: { unsubmitted: number; providerErrors: number; unisolated?: number; total: number };
 }
 
 export interface TransformDeps {
