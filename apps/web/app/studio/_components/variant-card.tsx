@@ -3,18 +3,18 @@
 // Static status marks only: the Agents panel is the one place that animates.
 import { useState } from "react";
 import { Check, ChevronRight, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { PillButton } from "@/components/ui/chat";
 import { cn } from "@/lib/utils";
 import { strategyLabel, type CardStatus, type VariantCard as Card } from "../_lib/agents";
 
-const STATUS: Record<CardStatus, { label: string; dot: string; text: string }> = {
-  generating: { label: "Writing", dot: "bg-muted-foreground/40", text: "text-muted-foreground" },
-  checking: { label: "Checking", dot: "bg-brand", text: "text-brand" },
-  "re-attacking": { label: "Re-testing with agents", dot: "bg-brand", text: "text-brand" },
-  verified: { label: "Verified · needs your approval", dot: "bg-verified", text: "text-verified" },
-  approved: { label: "Approved", dot: "bg-verified", text: "text-verified" },
-  rejected: { label: "Rejected", dot: "bg-rejected", text: "text-rejected" },
-  unverified: { label: "Not verified", dot: "bg-muted-foreground/40", text: "text-muted-foreground" },
+const STATUS: Record<CardStatus, { label: string; dot: string; pill: string }> = {
+  generating: { label: "Writing", dot: "bg-muted-foreground/40", pill: "bg-muted text-muted-foreground" },
+  checking: { label: "Checking", dot: "bg-brand", pill: "bg-brand-soft text-brand" },
+  "re-attacking": { label: "Re-testing with agents", dot: "bg-brand", pill: "bg-brand-soft text-brand" },
+  verified: { label: "Verified · needs your approval", dot: "bg-verified", pill: "bg-verified-soft text-verified" },
+  approved: { label: "Approved", dot: "bg-verified", pill: "bg-verified-soft text-verified" },
+  rejected: { label: "Rejected", dot: "bg-rejected", pill: "bg-rejected-soft text-rejected" },
+  unverified: { label: "Not verified", dot: "bg-muted-foreground/40", pill: "bg-muted text-muted-foreground" },
 };
 
 function questionLabel(itemId: string) {
@@ -42,16 +42,15 @@ export function VariantCard({ card, onApprove }: { card: Card; onApprove?: (id: 
             </span>
             <span className="text-muted-foreground"> · {strategyLabel(card.strategy)}</span>
           </p>
-          <p className={cn("mt-0.5 text-xs font-medium", s.text)}>
-            {s.label}
+          <p className="mt-1 text-xs">
+            <span className={cn("rounded-full px-2 py-0.5 font-medium", s.pill)}>{s.label}</span>
             {newRate != null ? <span className="num font-normal text-muted-foreground"> · agents solved {Math.round(newRate * 100)}%</span> : null}
           </p>
           {card.reason ? <p className="mt-1 text-[13px] leading-snug text-muted-foreground">{card.reason}</p> : null}
         </div>
         {decidable ? (
-          <Button
-            size="sm"
-            variant={card.status === "approved" ? "outline" : "default"}
+          <PillButton
+            variant={card.status === "approved" ? "secondary" : "primary"}
             disabled={busy || !onApprove}
             onClick={async () => {
               setBusy(true);
@@ -63,7 +62,7 @@ export function VariantCard({ card, onApprove }: { card: Card; onApprove?: (id: 
             }}
           >
             {card.status === "approved" ? "Undo" : "Approve"}
-          </Button>
+          </PillButton>
         ) : null}
       </div>
 

@@ -3,8 +3,8 @@
 // plain requests to actions (attack results, rewrite, replay, import), so it spends no quota.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileUp, History, PlayCircle, Target, Wand2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ChatLayout, Chip, Composer, Message, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
+import { ChatLayout, Chip, Composer, Message, PillButton, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
+import { APP_LINKS } from "@/components/ui/app-shell";
 import type { StudioData } from "../_lib/data";
 import {
   AGENT_ORDER,
@@ -144,7 +144,7 @@ export function StudioChat({ data }: { data: StudioData }) {
       if (/attack|agents? (solve|do)|solve rate|how did/i.test(t)) return showAttack();
       push({ id: nid(), role: "user", text: t });
       if (/replay|recorded/i.test(t)) return replay();
-      if (/saved|past|previous/i.test(t) && data.experiments.length) return push({ id: nid(), role: "assistant", kind: "saved" });
+      if (/saved|past|previous/i.test(t) && data.experiments.length) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "saved" });
       const qs = [...t.matchAll(/\bq(\d+)\b/gi)].map((m) => `${quiz?.id}-q${m[1]}`).filter((id) => quiz?.items.some((i) => i.id === id));
       if (/rewrite|transform|variant|fix|harden/i.test(t)) return offerRewrite(qs.length ? qs : solvable.map((s) => s.itemId));
       say("I can show how agents did on this quiz, rewrite the questions they answer, replay a recorded rewrite, or import a quiz you paste in Markdown.", {
@@ -187,12 +187,13 @@ export function StudioChat({ data }: { data: StudioData }) {
 
   const sidebar = {
     groups: [{ label: "Quizzes", items: [{ id: quiz?.id ?? "none", title, meta: quiz ? `${quiz.items.length} questions` : undefined, href: "/studio" }] }],
+    links: APP_LINKS,
     user: { name: "Professor", detail: title },
   };
   const composer = <Composer textareaId="studio-composer" submitId="studio-send" placeholder="Ask the agents, or paste a quiz in Markdown" onSubmit={handle} />;
   const sourceNote =
     data.quizSource === "neon" && data.solveRatesMeasured
-      ? `Quiz from Neon. Agent results are from ${data.attack?.itemRuns ?? 0} real answer attempts.`
+      ? `Agent results: ${data.attack?.itemRuns ?? 0} real answers.`
       : "Some of this view uses sample data.";
 
   if (!quiz) {
@@ -217,6 +218,14 @@ export function StudioChat({ data }: { data: StudioData }) {
     );
   }
 
+  // Show an agent's name only when the speaker changes (D's thread convention).
+  const speakers = msgs.map((m) => (m.role === "user" ? "__user" : (m.agent ?? "")));
+  const nameFor = (m: Msg) => {
+    if (m.role === "user" || !m.agent) return undefined;
+    const i = msgs.indexOf(m);
+    return i > 0 && speakers[i - 1] === m.agent ? undefined : m.agent;
+  };
+
   function renderMsg(m: Msg) {
     if (m.role === "user") {
       return (
@@ -227,7 +236,7 @@ export function StudioChat({ data }: { data: StudioData }) {
     }
     if (m.kind === "text") {
       return (
-        <Message key={m.id} role="assistant" agentName={m.agent} copyText={m.text}>
+        <Message key={m.id} role="assistant" agentName={nameFor(m)} copyText={m.text}>
           <p>{m.text}</p>
           {m.actions ? <Actions actions={m.actions} /> : null}
         </Message>
@@ -235,14 +244,14 @@ export function StudioChat({ data }: { data: StudioData }) {
     }
     if (m.kind === "attack") {
       return (
-        <Message key={m.id} role="assistant" agentName={m.agent}>
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
           <AttackSummary data={data} />
         </Message>
       );
     }
     if (m.kind === "saved") {
       return (
-        <Message key={m.id} role="assistant" agentName="Rewriter">
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
           <p>Saved variants for this quiz:</p>
           <div className="mt-3 space-y-2">
             {cardsFromExperiments(data.experiments).map((c) => (
@@ -255,7 +264,7 @@ export function StudioChat({ data }: { data: StudioData }) {
     if (m.kind === "run") {
       const r = runs[m.runId];
       return r ? (
-        <Message key={m.id} role="assistant" agentName={m.agent}>
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
           <RunResult run={r} withApproval={withApproval} onApprove={approve} />
         </Message>
       ) : null;
@@ -307,9 +316,9 @@ function Actions({ actions }: { actions: Action[] }) {
   return (
     <div className="mt-3 flex flex-wrap gap-2">
       {actions.map((a) => (
-        <Button key={a.label} size="sm" variant={a.primary ? "default" : "outline"} onClick={a.run} className="rounded-full">
+        <PillButton key={a.label} variant={a.primary ? "primary" : "secondary"} onClick={a.run}>
           {a.label}
-        </Button>
+        </PillButton>
       ))}
     </div>
   );
@@ -325,7 +334,7 @@ function AttackSummary({ data }: { data: StudioData }) {
       {a ? (
         <p>
           A browser agent took the quiz {perQ} time{perQ === 1 ? "" : "s"} and got{" "}
-          <span className="num font-medium">
+          <span className="font-medium">
             {a.itemCorrect} of {a.itemRuns}
           </span>{" "}
           answers right ({pct(a.accuracy)}).
