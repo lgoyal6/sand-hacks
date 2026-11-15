@@ -3,7 +3,7 @@ import { XMLValidator } from "fast-xml-parser";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import { parseMarkdownQuiz } from "../src/ingest/markdown.js";
-import { exportQti, importQti, numericKey, type QtiItem } from "../src/qti/index.js";
+import { exportCommonCartridge, exportQti, importQti, numericKey, type QtiItem } from "../src/qti/index.js";
 
 const md = await readFile(new URL("../../../data/quizzes/sample-stats.md", import.meta.url), "utf8");
 
@@ -96,6 +96,81 @@ describe("Canvas QTI 1.2", () => {
     ]);
     expect(back.items[0]!.stem).toBe(quiz.items[0]!.stem);
     expect(back.items[0]!.choices).toEqual(quiz.items[0]!.choices);
+  });
+
+  it("round-trips through a Common Cartridge .imscc shaped like a Canvas course export", () => {
+    const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c" });
+    const png = "data:image/png;base64," + Buffer.from([0x89, 0x50, 0x4e, 0x47]).toString("base64");
+    const items: QtiItem[] = [
+      ...quiz.items,
+      { id: "sample-stats-q6", quizId: "sample-stats", stem: "Which are measures of spread?", type: "multi", choices: [{ id: "a", text: "SD" }, { id: "b", text: "Mean" }, { id: "c", text: "IQR" }], answerKey: ["a", "c"], objective: "spread", originalItemId: null },
+      { id: "sample-stats-q7", quizId: "sample-stats", stem: "Using the table in the figure, what is n?", type: "numeric", answerKey: "36", objective: "read n", originalItemId: null, figure: { src: png, alt: "Figure for this question" } },
+    ];
+    const { zip, exported, skipped } = exportCommonCartridge({ id: "sample-stats", title: "Intro Statistics & more", items });
+    expect(skipped).toEqual([]);
+    expect(exported).toHaveLength(7);
+
+    const files = unzipSync(zip);
+    const names = Object.keys(files);
+    const aid = names.find((n) => n.endsWith("/assessment_qti.xml"))!.split("/")[0]!;
+    expect(names).toEqual(expect.arrayContaining(["imsmanifest.xml", `${aid}/assessment_qti.xml`, `${aid}/assessment_meta.xml`, `non_cc_assessments/${aid}.xml.qti`, "course_settings/course_settings.xml", "course_settings/canvas_export.txt"]));
+    for (const n of names.filter((x) => /\.(xml|qti)$/.test(x))) expect(XMLValidator.validate(strFromU8(files[n]!))).toBe(true);
+
+    const manifest = strFromU8(files["imsmanifest.xml"]!);
+    expect(manifest).toContain("<schema>IMS Common Cartridge</schema><schemaversion>1.1.0</schemaversion>");
+    expect(manifest).toContain(`<resource identifier="${aid}" type="imsqti_xmlv1p2/imscc_xmlv1p1/assessment"><file href="${aid}/assessment_qti.xml"/>`);
+    expect(manifest).toContain(`<file href="non_cc_assessments/${aid}.xml.qti"/>`);
+    expect(manifest).toMatch(/href="web_resources\/Uploaded Media\/figure-[0-9a-f]{8}\.png"/);
+    // Importing must never rename the professor's course.
+    expect(strFromU8(files["course_settings/course_settings.xml"]!)).not.toContain("<title>");
+
+    const cc = strFromU8(files[`${aid}/assessment_qti.xml`]!);
+    for (const profile of ["cc.exam.v0p1", "cc.multiple_choice.v0p1", "cc.multiple_response.v0p1", "cc.fib.v0p1"]) expect(cc).toContain(profile);
+    expect(cc).not.toContain("question_type");
+    const canvas = strFromU8(files[`non_cc_assessments/${aid}.xml.qti`]!);
+    expect(canvas).toContain("numerical_question");
+    expect(canvas).toContain('<vargte respident="response1">0.1662</vargte><varlte respident="response1">0.1672</varlte>');
+    expect(canvas).toContain("$IMS-CC-FILEBASE$/Uploaded%20Media/figure-");
+
+    // Canvas ships a question bank beside the quiz; every quiz item points at its bank copy.
+    const bankFile = names.find((n) => n.startsWith("non_cc_assessments/") && n !== `non_cc_assessments/${aid}.xml.qti`)!;
+    const bank = strFromU8(files[bankFile]!);
+    expect(bank).toContain("<objectbank ident=");
+    const refs = [...canvas.matchAll(/assessment_question_identifierref<\/fieldlabel><fieldentry>(g[0-9a-f]+)/g)].map((m) => m[1]);
+    expect(refs).toHaveLength(7);
+    expect([...bank.matchAll(/<item ident="(g[0-9a-f]+)"/g)].map((m) => m[1])).toEqual(refs);
+    expect(manifest).toContain(`href="${bankFile}"`);
+    // The quiz is graded: an assignment in a group that course_settings/assignment_groups.xml defines.
+    const meta = strFromU8(files[`${aid}/assessment_meta.xml`]!);
+    const group = strFromU8(files["course_settings/assignment_groups.xml"]!).match(/assignmentGroup identifier="(g[0-9a-f]+)"/)![1]!;
+    expect(meta).toContain(`<quiz_identifierref>${aid}</quiz_identifierref>`);
+    expect(meta).toContain("<submission_types>online_quiz</submission_types>");
+    expect(meta.split(group).length - 1).toBe(2);
+    for (const f of ["files_meta.xml", "context.xml", "media_tracks.xml", "assignment_groups.xml"]) expect(manifest).toContain(`href="course_settings/${f}"`);
+
+    const expected = [
+      ["mcq", "b"],
+      ["mcq", "b"],
+      ["numeric", "0.1667"],
+      ["mcq", "b"],
+      ["mcq", "b"],
+      ["multi", ["a", "c"]],
+      ["numeric", "36"],
+    ];
+    // Canvas's Classic copy wins when present: no duplicates from the CC copy or the question bank.
+    const back = importQti(zip, { quizId: "sample-stats", courseId: "c" }).quiz;
+    expect(back.title).toBe("Intro Statistics & more");
+    expect(back.items.map((i) => [i.type, i.answerKey])).toEqual(expected);
+    expect(back.items[0]!.choices).toEqual(quiz.items[0]!.choices);
+
+    // A plain CC package from another LMS (no non_cc_assessments) imports from the CC profile alone.
+    const ccOnly = Object.fromEntries(Object.entries(files).filter(([n]) => !n.startsWith("non_cc_assessments/")));
+    const fromCc = importQti(zipSync(ccOnly), { quizId: "sample-stats", courseId: "c" });
+    expect(fromCc.skipped).toEqual([]);
+    expect(fromCc.quiz.items.map((i) => [i.type, i.answerKey])).toEqual(expected);
+    // A bank-only non_cc folder (quiz copy missing) still falls back to the CC profile.
+    const { [`non_cc_assessments/${aid}.xml.qti`]: _quizCopy, ...bankOnly } = files;
+    expect(importQti(zipSync(bankOnly), { quizId: "sample-stats", courseId: "c" }).quiz.items).toHaveLength(7);
   });
 
   it("numeric keys become Canvas decimals with honest margins", () => {
