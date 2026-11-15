@@ -72,6 +72,7 @@ API keys go in a repo-root `.env.local` (template: `.env.example`, never commit)
 - **Deploy target:** Vultr only, with a GoDaddy domain. Never deploy to Vercel, Netlify or any other host, and never connect the repo to one.
 - **Models: Gemini only.** Every LLM call uses a Google Gemini model, either via the direct key (GEMINI_API_KEY) or via GMI (GMI_BASE_URL, `google/gemini-*` models only, no other families). Judge panels use 3 different Gemini models and are labelled "three Gemini models".
 - **Agents look like siblings:** every Mastra agent (Tutor, Explain coach, Researcher, Quiz checker, Rewriter, Judge panel, Leak scout, Supervisor) is drawn with one parameterized `<AgentAvatar agent=... state=...>` (owner D): same family, distinct hue, pattern and motion per agent. Agent events use one shared shape from `packages/shared`.
+- **No emojis** anywhere in the repo: code, UI copy, docs or commit messages. Use lucide icons for check, cross and similar marks.
 - **Question content and licensing:** OpenStax Introductory Statistics 2e is CC BY-NC-SA 4.0 and forbids feeding it to LLMs or generative AI. Never send OpenStax text to Gemini, GMI or browser agents (no transforms, attacks, embeddings or probes). Quizzes that touch an LLM must be our own writing (`data/quizzes/*.md`). OpenStax stems may be used only as exact-phrase search strings in the leak scan, with attribution.
 
 ## IDs (decided)
