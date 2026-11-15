@@ -17,6 +17,7 @@ export interface AttackSummary {
   attempts: number;
   attemptsCompleted: number;
   infraErrors: number;
+  infraReasons?: Record<string, number>;
   byAgentModel: Record<string, { itemRuns: number; accuracy: number }>;
   runs: { runId: string; agent: string; model: string; seconds: number; steps: number; score: number | null; answerChanges?: Record<string, number> }[];
 }
