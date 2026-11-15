@@ -11,15 +11,22 @@ import { sessionFor } from "@/lib/agents/session";
 const MASTRA_URL = (process.env.MASTRA_URL?.trim() || "http://localhost:3102").replace(/\/$/, "");
 
 /** Agents the browser may talk to directly. Others (judge panel, rewriter) run inside workflows. */
-const AGENTS: Record<string, { id: string; name: string }> = {
+const AGENTS: Record<string, { id: string; name: string; practiceOnly?: boolean; maxSteps?: number }> = {
   tutor: { id: "tutor", name: "Tutor" },
+  // Web research can't be a way to look up answers mid-quiz: refused in graded mode, before any model call.
+  researcher: { id: "researcher", name: "Researcher", practiceOnly: true, maxSteps: 6 },
 };
 
 const TOOL_LABEL: Record<string, string> = {
   startQuiz: "Loading the quiz",
   checkAnswer: "Checking the answer",
   explainResult: "Looking up what the question tests",
+  brightdata_search_engine: "Searching the web (Bright Data)",
+  brightdata_scrape_as_markdown: "Reading a source (Bright Data)",
 };
+
+const URL_RE = /https?:\/\/[^\s"'<>)\]]+/g;
+const normUrl = (u: string) => u.replace(/[.,;:]+$/, "").replace(/\/$/, "").replace(/^http:/, "https:").replace("://www.", "://");
 
 export async function POST(req: Request, ctx: { params: Promise<{ agent: string }> }) {
   const { agent } = await ctx.params;
@@ -31,6 +38,19 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
   if (input.length > 4000) return Response.json({ error: "input is too long" }, { status: 413 });
 
   const session = await sessionFor(body.attemptId);
+  if (spec.practiceOnly && session.mode !== "practice") {
+    const now = new Date().toISOString();
+    const text = "Research is available in practice mode and after your quiz. Ask me again then.";
+    return new Response(
+      [
+        { agentId: spec.id, status: "done", label: "Not available during a graded quiz", ts: now },
+        { type: "message", agent: spec.id, text, servedBy: "policy" },
+      ]
+        .map((o) => JSON.stringify(o))
+        .join("\n") + "\n",
+      { headers: { "Content-Type": "application/x-ndjson" } },
+    );
+  }
   const history = (body.history ?? [])
     .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
     .slice(-20)
@@ -44,7 +64,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
       body: JSON.stringify({
         messages: [...history, { role: "user", content: input }],
         requestContext: { mode: session.mode, quizId: session.quizId, attemptId: body.attemptId },
-        maxSteps: 6,
+        maxSteps: spec.maxSteps ?? 6,
       }),
       signal: req.signal,
     });
@@ -68,6 +88,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
       send(ev("thinking", session.mode === "graded" ? "Reading your message (graded quiz)" : "Reading your message"));
       let text = "";
       let servedBy: string | undefined;
+      const seenUrls = new Set<string>(); // every URL that appeared in a tool result (search or page)
       const calls = new Map<string, { name: string; args: unknown }>();
       const dec = new TextDecoder();
       let buf = "";
@@ -91,6 +112,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
             } else if (c.type === "tool-result") {
               const call = calls.get(String(p.toolCallId));
               const name = call?.name ?? String(p.toolName);
+              for (const u of JSON.stringify(p.result ?? "").match(URL_RE) ?? []) seenUrls.add(normUrl(u));
               send(ev("running", `${TOOL_LABEL[name] ?? name}: done`, { name, args: call?.args as Record<string, unknown>, result: p.result }));
             } else if (c.type === "text-delta" && typeof p.text === "string") {
               text += p.text;
@@ -101,7 +123,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ agent: string 
           }
         }
         if (servedBy) console.log(`[agents] ${spec.id} turn served by ${servedBy} (mode ${session.mode}, session from ${session.source})`);
-        send({ type: "message", agent: spec.id, text, servedBy });
+        // Citation check: a cited URL must have appeared in this turn's tool results.
+        const cited = [...new Set((text.match(URL_RE) ?? []).map(normUrl))];
+        const sources = cited.map((url) => ({ url, verified: seenUrls.has(url) || [...seenUrls].some((s) => s.startsWith(url) || url.startsWith(s)) }));
+        if (sources.some((s) => !s.verified)) console.warn(`[agents] ${spec.id} cited unverified URLs:`, sources.filter((s) => !s.verified).map((s) => s.url));
+        send({ type: "message", agent: spec.id, text, servedBy, ...(sources.length ? { sources } : {}) });
         send(ev("done", text ? "Replied" : "No reply"));
       } catch (e) {
         send({ type: "error", agent: spec.id, message: (e as Error).name === "AbortError" ? "Cancelled." : "Lost the connection to the agent." });

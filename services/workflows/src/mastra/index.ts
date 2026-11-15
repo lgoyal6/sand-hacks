@@ -17,6 +17,7 @@ import { runTransform } from "../runner.js";
 import { applyApprovals, baselineSolveRates, DEFAULT_ATTACK_MODEL, loadExperiments, selectTargets, type TransformTarget } from "../steps/index.js";
 import { envVal } from "../steps/llm.js";
 import { tutor } from "../agents/tutor.js";
+import { researcher } from "../agents/researcher.js";
 
 // ---- live dependencies: built lazily from env, or injected (tests) ----
 let ctxPromise: Promise<TransformContext> | null = null;
@@ -154,6 +155,6 @@ function storage() {
 const store = storage();
 export const mastra = new Mastra({
   workflows: { transform: transformWorkflow },
-  agents: { tutor },
+  agents: { tutor, researcher },
   ...(store ? { storage: store } : {}),
 });

@@ -18,17 +18,28 @@ const resultValue = (p: Part) => {
 };
 
 export function flattenToolHistory(prompt: Msg[]): Msg[] {
+  // Past tool calls are NOT rendered as assistant speech: models imitate that and start "calling"
+  // tools in plain text. Instead each call+result becomes a reference note from the system side,
+  // and the assistant message keeps only the text it actually said.
   const out: Msg[] = [];
+  const pending = new Map<string, { name?: string; args: unknown }>();
   for (const m of prompt) {
     if (m.role === "assistant" && Array.isArray(m.content) && m.content.some((p) => p.type === "tool-call")) {
-      const text = m.content
-        .map((p) => (p.type === "tool-call" ? `[I called the ${p.toolName} tool with ${json(p.input ?? p.args ?? {})}]` : p.type === "text" ? (p.text ?? "") : ""))
-        .filter(Boolean)
+      for (const p of m.content) if (p.type === "tool-call") pending.set(p.toolCallId ?? "", { name: p.toolName, args: p.input ?? p.args ?? {} });
+      const said = m.content
+        .filter((p) => p.type === "text" && p.text?.trim())
+        .map((p) => p.text)
         .join("\n");
-      out.push({ role: "assistant", content: [{ type: "text", text }] });
+      if (said) out.push({ role: "assistant", content: [{ type: "text", text: said }] });
     } else if (m.role === "tool" && Array.isArray(m.content)) {
-      const text = m.content.map((p) => `Result of the ${p.toolName} tool: ${json(resultValue(p))}`).join("\n");
-      out.push({ role: "user", content: [{ type: "text", text: `(tool output, not from the student)\n${text}` }] });
+      const notes = m.content.map((p) => {
+        const call = pending.get(p.toolCallId ?? "");
+        return `- ${p.toolName ?? call?.name} ${json(call?.args ?? {})} returned: ${json(resultValue(p))}`;
+      });
+      out.push({
+        role: "user",
+        content: [{ type: "text", text: `[Reference: results of tools you already ran. Use real tool calls for anything else you need.]\n${notes.join("\n")}` }],
+      });
     } else {
       out.push(m);
     }
@@ -42,5 +53,17 @@ export class FlattenToolHistory implements Processor {
     // Only for GMI-routed models; the native Gemini provider round-trips signatures itself.
     const viaGmi = String(model?.provider ?? "").startsWith("gmi");
     return viaGmi ? { prompt: flattenToolHistory(prompt as Msg[]) as never } : {};
+  }
+}
+
+/**
+ * Make sure an agent answers before it runs out of steps: from `answerFrom` on, tools are still
+ * described but the model may not call them, so the last step is always a reply.
+ */
+export class AnswerBeforeLimit implements Processor {
+  readonly id = "answer-before-limit";
+  constructor(private answerFrom = 4) {}
+  processInputStep({ stepNumber }: { stepNumber: number }) {
+    return stepNumber >= this.answerFrom ? { toolChoice: "none" as const } : {};
   }
 }

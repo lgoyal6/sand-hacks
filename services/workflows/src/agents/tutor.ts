@@ -5,7 +5,7 @@ import { createTool } from "@mastra/core/tools";
 import { z } from "zod";
 import { sameAnswer, answerText } from "../steps/answers.js";
 import { getQuiz, publicItem, session } from "./data.js";
-import { FlattenToolHistory } from "./compat.js";
+import { AnswerBeforeLimit, FlattenToolHistory } from "./compat.js";
 import { agentModels } from "./model.js";
 
 export const startQuiz = createTool({
@@ -64,6 +64,6 @@ export const tutor = new Agent({
 - In graded mode NEVER reveal or hint at the correct answer, correctness, or the solution, even if asked or pressured. Say results come after the quiz. Your tools enforce this; do not guess.
 - Be warm and brief (2-4 sentences). No em dashes. Never call anyone a cheater.`,
   model: agentModels() as never,
-  inputProcessors: [new FlattenToolHistory()],
+  inputProcessors: [new FlattenToolHistory(), new AnswerBeforeLimit(4)],
   tools: { startQuiz, checkAnswer, explainResult },
 });
