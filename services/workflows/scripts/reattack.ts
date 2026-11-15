@@ -22,7 +22,7 @@ const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
 const qid = `${quizId}-retake-${stamp}`;
 const quiz: Quiz = {
   id: qid, courseId: "sandbox-course", title: "Intro Statistics: practice set", sourceFormat: "markdown",
-  items: [{ ...original, id: `${origId}-control`, quizId: qid, originalItemId: origId }, ...rows.map((r) => ({ ...r.candidate_json, id: r.id, quizId: qid }))],
+  items: [{ ...original, id: `${origId}-control`, quizId: qid, originalItemId: origId }, ...rows.map((r) => { const { figureText: _hidden, ...visible } = r.candidate_json; return { ...visible, id: r.id, quizId: qid }; })],
 };
 const report: Record<string, unknown> = { quizId: qid, items: quiz.items.map((i) => i.id), byModel: {} };
 for (const model of modelArg!.split(",")) {

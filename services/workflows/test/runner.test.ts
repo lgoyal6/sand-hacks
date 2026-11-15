@@ -178,6 +178,22 @@ describe("transform runner (fake models, PGlite branches)", () => {
     await store.close();
   }, 60_000);
 
+  it("delivered_item serves a professor-APPROVED variant in its original's slot, never a merely verified one", async () => {
+    const store = await PGliteBranchStore.create(await loadSchema());
+    const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
+    const main = (await store.main()).db;
+    await saveQuiz(main, quiz);
+    const deps = { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker };
+    await runTransform(store, quiz, [{ item: quiz.items[1]!, solveRate: 1 }], deps, { candidatesPerItem: 1, strategies: ["isomorphic"] });
+    const slot2 = async () => (await main.query<{ item_id: string; is_variant: boolean }>("select item_id, is_variant from delivered_item where quiz_id = 'sample-stats' and slot = 2")).rows[0];
+    expect(await slot2()).toEqual({ item_id: "sample-stats-q2", is_variant: false }); // verified only
+    expect(await applyApprovals(main, [{ id: "sample-stats-q2-v1", approve: true }])).toEqual(["sample-stats-q2-v1"]);
+    expect(await slot2()).toEqual({ item_id: "sample-stats-q2-v1", is_variant: true });
+    const all = (await main.query<{ slot: number }>("select slot from delivered_item where quiz_id = 'sample-stats' order by slot")).rows.map((r) => r.slot);
+    expect(all).toEqual([1, 2, 3, 4, 5]);
+    await store.close();
+  }, 60_000);
+
   it("decide() applies both halves of the survival rule", () => {
     const r = (correct: number, runs = 10): SolveRate => ({ itemId: "x", runs, correct, solveRate: correct / runs, agentSolvable: false });
     expect(decide(1, r(3)).survives).toBe(true);

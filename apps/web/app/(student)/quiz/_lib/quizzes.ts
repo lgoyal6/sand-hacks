@@ -1,11 +1,13 @@
 // Quiz loading and grading. Server only: answer keys never leave this module.
-// Sources, in order: B's canonical ingest output data/fixtures/quiz-<id>.json (ids like stats-q1-i1),
-// then a raw data/quizzes/<id>.md. Later: Neon `item` rows (owner B).
+// The DELIVERED quiz comes from Neon main: for each original item (ordered by q<n>), the latest
+// professor-approved variant replaces it in that slot, else the original is served. Fixture JSON, then
+// Markdown, are the fallback only when Neon is unreachable or doesn't have the quiz.
 import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { Item, ItemType, Quiz } from "@unprompted/shared";
 import { DATA_DIR, fixturePath, readJson } from "@/lib/db/fixtures";
+import { neon } from "@/lib/db/neon";
 
 export type PublicItem = Omit<Item, "answerKey">;
 export type PublicQuiz = Omit<Quiz, "items"> & { items: PublicItem[] };
@@ -51,8 +53,65 @@ export function displayTitle(title: string) {
   return title.replace(/^Sample quiz:\s*/i, "").replace(/\s*\([^)]*\)\s*$/, "").trim();
 }
 
+// ---------- Neon (delivered quiz) ----------
+// B's view `delivered_item` owns the replacement rule: per original slot, the latest professor-approved
+// variant (else the original). We serve item_id (the variant's own id) so grading uses its answer key.
+type DeliveredRow = {
+  slot: number;
+  item_id: string;
+  original_item_id: string | null;
+  is_variant: boolean;
+  stem: string;
+  type: ItemType;
+  choices_json: { id: string; text: string }[] | null;
+  answer_key: string | string[] | null;
+  objective: string | null;
+  figure_json: { src: string; alt: string } | null;
+  figure_text: string | null;
+};
+const CACHE_MS = 15_000; // grading reads the quiz on every answer; approvals show up within seconds
+const cache = new Map<string, { at: number; quiz: Quiz | null }>();
+
+export async function getQuizFromNeon(id: string): Promise<Quiz | null | undefined> {
+  const db = neon();
+  if (!db) return undefined;
+  const hit = cache.get(id);
+  if (hit && Date.now() - hit.at < CACHE_MS) return hit.quiz;
+  try {
+    const [qr, rows] = await Promise.all([
+      db.query<{ course_id: string | null; title: string | null; source_format: Quiz["sourceFormat"] | null }>("select course_id, title, source_format from quiz where id = $1", [id]),
+      db.query<DeliveredRow>("select * from delivered_item where quiz_id = $1 order by slot", [id]),
+    ]);
+    if (!qr.rows[0] || !rows.rows.length) {
+      cache.set(id, { at: Date.now(), quiz: null });
+      return null;
+    }
+    const items: Item[] = rows.rows.map((r) => ({
+      id: r.item_id,
+      quizId: id,
+      stem: r.stem,
+      type: r.type,
+      ...(r.choices_json ? { choices: r.choices_json } : {}),
+      answerKey: r.answer_key ?? "",
+      objective: r.objective ?? "",
+      originalItemId: r.is_variant ? r.original_item_id : null,
+      ...(r.figure_json ? { figure: r.figure_json } : {}),
+      ...(r.figure_text ? ({ figureText: r.figure_text } as object) : {}),
+    }));
+    const q = qr.rows[0];
+    const quiz: Quiz = { id, courseId: q.course_id ?? "", title: displayTitle(q.title ?? id), sourceFormat: q.source_format ?? "markdown", items };
+    cache.set(id, { at: Date.now(), quiz });
+    return quiz;
+  } catch (err) {
+    console.error("[quizzes] Neon read failed, using the fixture fallback:", (err as Error).message);
+    return undefined; // unreachable: fall back
+  }
+}
+
 export async function getQuiz(id: string): Promise<Quiz | null> {
   if (!/^[a-z0-9-]+$/i.test(id)) return null;
+  const fromNeon = await getQuizFromNeon(id);
+  if (fromNeon) return fromNeon;
   const canonical = await readJson<Quiz | null>(fixturePath(`quiz-${id}.json`), null);
   if (canonical?.items?.length) return { ...canonical, title: displayTitle(canonical.title) };
   try {
@@ -73,6 +132,14 @@ export async function listQuizzes(): Promise<Quiz[]> {
     ...fixtures.filter((f) => /^quiz-.+\.json$/.test(f)).map((f) => f.slice(5, -5)),
     ...mds.filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3)),
   ]);
+  const db = neon();
+  if (db) {
+    try {
+      for (const r of (await db.query<{ id: string }>("select id from quiz")).rows) ids.add(r.id);
+    } catch {
+      /* Neon unreachable: files only */
+    }
+  }
   const quizzes = await Promise.all([...ids].sort().map((id) => getQuiz(id).catch(() => null)));
   return quizzes.filter((q): q is Quiz => q !== null && q.items.length > 0);
 }

@@ -170,5 +170,12 @@ export async function appeal(attemptId: string): Promise<AppealData> {
   const t0 = Date.now();
   const d = await appealSnapshot(attemptId);
   const branches = await api<{ branches: { name: string }[] }>("GET", "/branches").catch(() => ({ branches: [] }));
-  return { ...d, branch: { name: d.branch.name, deleted: !branches.branches.some((b) => b.name === d.branch.name) }, timings: { ...d.timings, totalMs: Date.now() - t0 } };
+  const out = { ...d, branch: { name: d.branch.name, deleted: !branches.branches.some((b) => b.name === d.branch.name) }, timings: { ...d.timings, totalMs: Date.now() - t0 } };
+  // Record it for the experiment tree (best effort: an appeal must not fail because of the log).
+  await neon()
+    ?.query("insert into appeal_log (attempt_id, quiz_id, branch, snapshot_lsn, branch_ms, total_ms, deleted) values ($1,$2,$3,$4,$5,$6,$7)", [
+      out.attemptId, out.quizId, out.branch.name, out.snapshotLsn, out.timings.branchMs, out.timings.totalMs, out.branch.deleted,
+    ])
+    .catch((e) => console.error("[appeal] log failed:", (e as Error).message));
+  return out;
 }

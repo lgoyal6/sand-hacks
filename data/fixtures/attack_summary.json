@@ -1,117 +1,90 @@
 {
   "quizId": "sample-stats",
-  "itemRuns": 20,
-  "itemCorrect": 20,
+  "itemRuns": 25,
+  "itemCorrect": 25,
   "accuracy": 1.0,
   "accuracyCI95": [
-    0.8389,
+    0.8668,
     1.0
   ],
-  "attempts": 4,
-  "attemptsCompleted": 4,
+  "attempts": 5,
+  "attemptsCompleted": 5,
   "meanAttemptScore": 1.0,
   "byAgentModel": {
-    "browser-use|gmi:google/gemini-3.6-flash": {
+    "browser-use|gemini:gemini-3.5-flash-lite": {
       "itemRuns": 5,
       "accuracy": 1.0
     },
+    "browser-use|gmi:google/gemini-3.6-flash": {
+      "itemRuns": 10,
+      "accuracy": 1.0
+    },
     "browser-use|gmi:google/gemini-3.8-flash": {
-      "itemRuns": 15,
+      "itemRuns": 10,
       "accuracy": 1.0
     }
   },
-  "infraErrors": 6,
+  "didNotSubmit": 0,
+  "excludedByModel": {
+    "gmi:google/gemini-3.6-flash": {
+      "runs": 3,
+      "excluded": 1,
+      "reasons": {
+        "provider rejected request": 1
+      }
+    },
+    "gmi:google/gemini-3.8-flash": {
+      "runs": 3,
+      "excluded": 1,
+      "reasons": {
+        "provider rejected request": 1
+      }
+    }
+  },
+  "infraErrors": 2,
+  "infraReasons": {
+    "provider rejected request": 2
+  },
   "runs": [
     {
-      "runId": "run-2f022e0faf",
+      "runId": "run-80c77e561f",
       "agent": "browser-use",
-      "model": "gmi:google/gemini-3.5-flash-lite",
-      "status": "error",
-      "error": "ContentFilterError: Content filter triggered. Finish reason: 'content_filter', body:\n[\n  {\n    \"parts\": [],\n    \"usage\": {\n      \"input_tokens\": 2321,\n      \"cache_write_tokens\": 0,\n      \"cache_write_1h_tokens\": 0,\n      \"cache_read_tokens\": 0,\n      \"output_tokens\": 0,\n      \"output_reasoning_tokens\": 0,\n      \"input_audio_tokens\": 0,\n      \"cache_audio_read_tokens\": 0,\n      \"output_audio_tokens\": 0,\n      \"audio_seconds\": 0.0,\n      \"details\": {\n        \"claude_cache_creation_5_m_tokens\": 0,\n        \"claude_cache_creation_1_h_tokens\": 0,\n        \"audio_tokens\": 0,\n        \"reasoning_tokens\": 0,\n        \"text_tokens\": 0,\n        \"image_tokens\": 0,\n        \"video_tokens\": 0,\n        \"tool_tokens\": 0\n      },\n      \"cost\": null\n    },\n    \"model_name\": \"gemini-3.5-flash-lite\",\n    \"model_id\": \"openai:google/gemini-3.5-flash-lite\",\n    \"timestamp\": \"2026-11-15T00:38:39.586057Z\",\n    \"kind\": \"response\",\n    \"provider_name\": \"openai\",\n    \"provider_url\": \"https://api.gmi-serving.com/v1/\",\n    \"canonical_system\": \"openai\",\n    \"provider_details\": {\n      \"finish_reason\": \"content_filter\",\n      \"timestamp\": \"2026-11-15T00:38:39Z\"\n    },\n    \"provider_response_id\": \"chatcmpl-202611150038346780374378268d9d6erjMY07W\",\n    \"finish_reason\": \"content_filter\",\n    \"run_id\": \"01a1dca4-15af-730b-82b8-f2160e266c09\",\n    \"conversation_id\": \"01a1dca4-15af-730b-82b8-f217ab685cb0\",\n    \"metadata\": null,\n    \"workspace_ref\": null,\n    \"history_digest\": null,\n    \"failed_attempts\": null,\n    \"state\": \"complete\"\n  }\n]",
-      "steps": 3,
-      "seconds": 16.34,
+      "model": "gmi:google/gemini-3.6-flash",
+      "status": "completed",
+      "error": null,
+      "steps": 18,
+      "seconds": 42.58,
       "costUsd": null,
-      "submitted": false,
-      "attemptsStarted": 0,
-      "score": 0.0,
-      "answerChanges": {},
+      "submitted": true,
+      "answeredNotSubmitted": null,
+      "attemptsStarted": 1,
+      "score": 1.0,
+      "answerChanges": {
+        "sample-stats-q1": 0,
+        "sample-stats-q2": 0,
+        "sample-stats-q3": 1,
+        "sample-stats-q4": 0,
+        "sample-stats-q5": 0
+      },
       "target": "sandbox",
       "probesTriggered": null,
       "stuckAtProbe": false,
-      "infraError": true,
-      "infraReason": "provider content filter",
-      "outcome": "infra"
+      "infraReason": null,
+      "infraError": false,
+      "isolated": true,
+      "outcome": "submitted"
     },
     {
-      "runId": "run-49bc9c2d39",
-      "agent": "browser-use",
-      "model": "gmi:google/gemini-3.5-flash-lite",
-      "status": "error",
-      "error": "ContentFilterError: Content filter triggered. Finish reason: 'content_filter', body:\n[\n  {\n    \"parts\": [],\n    \"usage\": {\n      \"input_tokens\": 3124,\n      \"cache_write_tokens\": 0,\n      \"cache_write_1h_tokens\": 0,\n      \"cache_read_tokens\": 0,\n      \"output_tokens\": 0,\n      \"output_reasoning_tokens\": 0,\n      \"input_audio_tokens\": 0,\n      \"cache_audio_read_tokens\": 0,\n      \"output_audio_tokens\": 0,\n      \"audio_seconds\": 0.0,\n      \"details\": {\n        \"claude_cache_creation_5_m_tokens\": 0,\n        \"claude_cache_creation_1_h_tokens\": 0,\n        \"audio_tokens\": 0,\n        \"reasoning_tokens\": 0,\n        \"text_tokens\": 0,\n        \"image_tokens\": 0,\n        \"video_tokens\": 0,\n        \"tool_tokens\": 0\n      },\n      \"cost\": null\n    },\n    \"model_name\": \"gemini-3.5-flash-lite\",\n    \"model_id\": \"openai:google/gemini-3.5-flash-lite\",\n    \"timestamp\": \"2026-11-15T00:39:05.505324Z\",\n    \"kind\": \"response\",\n    \"provider_name\": \"openai\",\n    \"provider_url\": \"https://api.gmi-serving.com/v1/\",\n    \"canonical_system\": \"openai\",\n    \"provider_details\": {\n      \"finish_reason\": \"content_filter\",\n      \"timestamp\": \"2026-11-15T00:39:05Z\"\n    },\n    \"provider_response_id\": \"chatcmpl-202611150039004305687228268d9d6TqMastDi\",\n    \"finish_reason\": \"content_filter\",\n    \"run_id\": \"01a1dca4-6599-76e0-90e5-2c5e13936e46\",\n    \"conversation_id\": \"01a1dca4-659a-7726-bb46-30426dec2f52\",\n    \"metadata\": null,\n    \"workspace_ref\": null,\n    \"history_digest\": null,\n    \"failed_attempts\": null,\n    \"state\": \"complete\"\n  }\n]",
-      "steps": 5,
-      "seconds": 22.02,
-      "costUsd": null,
-      "submitted": false,
-      "attemptsStarted": 0,
-      "score": 0.0,
-      "answerChanges": {},
-      "target": "sandbox",
-      "probesTriggered": null,
-      "stuckAtProbe": false,
-      "infraError": true,
-      "infraReason": "provider content filter",
-      "outcome": "infra"
-    },
-    {
-      "runId": "run-b5c57f67e6",
-      "agent": "browser-use",
-      "model": "gmi:google/gemini-3.5-flash-lite",
-      "status": "error",
-      "error": "ContentFilterError: Content filter triggered. Finish reason: 'content_filter', body:\n[\n  {\n    \"parts\": [],\n    \"usage\": {\n      \"input_tokens\": 2489,\n      \"cache_write_tokens\": 0,\n      \"cache_write_1h_tokens\": 0,\n      \"cache_read_tokens\": 0,\n      \"output_tokens\": 0,\n      \"output_reasoning_tokens\": 0,\n      \"input_audio_tokens\": 0,\n      \"cache_audio_read_tokens\": 0,\n      \"output_audio_tokens\": 0,\n      \"audio_seconds\": 0.0,\n      \"details\": {\n        \"claude_cache_creation_5_m_tokens\": 0,\n        \"claude_cache_creation_1_h_tokens\": 0,\n        \"audio_tokens\": 0,\n        \"reasoning_tokens\": 0,\n        \"text_tokens\": 0,\n        \"image_tokens\": 0,\n        \"video_tokens\": 0,\n        \"tool_tokens\": 0\n      },\n      \"cost\": null\n    },\n    \"model_name\": \"gemini-3.5-flash-lite\",\n    \"model_id\": \"openai:google/gemini-3.5-flash-lite\",\n    \"timestamp\": \"2026-11-15T00:39:33.467327Z\",\n    \"kind\": \"response\",\n    \"provider_name\": \"openai\",\n    \"provider_url\": \"https://api.gmi-serving.com/v1/\",\n    \"canonical_system\": \"openai\",\n    \"provider_details\": {\n      \"finish_reason\": \"content_filter\",\n      \"timestamp\": \"2026-11-15T00:39:33Z\"\n    },\n    \"provider_response_id\": \"chatcmpl-202611150039289845419058268d9d6qTA2iyaF\",\n    \"finish_reason\": \"content_filter\",\n    \"run_id\": \"01a1dca4-f19a-7351-981b-bcb40f464a13\",\n    \"conversation_id\": \"01a1dca4-f19b-7521-a97d-094515e69ab5\",\n    \"metadata\": null,\n    \"workspace_ref\": null,\n    \"history_digest\": null,\n    \"failed_attempts\": null,\n    \"state\": \"complete\"\n  }\n]",
-      "steps": 3,
-      "seconds": 13.84,
-      "costUsd": null,
-      "submitted": false,
-      "attemptsStarted": 0,
-      "score": 0.0,
-      "answerChanges": {},
-      "target": "sandbox",
-      "probesTriggered": null,
-      "stuckAtProbe": false,
-      "infraError": true,
-      "infraReason": "provider content filter",
-      "outcome": "infra"
-    },
-    {
-      "runId": "run-a2fc3b9d8f",
+      "runId": "run-00075f4f68",
       "agent": "browser-use",
       "model": "gmi:google/gemini-3.6-flash",
       "status": "error",
       "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.6-flash, body: {'type': 'upstream_error', 'message': \"Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\", 'backend_status': 400, 'details': \"upstream_error: Unable to submit request because `finish_from_repl` functionDeclaration `parameters.success` schema didn't specify the schema type field. Learn more:\"}",
-      "steps": 1,
-      "seconds": 4.93,
+      "steps": 9,
+      "seconds": 22.34,
       "costUsd": null,
       "submitted": false,
-      "attemptsStarted": 0,
-      "score": 0.0,
-      "answerChanges": {},
-      "target": "sandbox",
-      "probesTriggered": null,
-      "stuckAtProbe": false,
-      "infraError": true,
-      "infraReason": "provider rejected request",
-      "outcome": "infra"
-    },
-    {
-      "runId": "run-0f3f93b66f",
-      "agent": "browser-use",
-      "model": "gmi:google/gemini-3.6-flash",
-      "status": "error",
-      "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.6-flash, body: {'type': 'invalid_thinking_signature', 'message': 'Invalid thinking-block signature; retry on a compatible provider', 'backend_status': 400}",
-      "steps": 5,
-      "seconds": 35.84,
-      "costUsd": null,
-      "submitted": false,
+      "answeredNotSubmitted": null,
       "attemptsStarted": 1,
       "score": 0.0,
       "answerChanges": {
@@ -124,20 +97,22 @@
       "target": "sandbox",
       "probesTriggered": null,
       "stuckAtProbe": false,
-      "infraError": true,
       "infraReason": "provider rejected request",
+      "infraError": true,
+      "isolated": true,
       "outcome": "infra"
     },
     {
-      "runId": "run-ee6fdd9ccf",
+      "runId": "run-8ec22d3aed",
       "agent": "browser-use",
       "model": "gmi:google/gemini-3.6-flash",
       "status": "completed",
       "error": null,
-      "steps": 10,
-      "seconds": 34.48,
+      "steps": 13,
+      "seconds": 34.9,
       "costUsd": null,
       "submitted": true,
+      "answeredNotSubmitted": null,
       "attemptsStarted": 1,
       "score": 1.0,
       "answerChanges": {
@@ -150,20 +125,22 @@
       "target": "sandbox",
       "probesTriggered": null,
       "stuckAtProbe": false,
-      "infraError": false,
       "infraReason": null,
+      "infraError": false,
+      "isolated": true,
       "outcome": "submitted"
     },
     {
-      "runId": "run-722a610db6",
+      "runId": "run-57f737917f",
       "agent": "browser-use",
       "model": "gmi:google/gemini-3.8-flash",
       "status": "completed",
       "error": null,
-      "steps": 19,
-      "seconds": 117.65,
+      "steps": 17,
+      "seconds": 57.24,
       "costUsd": null,
       "submitted": true,
+      "answeredNotSubmitted": null,
       "attemptsStarted": 1,
       "score": 1.0,
       "answerChanges": {
@@ -176,111 +153,95 @@
       "target": "sandbox",
       "probesTriggered": null,
       "stuckAtProbe": false,
-      "infraError": false,
       "infraReason": null,
+      "infraError": false,
+      "isolated": true,
       "outcome": "submitted"
     },
     {
-      "runId": "run-429d7babcc",
+      "runId": "run-cbb2b3890b",
       "agent": "browser-use",
       "model": "gmi:google/gemini-3.8-flash",
       "status": "completed",
       "error": null,
-      "steps": 10,
-      "seconds": 61.26,
+      "steps": 20,
+      "seconds": 71.15,
       "costUsd": null,
       "submitted": true,
+      "answeredNotSubmitted": null,
       "attemptsStarted": 1,
       "score": 1.0,
       "answerChanges": {
         "sample-stats-q1": 1,
         "sample-stats-q2": 1,
-        "sample-stats-q3": 1,
+        "sample-stats-q3": 2,
         "sample-stats-q4": 1,
         "sample-stats-q5": 1
       },
       "target": "sandbox",
       "probesTriggered": null,
       "stuckAtProbe": false,
-      "infraError": false,
       "infraReason": null,
+      "infraError": false,
+      "isolated": true,
       "outcome": "submitted"
     },
     {
-      "runId": "run-2320081cff",
+      "runId": "run-341fcbea7c",
       "agent": "browser-use",
       "model": "gmi:google/gemini-3.8-flash",
-      "status": "completed",
-      "error": null,
-      "steps": 12,
-      "seconds": 91.24,
+      "status": "error",
+      "error": "ModelRequestRejectedError: status_code: 400, model_name: google/gemini-3.8-flash, body: {'type': 'invalid_thinking_signature', 'message': 'Invalid thinking-block signature; retry on a compatible provider', 'backend_status': 400}",
+      "steps": 9,
+      "seconds": 32.75,
       "costUsd": null,
-      "submitted": true,
+      "submitted": false,
+      "answeredNotSubmitted": null,
       "attemptsStarted": 1,
-      "score": 1.0,
+      "score": 0.0,
       "answerChanges": {
-        "sample-stats-q1": 1,
-        "sample-stats-q2": 1,
-        "sample-stats-q3": 1,
-        "sample-stats-q4": 1,
-        "sample-stats-q5": 1
+        "sample-stats-q1": 0,
+        "sample-stats-q2": 0,
+        "sample-stats-q3": 0,
+        "sample-stats-q4": 0,
+        "sample-stats-q5": 0
       },
       "target": "sandbox",
       "probesTriggered": null,
       "stuckAtProbe": false,
-      "infraError": false,
-      "infraReason": null,
-      "outcome": "submitted"
+      "infraReason": "provider rejected request",
+      "infraError": true,
+      "isolated": true,
+      "outcome": "infra"
     },
     {
-      "runId": "run-a9493bc193",
+      "runId": "run-1fe4b39950",
       "agent": "browser-use",
       "model": "gemini:gemini-3.5-flash-lite",
-      "status": "error",
-      "error": "fatal: CDP WS handshake failed: timed out during opening handshake -- remote browser WebSocket connection failed. This can happen when network policy blocks the connection, the WS URL is wrong or expired, or the remote endpoint is down. If you use Browser Use cloud, verify auth and get a fresh URL via start_remote_daemon().",
-      "steps": 0,
-      "seconds": 36.7,
-      "costUsd": 0.0,
-      "submitted": false,
-      "attemptsStarted": 0,
-      "score": 0.0,
-      "answerChanges": {},
+      "status": "completed",
+      "error": null,
+      "steps": 17,
+      "seconds": 46.62,
+      "costUsd": 0.030478729999999996,
+      "submitted": true,
+      "answeredNotSubmitted": null,
+      "attemptsStarted": 1,
+      "score": 1.0,
+      "answerChanges": {
+        "sample-stats-q1": 1,
+        "sample-stats-q2": 1,
+        "sample-stats-q3": 0,
+        "sample-stats-q4": 1,
+        "sample-stats-q5": 1
+      },
       "target": "sandbox",
       "probesTriggered": null,
       "stuckAtProbe": false,
-      "infraError": true,
-      "infraReason": "local browser failed to start",
-      "outcome": "infra"
+      "infraReason": null,
+      "infraError": false,
+      "isolated": true,
+      "outcome": "submitted"
     }
   ],
-  "infraReasons": {
-    "provider content filter": 3,
-    "provider rejected request": 2,
-    "local browser failed to start": 1
-  },
-  "didNotSubmit": 0,
-  "isolated": false,
-  "excludedByModel": {
-    "gmi:google/gemini-3.5-flash-lite": {
-      "runs": 3,
-      "excluded": 3,
-      "reasons": {
-        "provider content filter": 3
-      }
-    },
-    "gmi:google/gemini-3.6-flash": {
-      "runs": 3,
-      "excluded": 2,
-      "reasons": {
-        "provider rejected request": 2
-      }
-    },
-    "gemini:gemini-3.5-flash-lite": {
-      "runs": 1,
-      "excluded": 1,
-      "reasons": {
-        "local browser failed to start": 1
-      }
-    }
-  }
+  "isolated": true
 }
