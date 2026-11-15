@@ -150,3 +150,16 @@ export const AGENT_EVENT_STATE: Record<AgentEventStatus, "idle" | "thinking" | "
   done: "complete",
   error: "error",
 };
+
+/**
+ * The canonical record of a quiz as served, for integrity fingerprints (attempt start, appeals, the
+ * Solana notary). Hash it with canonical JSON (sorted keys) + SHA-256, i.e. `fingerprint()` in
+ * apps/web/lib/notary. Items in served order; approved variants appear under their own ids.
+ */
+export function quizVersionRecord(quizId: string, items: Pick<Item, "id" | "stem" | "type" | "choices" | "answerKey">[]) {
+  return {
+    v: 1,
+    quizId,
+    items: items.map((i) => ({ id: i.id, stem: i.stem, type: i.type, choices: i.choices ?? null, answerKey: i.answerKey })),
+  };
+}

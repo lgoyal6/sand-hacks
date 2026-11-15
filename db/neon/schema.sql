@@ -74,3 +74,6 @@ create table if not exists appeal_log (id bigserial primary key, attempt_id text
 alter table probe add column if not exists explain_signals_json jsonb;
 -- C: per-quiz professor setting "Explanations: voice required" (default off).
 alter table quiz add column if not exists voice_required boolean not null default false;
+-- D/C: full SHA-256 of quizVersionRecord(served quiz) at attempt start, and its Solana devnet anchor (AnchorRecord).
+alter table attempt add column if not exists quiz_version_sha256 text;
+alter table attempt add column if not exists quiz_version_anchor jsonb;

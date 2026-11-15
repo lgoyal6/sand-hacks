@@ -4,7 +4,8 @@
 // the branch. The student's answers come from main (they were written after the snapshot).
 import "server-only";
 import { Pool } from "pg";
-import type { ItemType } from "@unprompted/shared";
+import { quizVersionRecord, type ItemType } from "@unprompted/shared";
+import { fingerprint, type AnchorRecord } from "@/lib/notary";
 import { neon } from "@/lib/db/neon";
 
 const API = "https://console.neon.tech/api/v2";
@@ -42,6 +43,13 @@ export interface AppealData {
   items: AppealItem[];
   changedCount: number;
   timings: { branchMs: number; readMs: number; totalMs: number };
+  /**
+   * Integrity: SHA-256 of quizVersionRecord(the quiz exactly as read from the branch), the hash recorded
+   * at attempt start, and its Solana devnet anchor. matchesRecorded = the branch read re-hashes to it.
+   */
+  fingerprint?: { sha256: string; recordedSha256: string | null; matchesRecorded: boolean | null; anchor: AnchorRecord | null };
+  /** Which items were read: exactly what was served (delivered_item_ids), or the quiz's originals for older attempts. */
+  servedFrom?: "delivered_item_ids" | "originals";
 }
 
 async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -77,8 +85,12 @@ export async function appealSnapshot(attemptId: string): Promise<AppealData> {
   const main = neon();
   if (!main) throw new Error("Time travel needs DATABASE_URL (Neon main).");
   const a = (
-    await main.query<{ quiz_id: string; mode: string; student_pseudonym: string; lsn: string | null; quiz_snapshot_at: Date | null }>(
-      "select quiz_id, mode, student_pseudonym, quiz_snapshot_lsn::text lsn, quiz_snapshot_at from attempt where id = $1",
+    await main.query<{
+      quiz_id: string; mode: string; student_pseudonym: string; lsn: string | null; quiz_snapshot_at: Date | null;
+      delivered_item_ids: string[] | null; quiz_version_sha256: string | null; quiz_version_anchor: AnchorRecord | null;
+    }>(
+      `select quiz_id, mode, student_pseudonym, quiz_snapshot_lsn::text lsn, quiz_snapshot_at,
+              delivered_item_ids, quiz_version_sha256, quiz_version_anchor from attempt where id = $1`,
       [attemptId],
     )
   ).rows[0];
@@ -108,17 +120,22 @@ export async function appealSnapshot(attemptId: string): Promise<AppealData> {
     conn.searchParams.set("uselibpqcompat", "true");
     pool = new Pool({ connectionString: conn.toString(), max: 1 });
     const t1 = Date.now();
-    const then = await pool.query<ItemRow>("select id, stem, type, choices_json, answer_key, objective from item where quiz_id = $1 and original_item_id is null", [a.quiz_id]);
+    // Exactly what this student was served (approved variants included), in served order; originals for older attempts.
+    const served = Array.isArray(a.delivered_item_ids) && a.delivered_item_ids.length ? a.delivered_item_ids : null;
+    const then = served
+      ? await pool.query<ItemRow>("select id, stem, type, choices_json, answer_key, objective from item where id = any($1)", [served])
+      : await pool.query<ItemRow>("select id, stem, type, choices_json, answer_key, objective from item where quiz_id = $1 and original_item_id is null", [a.quiz_id]);
     readMs = Date.now() - t1;
-    const now = await main.query<ItemRow>("select id, stem, type, choices_json, answer_key, objective from item where quiz_id = $1 and original_item_id is null", [a.quiz_id]);
+    const now = await main.query<ItemRow>("select id, stem, type, choices_json, answer_key, objective from item where id = any($1)", [then.rows.map((r) => r.id)]);
     const responses = await main.query<{ item_id: string; answer: unknown; correct: boolean | null }>(
       "select item_id, answer, correct from response where attempt_id = $1",
       [attemptId],
     );
     const nowById = new Map(now.rows.map((r) => [r.id, r]));
     const respById = new Map(responses.rows.map((r) => [r.item_id, r]));
+    const order = served ? new Map(served.map((id, i) => [id, i])) : null;
     const items: AppealItem[] = then.rows
-      .sort((x, y) => x.id.localeCompare(y.id, undefined, { numeric: true }))
+      .sort((x, y) => (order ? (order.get(x.id) ?? 0) - (order.get(y.id) ?? 0) : x.id.localeCompare(y.id, undefined, { numeric: true })))
       .map((r) => {
         const cur = nowById.get(r.id);
         const changed: AppealItem["changedSince"] = !cur
@@ -142,7 +159,20 @@ export async function appealSnapshot(attemptId: string): Promise<AppealData> {
           changedSince: changed,
         };
       });
+    const sha256 = fingerprint(
+      quizVersionRecord(
+        a.quiz_id,
+        items.map((i) => ({ id: i.id, stem: i.stem, type: i.type, ...(i.choices ? { choices: i.choices } : {}), answerKey: i.key })),
+      ),
+    );
     return {
+      fingerprint: {
+        sha256,
+        recordedSha256: a.quiz_version_sha256,
+        matchesRecorded: a.quiz_version_sha256 ? a.quiz_version_sha256 === sha256 : null,
+        anchor: a.quiz_version_anchor,
+      },
+      servedFrom: served ? "delivered_item_ids" : "originals",
       attemptId,
       student: a.student_pseudonym,
       quizId: a.quiz_id,
