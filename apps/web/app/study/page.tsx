@@ -13,7 +13,7 @@ import { loadAnchors } from "@/lib/notary/registry";
 
 export const metadata = {
   title: "The State of Leaked Homework · Unprompted",
-  description: "84% of real textbook exercises we searched were already on homework-help sites. Method, limits and open data.",
+  description: "Textbook Leak Index: 36-48% of 500 randomly sampled end-of-chapter exercises from 10 open textbooks are already on homework-help sites (an 84% pilot used hand-picked exercises). Method, limits and open data.",
 };
 
 interface Study {
