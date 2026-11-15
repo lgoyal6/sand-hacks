@@ -5,10 +5,13 @@ import * as React from "react";
 import { ChevronRight, PanelRightClose } from "lucide-react";
 import { type AgentStatus } from "@/components/ui/agent-state";
 import { AgentAvatar, resolveAgent } from "@/components/ui/agent-avatar";
+import { AGENT_EVENT_STATE, type AgentEvent } from "@unprompted/shared";
 import { cn } from "@/lib/utils";
 
 export interface AgentStep {
   text: string;
+  /** Tool name shown in mono after the text (from AgentEvent.toolCall). */
+  tool?: string;
   /** Short time label, e.g. "now", "12s". */
   at?: string;
   done?: boolean;
@@ -45,29 +48,55 @@ function timeLabel(iso?: string) {
   return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
-/** Merge live "unprompted:agent-status" events into a base agent list (matched by name, new names appended). */
+/** Accepts the shared AgentEvent (packages/shared: agentId/status/label/toolCall/ts) or C's legacy detail. */
+function normalizeEvent(d: unknown): { id: string; name: string; status: string; state: AgentStatus; tool?: string; at?: string } | null {
+  const e = d as Partial<AgentEvent> & Partial<AgentStatusEventDetail>;
+  if (e?.agentId) {
+    const ident = resolveAgent(e.agentId);
+    return {
+      id: e.agentId,
+      name: ident?.name ?? e.agentId,
+      status: e.label ?? "",
+      state: AGENT_EVENT_STATE[e.status as keyof typeof AGENT_EVENT_STATE] ?? "idle",
+      tool: e.toolCall?.name,
+      at: e.ts,
+    };
+  }
+  if (e?.agent) {
+    const ident = resolveAgent(e.agent);
+    return { id: ident?.key ?? e.agent, name: e.agent, status: e.status ?? "", state: EVENT_STATE[e.state as AgentStatusEventDetail["state"]] ?? "idle", at: e.at };
+  }
+  return null;
+}
+
+/** Merge live "unprompted:agent-status" events into a base agent list (matched by id or name, new agents appended). */
 export function useAgentStatusEvents(base: AgentInfo[]): AgentInfo[] {
   // Only the live overrides live in state; the merge with `base` happens during render.
   const [live, setLive] = React.useState<Record<string, AgentInfo>>({});
   React.useEffect(() => {
-    const on = (e: Event) => {
-      const d = (e as CustomEvent<AgentStatusEventDetail>).detail;
-      if (!d?.agent) return;
-      const state = EVENT_STATE[d.state] ?? "idle";
-      const step = { text: d.status, at: timeLabel(d.at), done: state !== "working" && state !== "thinking" };
+    const on = (ev: Event) => {
+      const d = normalizeEvent((ev as CustomEvent).detail);
+      if (!d) return;
+      const step: AgentStep = { text: d.status, tool: d.tool, at: timeLabel(d.at), done: d.state !== "working" && d.state !== "thinking" };
       setLive((cur) => {
-        const prev = cur[d.agent];
+        const prev = cur[d.id];
         const steps = [...(prev?.steps ?? []).map((s) => ({ ...s, done: true })), step].slice(-8);
-        return { ...cur, [d.agent]: { id: d.agent, name: d.agent, status: d.status, state, steps } };
+        return { ...cur, [d.id]: { id: d.id, name: d.name, status: d.status, state: d.state, steps } };
       });
     };
     window.addEventListener("unprompted:agent-status", on);
     return () => window.removeEventListener("unprompted:agent-status", on);
   }, []);
   return React.useMemo(() => {
-    const names = new Set(base.map((a) => a.name));
-    const merged = base.map((a) => (live[a.name] ? { ...a, ...live[a.name], id: a.id, steps: [...(a.steps ?? []), ...(live[a.name].steps ?? [])].slice(-8) } : a));
-    return [...merged, ...Object.values(live).filter((a) => !names.has(a.name))];
+    const match = (a: AgentInfo) => live[a.id] ?? Object.values(live).find((l) => l.name === a.name || resolveAgent(a.name)?.key === l.id);
+    const used = new Set<string>();
+    const merged = base.map((a) => {
+      const l = match(a);
+      if (!l) return a;
+      used.add(l.id);
+      return { ...a, status: l.status, state: l.state, steps: [...(a.steps ?? []), ...(l.steps ?? [])].slice(-8) };
+    });
+    return [...merged, ...Object.values(live).filter((l) => !used.has(l.id))];
   }, [base, live]);
 }
 
@@ -151,7 +180,10 @@ export function AgentPanel({ agents: base, activeId, title = "Agents", onClose, 
                 <ol className="mb-2 ml-[2.6rem] mr-2 mt-1 space-y-1.5 border-l border-border pl-3">
                   {a.steps.map((s, i) => (
                     <li key={i} className="flex gap-2 text-xs">
-                      <span className={cn("flex-1", s.done === false ? "text-foreground" : "text-muted-foreground")}>{s.text}</span>
+                      <span className={cn("flex-1", s.done === false ? "text-foreground" : "text-muted-foreground")}>
+                        {s.text}
+                        {s.tool && <span className="num ml-1.5 text-[11px] text-muted-foreground/80">{s.tool}</span>}
+                      </span>
                       {s.at && <span className="num shrink-0 text-muted-foreground/70">{s.at}</span>}
                     </li>
                   ))}
