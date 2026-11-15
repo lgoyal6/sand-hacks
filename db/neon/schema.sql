@@ -72,3 +72,5 @@ create table if not exists appeal_log (id bigserial primary key, attempt_id text
   created_at timestamptz default now(), branch_ms int, total_ms int, deleted boolean);
 -- C: typing/paste signals per probe textarea (explanation, follow-up); probe.mode is 'voice' | 'typed' | 'accommodation' (no check constraint).
 alter table probe add column if not exists explain_signals_json jsonb;
+-- C: per-quiz professor setting "Explanations: voice required" (default off).
+alter table quiz add column if not exists voice_required boolean not null default false;

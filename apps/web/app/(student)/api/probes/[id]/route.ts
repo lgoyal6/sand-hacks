@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getProbe, patchProbe, saveExplainSignals } from "../../../_lib/probes";
+import { getAttempt } from "../../../quiz/_lib/attempts";
 import { writeEvents } from "@/lib/telemetry/server";
 
 // Completes a probe: transcript, confidence after, counterfactual latency. Grading (the council) happens later.
@@ -24,6 +25,12 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/probes/[id]">)
     const out = await patchProbe(id, { retried: true, transcript: undefined, explanation: undefined, counterfactualAnswer: undefined, counterfactualPrompt: undefined, counterfactualLatencyMs: undefined, completedAt: undefined });
     return NextResponse.json({ ok: Boolean(out) });
   }
+  // Voice required: a voice probe's words come from the call (/voice/finish), never as typed text here.
+  if ((typeof b.explanation === "string" || typeof b.counterfactualAnswer === "string" || typeof b.transcript === "string") && probe.mode === "voice" && b.mode !== "typed") {
+    const att = await getAttempt(probe.attemptId);
+    if ((att?.probePlan ?? []).includes("voice:required") && !(att?.probePlan ?? []).includes(`acc:${probe.itemId}`))
+      return NextResponse.json({ error: "This quiz asks you to explain out loud. Need another way? Request an accommodation." }, { status: 403 });
+  }
   const patch: Record<string, unknown> = {};
   if (typeof b.transcript === "string") patch.transcript = b.transcript.slice(0, 20000);
   if (typeof b.explanation === "string") patch.explanation = b.explanation.slice(0, 4000);
@@ -41,7 +48,16 @@ export async function PATCH(req: Request, ctx: RouteContext<"/api/probes/[id]">)
     patch.completedAt = new Date().toISOString();
   }
   // A voice probe that switched to typing becomes typed (an accommodation stays an accommodation).
-  if ((b.mode === "typed" || b.mode === "voice") && probe.mode !== "accommodation") patch.mode = b.mode;
+  if ((b.mode === "typed" || b.mode === "voice") && probe.mode !== "accommodation") {
+    // Voice required: switching to typing needs the recorded accommodation; with it, the probe becomes one.
+    const attempt = b.mode === "typed" ? await getAttempt(probe.attemptId) : null;
+    const plan = attempt?.probePlan ?? [];
+    if (plan.includes("voice:required"))
+      if (!plan.includes(`acc:${probe.itemId}`))
+        return NextResponse.json({ error: "This quiz asks you to explain out loud. Need another way? Request an accommodation." }, { status: 403 });
+      else patch.mode = "accommodation";
+    else patch.mode = b.mode;
+  }
   if (b.explainSignals && typeof b.explainSignals === "object") {
     await saveExplainSignals(id, b.explainSignals);
     await writeEvents(

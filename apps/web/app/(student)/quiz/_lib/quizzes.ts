@@ -201,3 +201,23 @@ export function grade(item: Item, answer: string | string[]): boolean {
       return String(answer).trim().toLowerCase() === String(key).trim().toLowerCase();
   }
 }
+
+/** Professor setting "Explanations: voice required" (Neon quiz.voice_required; false when absent). */
+export async function quizVoiceRequired(quizId: string): Promise<boolean> {
+  const db = neon();
+  if (!db) return false;
+  try {
+    const { rows } = await db.query<{ voice_required: boolean | null }>("select voice_required from quiz where id = $1", [quizId]);
+    return rows[0]?.voice_required === true;
+  } catch {
+    return false; // column not there yet
+  }
+}
+
+export async function setQuizVoiceRequired(quizId: string, on: boolean) {
+  const db = neon();
+  if (!db) throw new Error("Neon is not configured");
+  const r = await db.query("update quiz set voice_required = $2 where id = $1", [quizId, on]);
+  cache.delete(quizId);
+  return (r.rowCount ?? 0) > 0;
+}

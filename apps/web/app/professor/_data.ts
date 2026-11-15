@@ -127,6 +127,18 @@ export async function loadPseudonyms(ids: string[]): Promise<Map<string, string>
   return out;
 }
 
+interface FieldSignals {
+  keys?: number;
+  charsTyped?: number;
+  finalLength?: number;
+  pastes?: number;
+  pastedChars?: number;
+  inputEvents?: number;
+  nonKeyInputEvents?: number;
+  keyIntervalMedianMs?: number | null;
+  keyIntervalIqrMs?: number | null;
+}
+
 export interface ProbeEvidence {
   probeId: string;
   attemptId: string;
@@ -136,27 +148,50 @@ export interface ProbeEvidence {
   score: number | null;
   chars: number;
   keys: number;
-  pastes: number;
-  /** Neutral description of how the typed text arrived. Accommodations are excluded from this check. */
-  evidence: "voice" | "typed by hand" | "pasted" | "appeared without typing" | "no text" | "excluded (accommodation)";
+  pastedChars: number;
+  /** Characters that arrived without keystrokes or a paste (script-set values). */
+  untypedChars: number;
+  medianKeyMs: number | null;
+  /** Neutral notes for the professor; empty when the text was typed normally. Never a verdict. */
+  notes: string[];
+  evidence: "voice" | "typed" | "no text" | "excluded (accommodation)";
+}
+
+/** Combine C's per-field signals (explanation + follow-up) into neutral notes. */
+function describe(sig: Record<string, FieldSignals | undefined>): Pick<ProbeEvidence, "chars" | "keys" | "pastedChars" | "untypedChars" | "medianKeyMs" | "notes"> {
+  const f = Object.values(sig).filter(Boolean) as FieldSignals[];
+  const sum = (k: keyof FieldSignals) => f.reduce((n, x) => n + (Number(x[k]) || 0), 0);
+  const chars = sum("finalLength");
+  const keys = sum("keys");
+  const typed = sum("charsTyped");
+  const pastedChars = sum("pastedChars");
+  const untypedChars = Math.max(0, chars - typed - pastedChars);
+  const medians = f.map((x) => x.keyIntervalMedianMs).filter((v): v is number => typeof v === "number");
+  const iqrs = f.map((x) => x.keyIntervalIqrMs).filter((v): v is number => typeof v === "number");
+  const medianKeyMs = medians.length ? Math.round(medians.reduce((a, b) => a + b, 0) / medians.length) : null;
+  const notes: string[] = [];
+  if (untypedChars >= Math.max(10, chars * 0.3)) notes.push(`${untypedChars} characters typed without keystrokes`);
+  if (pastedChars > 0) notes.push(`pasted ${pastedChars} characters`);
+  if (keys >= 20 && medianKeyMs != null && medianKeyMs < 40 && (iqrs.length ? Math.max(...iqrs) : 0) < 25) notes.push(`very fast, even typing (median ${medianKeyMs} ms between keys)`);
+  return { chars, keys, pastedChars, untypedChars, medianKeyMs, notes };
 }
 
 /**
- * Think-aloud explanations with their mode and typing evidence: Neon probes (C) joined with the key and paste
- * events Tiger recorded in the explanation fields (#probe-explanation, #probe-cf-answer) for that attempt.
- * A typed answer can be AI-written; this is evidence for a follow-up, never a verdict.
+ * Think-aloud explanations with their mode and typing evidence. Prefers C's probe.explain_signals_json
+ * (per-field keys, typed/pasted/final lengths, key timing); falls back to counting key and paste events in
+ * Tiger for older probes. Evidence for a follow-up conversation, never a verdict.
  */
 export async function loadProbeEvidence(limit = 30): Promise<Source<ProbeEvidence[]>> {
   const n = neon();
   if (!n) return { data: [], origin: "none" };
   try {
     const { rows } = await n.query<{
-      id: string; attempt_id: string; item_id: string; mode: string | null; final_score: number | null;
-      chars: number; student_pseudonym: string; accommodations: { itemId?: string }[] | null;
+      id: string; attempt_id: string; item_id: string; mode: string | null; final_score: number | null; chars: number;
+      student_pseudonym: string; accommodations: { itemId?: string }[] | null; signals: Record<string, FieldSignals> | null;
     }>(
       `select p.id, p.attempt_id, p.item_id, p.mode, p.final_score,
               length(coalesce(p.explanation, '')) + length(coalesce(p.counterfactual_answer, '')) as chars,
-              a.student_pseudonym, a.accommodations
+              a.student_pseudonym, a.accommodations, p.explain_signals_json as signals
        from probe p join attempt a on a.id = p.attempt_id
        where coalesce(p.explanation, '') <> '' or p.mode = 'voice'
        order by p.created_at desc limit $1`,
@@ -164,30 +199,32 @@ export async function loadProbeEvidence(limit = 30): Promise<Source<ProbeEvidenc
     );
     const t = tiger();
     const counts = new Map<string, { keys: number; pastes: number }>();
-    if (t && rows.length) {
-      const ids = [...new Set(rows.map((r) => r.attempt_id))];
+    const needFallback = rows.filter((r) => !r.signals).map((r) => r.attempt_id);
+    if (t && needFallback.length) {
       const ev = await t.query<{ attempt_id: string; keys: number; pastes: number }>(
         `select attempt_id, count(*) filter (where kind = 'key')::int keys, count(*) filter (where kind = 'paste')::int pastes
-         from interaction_events
-         where attempt_id = any($1) and payload->>'target' in ('probe-explanation', 'probe-cf-answer')
+         from interaction_events where attempt_id = any($1) and payload->>'target' in ('probe-explanation', 'probe-cf-answer')
          group by attempt_id`,
-        [ids],
+        [[...new Set(needFallback)]],
       );
       for (const e of ev.rows) counts.set(e.attempt_id, { keys: e.keys, pastes: e.pastes });
     }
     const data = rows.map((r): ProbeEvidence => {
-      const accommodated = (r.accommodations ?? []).some((a) => a?.itemId === r.item_id);
-      const c = counts.get(r.attempt_id) ?? { keys: 0, pastes: 0 };
-      const mode = accommodated ? "accommodation" : r.mode === "voice" ? "voice" : "typed";
-      const chars = Number(r.chars);
-      const evidence: ProbeEvidence["evidence"] =
-        mode === "accommodation" ? "excluded (accommodation)"
-        : mode === "voice" ? "voice"
-        : chars === 0 ? "no text"
-        : c.pastes > 0 ? "pasted"
-        : c.keys >= chars * 0.5 ? "typed by hand"
-        : "appeared without typing";
-      return { probeId: r.id, attemptId: r.attempt_id, student: r.student_pseudonym, itemId: r.item_id, mode, score: r.final_score, chars, keys: c.keys, pastes: c.pastes, evidence };
+      const accommodated = r.mode === "accommodation" || (r.accommodations ?? []).some((a) => a?.itemId === r.item_id);
+      const mode: ProbeEvidence["mode"] = accommodated ? "accommodation" : r.mode === "voice" ? "voice" : "typed";
+      const base = { probeId: r.id, attemptId: r.attempt_id, student: r.student_pseudonym, itemId: r.item_id, mode, score: r.final_score };
+      if (mode !== "typed") {
+        return { ...base, chars: Number(r.chars), keys: 0, pastedChars: 0, untypedChars: 0, medianKeyMs: null, notes: [], evidence: mode === "voice" ? "voice" : "excluded (accommodation)" };
+      }
+      let d: ReturnType<typeof describe>;
+      if (r.signals) d = describe(r.signals);
+      else {
+        // Older probes: estimate from Tiger key counts (keys ~ characters typed; pastes counted, size unknown).
+        const c = counts.get(r.attempt_id) ?? { keys: 0, pastes: 0 };
+        const chars = Number(r.chars);
+        d = describe({ explanation: { keys: c.keys, charsTyped: c.keys, finalLength: chars, pastes: c.pastes, pastedChars: c.pastes ? Math.max(0, chars - c.keys) : 0 } });
+      }
+      return { ...base, ...d, evidence: d.chars === 0 ? "no text" : "typed" };
     });
     return { data, origin: "tiger", updatedAt: new Date().toISOString() };
   } catch (e) {

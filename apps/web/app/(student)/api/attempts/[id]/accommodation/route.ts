@@ -23,9 +23,18 @@ export async function POST(req: Request, ctx: RouteContext<"/api/attempts/[id]/a
   const { id } = await ctx.params;
   const attempt = await getAttempt(id);
   if (!attempt) return NextResponse.json({ error: "attempt not found" }, { status: 404 });
-  const body = (await req.json().catch(() => ({}))) as { itemId?: string };
+  const body = (await req.json().catch(() => ({}))) as { itemId?: string; kind?: "figure_text" | "typed_explanation" };
   const quiz = await getQuiz(attempt.quizId);
   const item = quiz?.items.find((i) => i.id === body.itemId) as FigureItem | undefined;
+  // Typed explanation instead of voice (voice-required quizzes): allowed for any item, recorded, never penalized.
+  if (body.kind === "typed_explanation") {
+    if (!item) return NextResponse.json({ error: "item not found" }, { status: 404 });
+    await addAccommodation(id, item.id, "typed_explanation");
+    await writeEvents([
+      { ts: new Date().toISOString(), attemptId: id, itemId: item.id, kind: "focus", payload: { type: "accommodation", accommodation: "typed_explanation", excludeFromDetection: true } },
+    ]).catch(() => {});
+    return NextResponse.json({ ok: true });
+  }
   if (!item?.figure) return NextResponse.json({ error: "this question has no figure" }, { status: 400 });
   const text = item.figureText?.trim() || (await figureTextFromNeon(item.id)) || item.figure.alt;
   await addAccommodation(id, item.id, "figure_text");

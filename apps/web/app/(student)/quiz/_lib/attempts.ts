@@ -233,7 +233,7 @@ export async function updateAttempt(attemptId: string, patch: Partial<Pick<Attem
 // Accommodation (CONTRACTS: figure items): recorded on the attempt so the probe policy can honor it.
 // The marker "acc:<itemId>" in probe_plan is authoritative (no schema change needed); the
 // attempt.accommodations column, when present, gets a descriptive copy for D's exclusion and audits.
-export async function addAccommodation(attemptId: string, itemId: string, kind: "figure_text") {
+export async function addAccommodation(attemptId: string, itemId: string, kind: "figure_text" | "typed_explanation") {
   const marker = `acc:${itemId}`;
   const entry = { itemId, kind, at: new Date().toISOString() };
   const db = neon();

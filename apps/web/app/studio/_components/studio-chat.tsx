@@ -1,7 +1,8 @@
 "use client";
 // Studio as a conversation (owner: B), on D's chat shell. No LLM behind the composer: it maps
 // plain requests to actions (attack results, rewrite, replay, import), so it spends no quota.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { Download, FileUp, GitBranch, Globe, History, Link2, Target } from "lucide-react";
 import { CanvasCard } from "./canvas-card";
 import { replayCookieOn, studioFetch, syncReplayCookie } from "../_lib/replay-client";
@@ -61,6 +62,7 @@ export function StudioChat({ data }: { data: StudioData }) {
   const [resumed, setResumed] = useState<Record<string, boolean>>({});
   const [decideError, setDecideError] = useState<string | null>(null);
   const sourceRef = useRef<EventSource | null>(null);
+  const router = useRouter();
 
   const quiz = data.quiz;
   const title = quiz ? displayTitle(quiz.title) : "Studio";
@@ -75,10 +77,18 @@ export function StudioChat({ data }: { data: StudioData }) {
 
   // Demo resilience: ?replay=1 turns replay mode on (cookie); replayed responses raise a badge.
   const [replayAt, setReplayAt] = useState<string | null>(null);
-  const [replayMode, setReplayMode] = useState(false);
+  // The cookie is external state: read it with useSyncExternalStore (false on the server).
+  const replayMode = useSyncExternalStore(
+    (cb) => {
+      window.addEventListener("studio:replay-mode", cb);
+      return () => window.removeEventListener("studio:replay-mode", cb);
+    },
+    () => replayCookieOn(),
+    () => false,
+  );
   useEffect(() => {
     syncReplayCookie();
-    setReplayMode(replayCookieOn());
+    window.dispatchEvent(new Event("studio:replay-mode"));
     const on = (e: Event) => setReplayAt((e as CustomEvent<{ recordedAt: string }>).detail.recordedAt);
     window.addEventListener("studio:replay", on);
     return () => window.removeEventListener("studio:replay", on);
@@ -434,7 +444,7 @@ export function StudioChat({ data }: { data: StudioData }) {
           <CanvasCard
             onImported={(r) =>
               say(`Imported "${r.title}" from Canvas: ${r.items} question${r.items === 1 ? "" : "s"}${r.skipped?.length ? `, ${r.skipped.length} skipped (unsupported types)` : ""}.`, {
-                actions: [{ label: "Open it here and attack it", primary: true, run: () => (window.location.href = `/studio?quiz=${encodeURIComponent(r.quizId)}`) }],
+                actions: [{ label: "Open it here and attack it", primary: true, run: () => router.push(`/studio?quiz=${encodeURIComponent(r.quizId)}`) }],
               })
             }
           />

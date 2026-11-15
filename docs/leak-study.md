@@ -1,4 +1,33 @@
-# How many textbook exercises are already online? (leak study)
+# Textbook Leak Index (500 exercises, 10 books)
+
+Run on 2026-11-15. Open data: `data/open/leak-index-2026-11.csv` / `.json` (links and match levels only). This replaces the pilot below as the headline.
+
+**Between 36% and 48% of 500 randomly sampled end-of-chapter exercises are already on homework-help sites.** Three levels. The strict level was the plan; the exact-phrase level was added after the run, once it was clear that short search snippets cut off long questions:
+
+| Level | Meaning | Exercises |
+|---|---|---|
+| Strict | a homework-site search result shows the exercise's actual question | 180/500 (36%, 95% CI 32-40) |
+| Exact phrase | strict, or a homework page whose result quotes an exact 8-12 word phrase from the exercise | 242/500 (48%, CI 44-53) |
+| Any overlap | text overlap of 0.5 or more on a homework site (upper bound, includes false positives) | 285/500 (57%) |
+
+| Book | Strict | Exact phrase |
+|---|---|---|
+| American Government 3e | 35/50 (70%, CI 56-81) | 41/50 (82%) |
+| Biology 2e | 29/50 (58%, CI 44-71) | 31/50 (62%) |
+| Principles of Microeconomics 3e | 26/50 (52%, CI 38-65) | 31/50 (62%) |
+| Chemistry 2e | 18/50 (36%, CI 24-50) | 27/50 (54%) |
+| Principles of Macroeconomics 3e | 22/50 (44%, CI 31-58) | 27/50 (54%) |
+| Psychology 2e | 19/50 (38%, CI 26-52) | 27/50 (54%) |
+| Introductory Statistics 2e | 11/50 (22%, CI 13-35) | 20/50 (40%) |
+| College Physics 2e | 7/50 (14%, CI 7-26) | 19/50 (38%) |
+| Calculus Volume 1 | 8/50 (16%, CI 8-28) | 10/50 (20%) |
+| Calculus Volume 2 | 5/50 (10%, CI 4-21) | 9/50 (18%) |
+
+- **Method:** 50 exercises per book, sampled at random across chapters by `services/leakscan/scripts/collect_openstax.py`. The script respects openstax.org's robots.txt (`/books/` is allowed for general crawlers), fetches 1 page per second, and keeps only self-contained text exercises (no figures or tables). The text is never read by an AI model and never committed. Same search method as the pilot: one exact-phrase search, then one keyword search on homework sites if nothing matched. 697 searches in total (about $1), of which 35 failed, leaving 23 exercises unknown.
+- **Why it's lower than the pilot's 84%:** the pilot's 92 exercises were picked for distinctive, self-contained wording, which are the easiest to find. This index takes every kind of exercise at random, including long and math-heavy ones. It also searches the full question, so a short search snippet often cuts off before the question's ask; that's why the strict level undercounts and we report the exact-phrase level next to it.
+- **Limits:** one search snapshot; with 50 per book, each book's rate is about plus or minus 13 points; the most-leaked-chapters ranking rests on 3 exercises per chapter, so read it as a hint.
+
+# Pilot: how many textbook exercises are already online?
 
 Owner: D. Run on 2026-11-14 with the Bright Data SERP API. Raw results: `services/leakscan/results/study-openstax-study-2026-11-15T01-36-17-981Z.json`. Test set: `services/leakscan/testsets/openstax-study.json`.
 

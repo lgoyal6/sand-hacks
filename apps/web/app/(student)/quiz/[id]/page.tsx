@@ -20,7 +20,7 @@ async function QuizBody({ params, searchParams }: { params: Promise<{ id: string
   return (
     <>
       <h1 id="quiz-title" className="sr-only">{pub.title}</h1>
-      <ChatQuiz quizzes={quizzes} initialQuizId={pub.id} viewer={viewer ? { name: viewer.name, role: viewer.role } : null} suggestedMode={sp.mode === "graded" ? "graded" : "practice"} student={student} />
+      <ChatQuiz quizzes={quizzes} initialQuizId={pub.id} viewer={viewer ? { name: viewer.name, role: viewer.role } : null} suggestedMode={sp.mode === "graded" ? "graded" : "practice"} voiceRequired={sp.voice === "required"} student={student} />
     </>
   );
 }

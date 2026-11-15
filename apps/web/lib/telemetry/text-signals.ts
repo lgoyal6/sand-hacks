@@ -35,10 +35,10 @@ export function trackTextSignals(el: HTMLTextAreaElement) {
   const gaps: number[] = [];
   const s = { keys: 0, pastes: 0, pastedChars: 0, inputEvents: 0, nonKeyInputEvents: 0, charsTyped: 0 };
 
-  const onKey = (e: KeyboardEvent) => {
+  let composing = false;
+  const onKey = () => {
     const now = performance.now();
     s.keys++;
-    if (e.key.length === 1) s.charsTyped++;
     if (lastKey !== null) gaps.push(now - lastKey);
     lastKey = now;
     firstKey ??= now;
@@ -51,15 +51,25 @@ export function trackTextSignals(el: HTMLTextAreaElement) {
     lastActivity = performance.now();
     sawKeyOrPaste = true;
   };
-  const onInput = () => {
+  // Characters come from the inserted text, not from e.key: Android keyboards report "Unidentified" and IME
+  // composition reports "Process", so counting e.key would mislabel hand typing as "without keystrokes".
+  const onInput = (ev: Event) => {
+    const e = ev as InputEvent;
     s.inputEvents++;
-    if (!sawKeyOrPaste) s.nonKeyInputEvents++;
+    const typedHere = sawKeyOrPaste || composing;
+    if (!typedHere) s.nonKeyInputEvents++;
+    else if (e.inputType === "insertText" || e.inputType === "insertCompositionText" || e.inputType === "insertReplacementText") s.charsTyped += e.data?.length ?? 0;
+    else if (e.inputType === "insertLineBreak") s.charsTyped += 1;
     sawKeyOrPaste = false;
     lastActivity = performance.now();
   };
   el.addEventListener("keydown", onKey);
   el.addEventListener("paste", onPaste);
   el.addEventListener("input", onInput);
+  const onCompStart = () => (composing = true);
+  const onCompEnd = () => (composing = false);
+  el.addEventListener("compositionstart", onCompStart);
+  el.addEventListener("compositionend", onCompEnd);
 
   return {
     read(): TextSignals {
@@ -78,6 +88,8 @@ export function trackTextSignals(el: HTMLTextAreaElement) {
       el.removeEventListener("keydown", onKey);
       el.removeEventListener("paste", onPaste);
       el.removeEventListener("input", onInput);
+      el.removeEventListener("compositionstart", onCompStart);
+      el.removeEventListener("compositionend", onCompEnd);
     },
   };
 }

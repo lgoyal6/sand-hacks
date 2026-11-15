@@ -68,6 +68,8 @@ interface LeakIndex {
   queries: number;
   query_errors: number;
   by_book: Record<string, { subject: string; exercises: number; found: number; pct: number; ci95: [number, number] }>;
+  levels: Record<"strict" | "exact_phrase" | "any_overlap", { found: number; pct: number; ci95: [number, number] }>;
+  by_book_levels: Record<string, Record<"strict" | "exact_phrase" | "any_overlap", { found: number; pct: number; ci95: [number, number] }>>;
   by_chapter: { book: string; chapter: string; exercises: number; found: number; pct: number }[];
   by_site: Record<string, { exercises: number; results: number }>;
 }
@@ -81,22 +83,20 @@ async function loadIndex(): Promise<LeakIndex | null> {
   }
 }
 
-/** A book's rate as a bar, with its 95% confidence interval drawn as a thin whisker over the bar. */
-function RateRow({ label, sub, pct, ci, n, k }: { label: string; sub?: string; pct: number; ci: [number, number]; n: number; k: number }) {
+/** A book's rate as a two-tone bar: dark = strict, light extension = exact phrase. Values printed. */
+function RangeRow({ label, sub, strict, exact, n }: { label: string; sub?: string; strict: number; exact: number; n: number }) {
   return (
-    <li className="group grid grid-cols-[150px_minmax(0,1fr)_112px] items-center gap-3 rounded-lg px-1 py-1 sm:grid-cols-[210px_minmax(0,1fr)_120px]" title={`${label}: ${k} of ${n} found, 95% CI ${ci[0]}-${ci[1]}%`} tabIndex={0}>
+    <li className="group grid grid-cols-[150px_minmax(0,1fr)_96px] items-center gap-3 rounded-lg px-1 py-1 sm:grid-cols-[210px_minmax(0,1fr)_110px]" title={`${label}: ${Math.round(strict)}% strict, ${Math.round(exact)}% with an exact 10-word phrase (n=${n})`} tabIndex={0}>
       <span className="min-w-0">
         <span className="block truncate text-sm">{label}</span>
         {sub && <span className="block truncate text-xs text-muted-foreground">{sub}</span>}
       </span>
       <span className="relative h-3 w-full rounded-r-[4px] bg-muted/60">
-        <span className="block h-full rounded-r-[4px] bg-brand transition-opacity group-hover:opacity-80" style={{ width: `${Math.max(1.5, pct)}%` }} />
-        <span aria-hidden className="absolute top-1/2 h-px -translate-y-1/2 bg-foreground/60" style={{ left: `${ci[0]}%`, width: `${Math.max(0.5, ci[1] - ci[0])}%` }} />
-        <span aria-hidden className="absolute top-1/2 h-2.5 w-px -translate-y-1/2 bg-foreground/60" style={{ left: `${ci[0]}%` }} />
-        <span aria-hidden className="absolute top-1/2 h-2.5 w-px -translate-y-1/2 bg-foreground/60" style={{ left: `${ci[1]}%` }} />
+        <span className="absolute inset-y-0 left-0 rounded-r-[4px] bg-brand/30" style={{ width: `${Math.max(1.5, exact)}%` }} />
+        <span className="absolute inset-y-0 left-0 rounded-r-[4px] bg-brand transition-opacity group-hover:opacity-80" style={{ width: `${Math.max(1, strict)}%` }} />
       </span>
       <span className="num text-right text-sm">
-        {Math.round(pct)}% <span className="text-xs text-muted-foreground">{Math.round(ci[0])}-{Math.round(ci[1])}</span>
+        {Math.round(strict)}-{Math.round(exact)}%
       </span>
     </li>
   );
@@ -181,10 +181,10 @@ export default async function Page() {
           </span>
           <h1 className="text-[34px] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[40px]">The State of Leaked Homework</h1>
           <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
-            <span className="num text-[72px] font-semibold leading-none tracking-[-0.04em] sm:text-[88px]">{Math.round(index ? index.pct_found : s.pct_found)}%</span>
+            <span className="num text-[72px] font-semibold leading-none tracking-[-0.04em] sm:text-[88px]">{index ? `${Math.round(index.levels.strict.pct)}-${Math.round(index.levels.exact_phrase.pct)}` : Math.round(s.pct_found)}%</span>
             <p className="max-w-[460px] pb-2 text-[17px] leading-relaxed text-muted-foreground">
               {index
-                ? `of ${index.exercises} real end-of-chapter exercises from ${Object.keys(index.by_book).length} open textbooks were already on homework-help sites (${index.found_on_study_sites} found; 95% CI ${Math.round(index.ci95[0])}-${Math.round(index.ci95[1])}%).`
+                ? `of ${index.exercises} randomly sampled end-of-chapter exercises from ${Object.keys(index.by_book).length} open textbooks are already on homework-help sites: ${index.levels.strict.found} with the question visible in the search result, ${index.levels.exact_phrase.found} counting pages that quote an exact 10-word phrase.`
                 : `of real textbook exercises we searched were already on homework-help sites: ${s.found_on_study_sites} of ${s.exercises}, across 5 subjects.`}
             </p>
           </div>
@@ -204,18 +204,18 @@ export default async function Page() {
                 Textbook Leak Index
               </h2>
               <p className="max-w-[680px] text-sm leading-relaxed text-muted-foreground">
-                About 50 exercises per book, sampled across chapters. Bars show the share found on homework sites; the thin line is the 95% confidence interval.
+                50 exercises per book, sampled at random across chapters. Dark: the search result shows the question itself. Light: a homework page quotes an exact 10-word phrase from it. With 50 per book, each rate is about plus or minus 13 points (95% CI).
               </p>
             </div>
             <ul className="flex flex-col gap-1.5">
-              {Object.entries(index.by_book)
-                .sort((a, b) => b[1].pct - a[1].pct)
+              {Object.entries(index.by_book_levels)
+                .sort((a, b) => b[1].exact_phrase.pct - a[1].exact_phrase.pct)
                 .map(([book, v]) => (
-                  <RateRow key={book} label={book} sub={v.subject} pct={v.pct} ci={v.ci95} n={v.exercises} k={v.found} />
+                  <RangeRow key={book} label={book} sub={index.by_book[book]?.subject} strict={v.strict.pct} exact={v.exact_phrase.pct} n={index.by_book[book]?.exercises ?? 50} />
                 ))}
             </ul>
             <div className="flex flex-col gap-2">
-              <span className="text-xs text-muted-foreground">Most-leaked chapters (3 or more exercises sampled)</span>
+              <span className="text-xs text-muted-foreground">Most-leaked chapters (3 or more exercises sampled; small samples, read as hints)</span>
               <table className="w-full text-sm">
                 <caption className="sr-only">Most-leaked chapters</caption>
                 <thead>
@@ -243,7 +243,7 @@ export default async function Page() {
               </table>
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              {index.queries} searches; {index.query_errors} failed{index.unknown_due_to_errors ? `, leaving ${index.unknown_due_to_errors} exercises unknown` : ""}. Exercise text was collected by a plain script that respects openstax.org&apos;s robots.txt, used only as search queries, and never stored here or in git.{" "}
+              Why lower than the pilot&apos;s 84%: the pilot used 92 exercises hand-picked for distinctive wording, which are the easiest to find; this index samples every kind of exercise at random, including long and math-heavy ones that are harder to match by search. A third level, any text overlap on a homework site, reaches {Math.round(index.levels.any_overlap.pct)}% but includes false positives. {index.queries} searches; {index.query_errors} failed{index.unknown_due_to_errors ? `, leaving ${index.unknown_due_to_errors} exercises unknown` : ""}. Exercise text was collected by a plain script that respects openstax.org&apos;s robots.txt, used only as search queries, and never stored here or in git.{" "}
               <a href="/study/data/leak-index-2026-11.csv" className="underline hover:text-foreground">
                 Download the index (CSV)
               </a>

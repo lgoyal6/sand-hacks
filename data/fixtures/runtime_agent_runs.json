@@ -53,5 +53,115 @@
     "seconds": 11.6,
     "steps": 61,
     "runAt": "2026-11-15T04:39:05.550200Z"
+  },
+  {
+    "id": "run-6f90a83eb8:sample-stats-q1",
+    "quizId": "sample-stats",
+    "itemId": "sample-stats-q1",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.8-flash",
+    "correct": true,
+    "seconds": 41.4,
+    "steps": 53,
+    "runAt": "2026-11-15T04:43:48.313451Z"
+  },
+  {
+    "id": "run-6f90a83eb8:sample-stats-q2",
+    "quizId": "sample-stats",
+    "itemId": "sample-stats-q2",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.8-flash",
+    "correct": true,
+    "seconds": 5.4,
+    "steps": 53,
+    "runAt": "2026-11-15T04:43:48.313522Z"
+  },
+  {
+    "id": "run-6f90a83eb8:sample-stats-q3",
+    "quizId": "sample-stats",
+    "itemId": "sample-stats-q3",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.8-flash",
+    "correct": true,
+    "seconds": 4,
+    "steps": 53,
+    "runAt": "2026-11-15T04:43:48.313536Z"
+  },
+  {
+    "id": "run-6f90a83eb8:sample-stats-q4",
+    "quizId": "sample-stats",
+    "itemId": "sample-stats-q4",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.8-flash",
+    "correct": true,
+    "seconds": 4.2,
+    "steps": 53,
+    "runAt": "2026-11-15T04:43:48.313542Z"
+  },
+  {
+    "id": "run-6f90a83eb8:sample-stats-q5",
+    "quizId": "sample-stats",
+    "itemId": "sample-stats-q5",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.8-flash",
+    "correct": true,
+    "seconds": 8.9,
+    "steps": 53,
+    "runAt": "2026-11-15T04:43:48.313548Z"
+  },
+  {
+    "id": "run-7c25b39acc:sample-stats-q1",
+    "quizId": "sample-stats",
+    "itemId": "sample-stats-q1",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.6-flash",
+    "correct": true,
+    "seconds": 8.1,
+    "steps": 47,
+    "runAt": "2026-11-15T04:46:55.298105Z"
+  },
+  {
+    "id": "run-7c25b39acc:sample-stats-q2",
+    "quizId": "sample-stats",
+    "itemId": "sample-stats-q2",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.6-flash",
+    "correct": true,
+    "seconds": 7.7,
+    "steps": 47,
+    "runAt": "2026-11-15T04:46:55.298396Z"
+  },
+  {
+    "id": "run-7c25b39acc:sample-stats-q3",
+    "quizId": "sample-stats",
+    "itemId": "sample-stats-q3",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.6-flash",
+    "correct": true,
+    "seconds": 6.6,
+    "steps": 47,
+    "runAt": "2026-11-15T04:46:55.298402Z"
+  },
+  {
+    "id": "run-7c25b39acc:sample-stats-q4",
+    "quizId": "sample-stats",
+    "itemId": "sample-stats-q4",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.6-flash",
+    "correct": true,
+    "seconds": 7.6,
+    "steps": 47,
+    "runAt": "2026-11-15T04:46:55.298404Z"
+  },
+  {
+    "id": "run-7c25b39acc:sample-stats-q5",
+    "quizId": "sample-stats",
+    "itemId": "sample-stats-q5",
+    "agent": "browser-use",
+    "model": "gmi:google/gemini-3.6-flash",
+    "correct": true,
+    "seconds": 9.8,
+    "steps": 47,
+    "runAt": "2026-11-15T04:46:55.298407Z"
   }
 ]
