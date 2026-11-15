@@ -76,3 +76,19 @@ test("register a variant quiz", async () => {
   assert.equal(r.status, 201);
   assert.match((await r.json()).url, /\/quiz\/v-1$/);
 });
+
+test("figure items render an img, only from data: URLs or /figures/", async () => {
+  const png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+  const quiz = { id: "fig-1", courseId: "c", title: "Fig", sourceFormat: "markdown", items: [
+    { id: "fig-1-q1", quizId: "fig-1", type: "numeric", stem: "Read the slope from the chart.", answerKey: "2", objective: "x", figure: { src: png, alt: "A line chart" } },
+    { id: "fig-1-q2", quizId: "fig-1", type: "numeric", stem: "Bad src.", answerKey: "1", objective: "x", figure: { src: "https://example.com/x.png", alt: "" } },
+    { id: "fig-1-q3", quizId: "fig-1", type: "numeric", stem: "No alt.", answerKey: "3", objective: "x", image: { src: png } },
+  ] };
+  assert.equal((await fetch(`${base}/api/quizzes`, { method: "POST", headers: RUNNER, body: JSON.stringify(quiz) })).status, 201);
+  const login = await fetch(`${base}/login`, { method: "POST", body: new URLSearchParams({ username: "student1", password: "sandbox" }), redirect: "manual" });
+  const cookie = login.headers.get("set-cookie").split(";")[0];
+  const html = await (await fetch(`${base}/quiz/fig-1`, { headers: { cookie } })).text();
+  assert.ok(html.includes(`<img src="${png}" alt="A line chart"`));
+  assert.ok(!html.includes("example.com"), "remote figure URLs are not rendered");
+  assert.ok(html.includes(`<img src="${png}" alt=""`), "image alias renders with empty alt");
+});

@@ -91,7 +91,17 @@ function renderItem(item, idx) {
   } else {
     input = `<label>Answer: <input type="text" name="${esc(item.id)}" autocomplete="off"></label>`;
   }
-  return `<section class="question" data-item-id="${esc(item.id)}"><h3>Question ${n}</h3><p class="stem">${esc(item.stem)}</p>${input}</section>`;
+  return `<section class="question" data-item-id="${esc(item.id)}"><h3>Question ${n}</h3><p class="stem">${esc(item.stem)}</p>${renderFigure(item)}${input}</section>`;
+}
+
+// Optional figure for figure-dependent variants: item.figure = { src, alt }. src is a data:image URL or a path
+// served from /figures/. alt is rendered as given; whoever writes the variant decides what it contains (a figure
+// whose alt text holds the data is readable to agents and screen readers alike).
+function renderFigure(item) {
+  const f = item.figure ?? item.image; // B's shared type calls it `image`; `figure` kept as an alias
+  if (!f || typeof f.src !== "string") return "";
+  if (!/^data:image\/(png|jpeg|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(f.src) && !/^\/figures\/[\w.-]+$/.test(f.src)) return "";
+  return `<figure class="figure"><img src="${esc(f.src)}" alt="${esc(f.alt ?? "")}" style="max-width:100%"></figure>`;
 }
 
 // Answer-change events let us time each item without trusting the agent's own report.
@@ -144,7 +154,17 @@ async function handle(req, res) {
   const sess = currentSession(req);
 
   // ---------- runner API (not linked from the UI) ----------
-  if (p === "/api/health") return json(res, 200, { ok: true, quizzes: [...quizzes.keys()] });
+  if (p === "/api/health") return json(res, 200, { ok: true, quizzes: [...quizzes.keys()], figures: true });
+
+  let fm;
+  if ((fm = p.match(/^\/figures\/([\w.-]+\.(png|jpe?g|gif|webp|svg))$/))) {
+    try {
+      const type = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml" }[fm[2]];
+      return send(res, 200, readFileSync(path.join(here, "figures", fm[1])), type);
+    } catch {
+      return send(res, 404, "not found", "text/plain");
+    }
+  }
 
   const isRunner = req.headers["x-runner-token"] === RUNNER_TOKEN;
   if ((p === "/api/quizzes" || p.startsWith("/api/runs/")) && !isRunner) return json(res, 403, { error: "runner token required" });
@@ -155,6 +175,8 @@ async function handle(req, res) {
     if (!q.id || !Array.isArray(q.items) || q.items.length === 0) return json(res, 400, { error: "quiz needs id and items" });
     for (const it of q.items) {
       if (!it.id || !it.stem || !it.type || it.answerKey === undefined) return json(res, 400, { error: `bad item ${it.id}` });
+      const fig = it.figure ?? it.image;
+      if (fig && (typeof fig.src !== "string" || fig.src.length > 2_000_000)) return json(res, 400, { error: `bad image on ${it.id}` });
     }
     quizzes.set(q.id, q);
     return json(res, 201, { id: q.id, url: `http://localhost:${PORT}/quiz/${encodeURIComponent(q.id)}` });

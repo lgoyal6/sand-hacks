@@ -2,7 +2,10 @@
 // Studio as a conversation (owner: B), on D's chat shell. No LLM behind the composer: it maps
 // plain requests to actions (attack results, rewrite, replay, import), so it spends no quota.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FileUp, History, PlayCircle, Target, Wand2 } from "lucide-react";
+import { FileUp, Globe, History, PlayCircle, Target, Wand2 } from "lucide-react";
+import type { LeakFinding } from "@unprompted/shared";
+import { LeakRadar } from "@/components/dashboard/leak-radar";
+import { buildLeakRadar, type LeakRadarData } from "@/components/dashboard/leak-radar-data";
 import { ChatLayout, Chip, Composer, Message, PillButton, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
 import { APP_LINKS } from "@/components/ui/app-shell";
 import type { StudioData } from "../_lib/data";
@@ -29,7 +32,8 @@ type Msg =
   | { id: string; role: "assistant"; agent?: string; kind: "attack" }
   | { id: string; role: "assistant"; agent?: string; kind: "saved" }
   | { id: string; role: "assistant"; agent?: string; kind: "run"; runId: string }
-  | { id: string; role: "assistant"; agent?: string; kind: "import" };
+  | { id: string; role: "assistant"; agent?: string; kind: "import" }
+  | { id: string; role: "assistant"; agent?: string; kind: "leaks"; text: string; radar: LeakRadarData | null; done: boolean; error?: string };
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 let seq = 0;
@@ -140,6 +144,54 @@ export function StudioChat({ data }: { data: StudioData }) {
     [push, say],
   );
 
+  // Leak scout (Mastra agent behind /api/agents): streams AgentEvents to the panel, findings -> D's LeakRadar.
+  const checkLeaks = useCallback(async () => {
+    if (!quiz) return;
+    push({ id: nid(), role: "user", text: "Is any of this quiz already online?" });
+    const id = nid();
+    push({ id, role: "assistant", agent: "Leak scout", kind: "leaks", text: "", radar: null, done: false });
+    const patch = (p: Partial<Extract<Msg, { kind: "leaks" }>>) => setMsgs((ms) => ms.map((m) => (m.id === id ? ({ ...m, ...p } as Msg) : m)));
+    try {
+      const res = await fetch("/api/agents/leak-scout/turn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: `Is anything from my quiz "${quiz.id}" (quizId ${quiz.id}) already online?` }),
+      });
+      if (!res.ok || !res.body) {
+        const b = (await res.json().catch(() => ({}))) as { error?: string };
+        return patch({ done: true, error: b.error ?? `Leak scout unavailable (${res.status}).` });
+      }
+      const dec = new TextDecoder();
+      let buf = "";
+      let text = "";
+      for await (const part of res.body as unknown as AsyncIterable<Uint8Array>) {
+        buf += dec.decode(part, { stream: true });
+        let i;
+        while ((i = buf.indexOf("\n")) >= 0) {
+          const line = buf.slice(0, i).trim();
+          buf = buf.slice(i + 1);
+          if (!line) continue;
+          const o = JSON.parse(line) as { type?: string; text?: string; message?: string; agentId?: string; toolCall?: { name: string; result?: { findings?: LeakFinding[] } } };
+          if (o.agentId) {
+            window.dispatchEvent(new CustomEvent("unprompted:agent-status", { detail: o }));
+            const findings = o.toolCall?.result?.findings;
+            if (findings) patch({ radar: buildLeakRadar(quiz, findings, { archiveWatch: { status: "off" } }) });
+          } else if (o.type === "delta" && o.text) {
+            text += o.text;
+            patch({ text });
+          } else if (o.type === "message") {
+            patch({ text: o.text ?? text, done: true });
+          } else if (o.type === "error") {
+            patch({ done: true, error: o.message });
+          }
+        }
+      }
+      patch({ done: true });
+    } catch {
+      patch({ done: true, error: "Lost the connection to the Leak scout." });
+    }
+  }, [push, quiz]);
+
   const handle = useCallback(
     (text: string) => {
       const t = text.trim();
@@ -148,6 +200,7 @@ export function StudioChat({ data }: { data: StudioData }) {
       if (/attack|agents? (solve|do)|solve rate|how did/i.test(t)) return showAttack();
       push({ id: nid(), role: "user", text: t });
       if (/replay|recorded/i.test(t)) return replay();
+      if (/leak|online|published|posted|quizlet|chegg|reddit/i.test(t)) return void checkLeaks();
       if (/saved|past|previous/i.test(t) && data.experiments.length) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "saved" });
       const qs = [...t.matchAll(/\bq(\d+)\b/gi)].map((m) => `${quiz?.id}-q${m[1]}`).filter((id) => quiz?.items.some((i) => i.id === id));
       if (/rewrite|transform|variant|fix|harden/i.test(t)) return offerRewrite(qs.length ? qs : solvable.map((s) => s.itemId));
@@ -155,7 +208,7 @@ export function StudioChat({ data }: { data: StudioData }) {
         actions: [{ label: "Attack my quiz", primary: true, run: showAttack }],
       });
     },
-    [data.experiments.length, importQuiz, offerRewrite, push, quiz, replay, say, showAttack, solvable],
+    [checkLeaks, data.experiments.length, importQuiz, offerRewrite, push, quiz, replay, say, showAttack, solvable],
   );
 
   const decide = useCallback(
@@ -262,6 +315,22 @@ export function StudioChat({ data }: { data: StudioData }) {
         </Message>
       );
     }
+    if (m.kind === "leaks") {
+      return (
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
+          {m.error ? <p className="text-muted-foreground">{m.error}</p> : m.text ? <p>{withBold(m.text)}</p> : null}
+          {m.radar ? (
+            <div className="mt-3">
+              <LeakRadar data={m.radar} />
+            </div>
+          ) : !m.done ? (
+            <div className="mt-2">
+              <Thinking label="Leak scout is checking the web" />
+            </div>
+          ) : null}
+        </Message>
+      );
+    }
     if (m.kind === "saved") {
       return (
         <Message key={m.id} role="assistant" agentName={nameFor(m)}>
@@ -313,6 +382,9 @@ export function StudioChat({ data }: { data: StudioData }) {
                 Replay a recorded run
               </Chip>
             ) : null}
+            <Chip icon={<Globe />} onClick={() => void checkLeaks()}>
+              Is any of this online?
+            </Chip>
             {data.experiments.length ? (
               <Chip icon={<History />} onClick={() => handle("show saved variants")}>
                 Saved variants
@@ -329,6 +401,13 @@ export function StudioChat({ data }: { data: StudioData }) {
         {decideError ? <p className="text-sm text-rejected">{decideError}</p> : null}
       </Thread>
     </ChatLayout>
+  );
+}
+
+/** Agents may use **bold** (and nothing else); render it without a Markdown library. */
+function withBold(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**") ? <strong key={i}>{part.slice(2, -2)}</strong> : <span key={i}>{part}</span>,
   );
 }
 

@@ -259,5 +259,28 @@
     "local browser failed to start": 1
   },
   "didNotSubmit": 0,
-  "isolated": false
+  "isolated": false,
+  "excludedByModel": {
+    "gmi:google/gemini-3.5-flash-lite": {
+      "runs": 3,
+      "excluded": 3,
+      "reasons": {
+        "provider content filter": 3
+      }
+    },
+    "gmi:google/gemini-3.6-flash": {
+      "runs": 3,
+      "excluded": 2,
+      "reasons": {
+        "provider rejected request": 2
+      }
+    },
+    "gemini:gemini-3.5-flash-lite": {
+      "runs": 1,
+      "excluded": 1,
+      "reasons": {
+        "local browser failed to start": 1
+      }
+    }
+  }
 }

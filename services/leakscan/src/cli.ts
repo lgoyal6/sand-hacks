@@ -9,8 +9,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { LeakFinding, Quiz } from "@unprompted/shared";
-import { BrightDataSerp, brightDataFromEnv, screenshot } from "./brightdata.js";
-import { scanAll, type ScanItem } from "./scan.js";
+import { BrightDataSerp, brightDataFromEnv, screenshot } from "./brightdata";
+import { scanAll, type ScanItem } from "./scan";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "../../..");

@@ -51,6 +51,9 @@ export async function shouldProbe(args: {
   const { attemptId, itemId, mode, plan, triggered, remainingItems } = args;
   const cap = MAX_PROBES[mode];
   if (triggered.includes(itemId)) return { probe: false, anomaly: 0, reason: "already probed" };
+  // Accommodation rule (CONTRACTS): an item answered with its accessible version always gets the
+  // think-aloud, even past the cap. It is never penalized; the explanation is the evidence.
+  if (plan.includes(`acc:${itemId}`)) return { probe: true, anomaly: 0, reason: "accommodation" };
   if (triggered.length >= cap) return { probe: false, anomaly: 0, reason: "cap reached" };
   const signals = await itemSignals(attemptId, itemId);
   const anomaly = signals.anomaly;
@@ -59,7 +62,7 @@ export async function shouldProbe(args: {
   if (0.2 * anomaly >= 0.15) return { probe: true, anomaly, reason: "session anomaly" };
   // Guarantee the minimum before the quiz ends (planned items may have been skipped).
   const min = MIN_PROBES[mode];
-  const plannedLeft = plan.filter((p) => !triggered.includes(p) && p !== itemId).length;
+  const plannedLeft = plan.filter((p) => !p.startsWith("acc:") && !triggered.includes(p) && p !== itemId).length;
   if (remainingItems === 0 && triggered.length < min && plannedLeft === 0) return { probe: true, anomaly, reason: "minimum" };
   return { probe: false, anomaly, reason: "not selected" };
 }

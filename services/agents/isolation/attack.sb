@@ -6,6 +6,13 @@
 (version 1)
 (allow default)
 
+;; Network: localhost only (the sandbox site, Chrome's debugging port, the egress proxy) plus local unix sockets.
+;; Model API traffic leaves through isolation/egress_proxy.py, which only connects to the model API hosts.
+(deny network-outbound)
+(allow network-outbound (remote ip "localhost:*"))
+(allow network-outbound (remote unix-socket))
+(allow network-outbound (literal "/private/var/run/mDNSResponder"))
+
 ;; No process listing (ps/pgrep/top/lsof) and no shell-outs that reveal other processes.
 (deny process-exec
   (literal "/bin/ps") (literal "/usr/bin/pgrep") (literal "/usr/bin/top") (literal "/usr/sbin/lsof")

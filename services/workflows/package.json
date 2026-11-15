@@ -8,7 +8,8 @@
     "killtest:neon": "tsx --env-file-if-exists=../../.env.local scripts/neon-killtest.ts",
     "ingest": "tsx --env-file-if-exists=../../.env.local src/cli/ingest.ts",
     "transform": "tsx --env-file-if-exists=../../.env.local src/cli/transform.ts",
-    "mastra:dev": "mastra dev --env ../../.env.local"
+    "mastra:dev": "mastra dev --env ../../.env.local",
+    "test:boot": "zsh scripts/boot-test.sh"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",
@@ -17,6 +18,7 @@
     "@mastra/mcp": "2.9.0",
     "@mastra/pg": "1.36.0",
     "@neondatabase/serverless": "^1.2.1",
+    "@unprompted/leakscan": "workspace:^",
     "@unprompted/shared": "workspace:^",
     "zod": "4.6.7"
   },

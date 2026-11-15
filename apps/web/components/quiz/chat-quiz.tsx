@@ -79,6 +79,8 @@ function choiceText(item: PublicItem, a: Answer) {
   return ids.map((id) => { const i = item.choices!.findIndex((c) => c.id === id); return `${"ABCDEFGH"[i] ?? id} · ${item.choices![i]?.text ?? ""}`; }).join(", ");
 }
 
+const qs = (n: number) => `${n} question${n === 1 ? "" : "s"}`;
+
 // Calm practice feedback: what the answer is and what the question was about. Not color-only.
 function feedbackText(item: PublicItem, correct: boolean, key: string[] | null) {
   const why = item.objective ? ` The skill here: ${item.objective.replace(/\.$/, "")}.` : "";
@@ -156,6 +158,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const [lastCorrect, setLastCorrect] = useState<boolean | null>(null);
   const [lastKey, setLastKey] = useState<string[] | null>(null);
   const [tutorLive, setTutorLive] = useState<string | null>(null); // streaming agent reply
+  const [figureTexts, setFigureTexts] = useState<Record<string, string>>({}); // accessible versions shown
   const [liveAgent, setLiveAgent] = useState<"tutor" | "researcher">("tutor");
   const [liveStep, setLiveStep] = useState<string | null>(null); // e.g. "Searching the web (Bright Data)"
   const [lastCardId, setLastCardId] = useState<number | null>(null);
@@ -225,8 +228,8 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
       say(
         "tutor",
         m === "practice"
-          ? `Great. ${target.items.length} questions on ${target.title}. After each one I'll tell you how it went. Sometimes I'll ask you to talk through your thinking. That's the part that makes it stick.`
-          : `${target.items.length} questions on ${target.title}. You'll see your results at the end. Once or twice I'll ask you to explain your reasoning in your own words.`,
+          ? `Great. ${qs(target.items.length)} on ${target.title}. After each one I'll tell you how it went. Sometimes I'll ask you to talk through your thinking. That's the part that makes it stick.`
+          : `${qs(target.items.length)} on ${target.title}. You'll see your results at the end. Once or twice I'll ask you to explain your reasoning in your own words.`,
         { agent: "Tutor" },
       );
       setIndex(0);
@@ -260,6 +263,18 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     setPhase("question");
     telemetry.emit("answer", { type: "item_shown", index: index + 2 }, quiz.items[index + 1]?.id);
     emitAgentStatus("tutor", `presenting question ${index + 2} of ${quiz.items.length}`);
+  };
+
+  // Accommodation (CONTRACTS): the accessible version is never penalized; this item's think-aloud always runs.
+  const requestAccessible = async () => {
+    if (!attemptId || !item || figureTexts[item.id]) return;
+    try {
+      const d = await post<{ figureText: string }>(`/api/attempts/${attemptId}/accommodation`, { itemId: item.id });
+      setFigureTexts((m) => ({ ...m, [item.id]: d.figureText }));
+      telemetry.emit("focus", { type: "accommodation", accommodation: "figure_text", excludeFromDetection: true });
+    } catch (e) {
+      setError((e as Error).message);
+    }
   };
 
   const changeAnswer = (v: Answer) => {
@@ -505,7 +520,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     const match = attemptId ? null : matchQuiz(quizzes, text);
     if (match) {
       setQuizId(match.id);
-      say("tutor", `Let's work on ${match.title}: ${match.items.length} questions. Practice run, or the graded quiz?`, { agent: "Tutor" });
+      say("tutor", `Let's work on ${match.title}: ${qs(match.items.length)}. Practice run, or the graded quiz?`, { agent: "Tutor" });
       setPhase("intro");
     } else if (text === "I'm not sure what to study.") {
       say("tutor", "Happy to help. Which topic are we working on? Pick one and I'll quiz you, with a short think-aloud along the way.", { agent: "Tutor" });
@@ -518,7 +533,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
 
   const sidebarGroups = [
     ...sessionGroups,
-    { label: "Topics", items: quizzes.map((q) => ({ id: `topic-${q.id}`, title: q.title, href: `/quiz/${q.id}`, subtitle: `${q.items.length} questions` })) },
+    { label: "Topics", items: quizzes.map((q) => ({ id: `topic-${q.id}`, title: q.title, href: `/quiz/${q.id}`, subtitle: `${qs(q.items.length)}` })) },
   ];
 
   const composerProps = phase === "home" || phase === "intro" || phase === "pick"
@@ -710,7 +725,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           {!startEmpty && (
           <Message role="tutor">
             <p>
-              Ready for <strong>{quiz.title}</strong>? {quiz.items.length} questions. Practice tells you how you did after each one; the graded quiz shows results at the end.
+              Ready for <strong>{quiz.title}</strong>? {qs(quiz.items.length)}. Practice tells you how you did after each one; the graded quiz shows results at the end.
             </p>
           </Message>
           )}
@@ -751,7 +766,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                   onClick={() => {
                     setQuizId(q.id);
                     say("student", q.title);
-                    say("tutor", `${q.title}: ${q.items.length} questions. Practice run, or the graded quiz?`, { agent: "Tutor" });
+                    say("tutor", `${q.title}: ${qs(q.items.length)}. Practice run, or the graded quiz?`, { agent: "Tutor" });
                     setPhase("intro");
                   }}
                 >
@@ -794,7 +809,16 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                 <p id="item-progress" className="sr-only">
                   Question {index + 1} of {quiz.items.length}
                 </p>
-                <ItemView key={item.id} item={item} value={answer} onChange={changeAnswer} disabled={phase !== "question" || busy} hideStem />
+                <ItemView
+                  key={item.id}
+                  item={item}
+                  value={answer}
+                  onChange={changeAnswer}
+                  disabled={phase !== "question" || busy}
+                  hideStem
+                  onAccessible={item.figure ? requestAccessible : undefined}
+                  figureText={figureTexts[item.id] ?? null}
+                />
               </QuestionCard>
             </form>
           )}

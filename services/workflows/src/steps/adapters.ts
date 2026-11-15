@@ -3,12 +3,13 @@ import path from "node:path";
 import type { Item, Quiz, SolveRate, VariantStrategy } from "@unprompted/shared";
 import { z } from "zod";
 import { answerText, extractFinal } from "./answers.js";
+import { leakedNumbers, renderTablePng, tableText } from "./figure.js";
 import { InfraError, type GeminiModel, type JsonModel } from "./llm.js";
 import type { AttackResult, Attacker, Candidate, GeneratedCandidate, Generator, Judge, PanelVote, Solver, SolveResult } from "./types.js";
 
 // ---------- shared prompt helpers ----------
 
-export function renderItem(it: Pick<Item, "stem" | "type" | "choices">): string {
+export function renderItem(it: Pick<Item, "stem" | "type" | "choices"> & { figureText?: string }): string {
   const choices = it.choices?.map((c) => `  ${c.id}) ${c.text}`).join("\n") ?? "";
   const how =
     it.type === "mcq"
@@ -18,7 +19,8 @@ export function renderItem(it: Pick<Item, "stem" | "type" | "choices">): string 
         : it.type === "numeric"
           ? "Give a single number (a fraction like 1/6 is fine)."
           : "Give a short answer.";
-  return `[${it.type}] ${it.stem}\n${choices}\n(${how})`.trim();
+  const fig = it.figureText ? `\nThe figure shown with this question (an image; its content is):\n${it.figureText}\n` : "";
+  return `[${it.type}] ${it.stem}\n${fig}${choices}\n(${how})`.trim();
 }
 
 const STRATEGY_BRIEF: Record<VariantStrategy, string> = {
@@ -29,7 +31,7 @@ const STRATEGY_BRIEF: Record<VariantStrategy, string> = {
   find_error:
     "FIND THE ERROR: present a short worked solution (3-5 numbered steps) to a problem testing this skill, with exactly one step containing a conceptual or computational mistake. Ask which step is wrong, or what the corrected final answer is.",
   figure_dependency:
-    "TABLE DEPENDENCY: put the needed values only in a small Markdown table inside the stem (not in the sentence), and require two dependent steps that use values from different rows.",
+    "FIGURE ONLY: every number the student needs must appear ONLY in a small data table (2-5 rows) that will be shown as an IMAGE next to the question. Return that table in figureTable. The stem must refer to 'the table in the figure' and must NOT repeat any number from it. Require reading at least two values from the table.",
   counterfactual:
     "COUNTERFACTUAL: start from a stated baseline result, then ask what happens to it when one parameter changes (doubles, halves, flips sign, hits a boundary). The student must reason about the causal relationship, not recompute from scratch.",
 };
@@ -42,6 +44,10 @@ const CandidateSchema = z.object({
   choices: z.array(z.object({ id: z.string(), text: z.string() })).optional(),
   answerKey: z.string().describe("choice id for mcq; comma-separated ids for multi; the value for numeric/short"),
   rationale: z.string().describe("one or two sentences: why this still tests the same objective and why it is harder to look up"),
+  figureTable: z
+    .object({ title: z.string(), columns: z.array(z.string()), rows: z.array(z.array(z.union([z.string(), z.number()]))) })
+    .optional()
+    .describe("ONLY for the FIGURE ONLY strategy: the data table rendered as an image"),
 });
 
 export class GeminiGenerator implements Generator {
@@ -66,6 +72,14 @@ Rules:
 - No trick wording, no "all of the above", no reference to the original question.`;
     const out = await this.model.json(prompt, CandidateSchema, { temperature: 0.9 });
     const candidate = normalizeCandidate(out, source);
+    if (strategy === "figure_dependency") {
+      const t = out.figureTable;
+      if (!t || !t.rows.length) throw new Error("figure strategy: generator returned no figure table");
+      const leaked = leakedNumbers(candidate.stem, t);
+      if (leaked.length) throw new Error(`figure strategy: the stem repeats numbers from the figure (${leaked.join(", ")}), so the image isn't the only source`);
+      candidate.figure = { src: await renderTablePng(t), alt: "Figure for this question" };
+      candidate.figureText = tableText(t);
+    }
     return { candidate, rationale: out.rationale, generator: this.model.name };
   }
 }

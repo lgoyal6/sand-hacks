@@ -77,9 +77,31 @@ export async function listQuizzes(): Promise<Quiz[]> {
   return quizzes.filter((q): q is Quiz => q !== null && q.items.length > 0);
 }
 
+// Optional figure fields (packages/shared Item.figure; figureText stays server-side, see the accommodation rule).
+export interface Figure {
+  src: string;
+  alt: string;
+}
+export type FigureItem = Quiz["items"][number] & { figure?: Figure; figureText?: string };
+
+/** Only inline data: images or files under /figures/ are rendered. */
+export function safeFigure(f: unknown): Figure | undefined {
+  const x = f as Partial<Figure> | undefined;
+  if (!x || typeof x.src !== "string" || typeof x.alt !== "string") return undefined;
+  const ok = /^data:image\/(png|jpeg|gif|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(x.src) || /^\/figures\/[\w.-]+\.(png|jpe?g|gif|webp|svg)$/.test(x.src);
+  return ok ? { src: x.src, alt: x.alt } : undefined;
+}
+
 export function toPublic(q: Quiz): PublicQuiz {
-  return { ...q, // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    items: q.items.map(({ answerKey: _k, ...rest }) => rest) };
+  return {
+    ...q,
+    items: q.items.map((item) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { answerKey: _k, figureText: _t, figure, ...rest } = item as FigureItem;
+      const fig = safeFigure(figure);
+      return { ...rest, ...(fig ? { figure: fig, hasFigureText: Boolean(_t) } : {}) };
+    }),
+  };
 }
 
 function parseNumber(s: string): number | null {

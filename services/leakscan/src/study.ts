@@ -6,9 +6,9 @@ import { readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { LeakFinding } from "@unprompted/shared";
-import { BrightDataSerp, brightDataFromEnv, type SearchClient } from "./brightdata.js";
-import { scanItem, type ItemScan } from "./scan.js";
-import { hostOf, isStudySite } from "./sources.js";
+import { BrightDataSerp, brightDataFromEnv, type SearchClient } from "./brightdata";
+import { scanItem, type ItemScan } from "./scan";
+import { hostOf, isStudySite } from "./sources";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const arg = (n: string, d?: string) => {

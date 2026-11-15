@@ -19,6 +19,7 @@
     "@neon/auth": "^0.8.2",
     "@neon/config": "^1.14.0",
     "@tanstack/react-table": "^8",
+    "@unprompted/leakscan": "workspace:^",
     "@unprompted/probe-core": "workspace:*",
     "@unprompted/shared": "workspace:*",
     "class-variance-authority": "^0.7.1",

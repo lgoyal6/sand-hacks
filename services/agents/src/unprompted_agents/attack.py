@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .runners import RUNNERS, RunOutcome, isolated, save_trace
 from .sandbox import Sandbox
-from .stats import solve_rates, summary
+from .stats import excluded_by_model, solve_rates, summary
 
 
 # A run whose loop died (status "error") before submitting says nothing about whether the agent can do the quiz:
@@ -172,6 +172,7 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
             "quizId": quiz["id"],
             **summary(all_runs, [m for m in metas if m["outcome"] == "submitted"]),
             "didNotSubmit": sum(m["outcome"] == "did_not_submit" for m in metas),
+            "excludedByModel": excluded_by_model(metas),
             "infraErrors": sum(m["infraError"] for m in metas),
             "infraReasons": {r: sum(m.get("infraReason") == r for m in metas) for r in {m.get("infraReason") for m in metas} if r},
         },

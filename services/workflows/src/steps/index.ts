@@ -84,7 +84,8 @@ export async function reattack(
     courseId: quiz.courseId,
     title: `${quiz.title} (variant candidates)`,
     sourceFormat: quiz.sourceFormat,
-    items: candidates.map(({ itemId, candidate }) => ({ ...candidate, id: itemId, quizId: `${quiz.id}-variants-${batchId}` })),
+    // figureText is for the checkers only; agents get the image (candidate.figure), never the data as text.
+    items: candidates.map(({ itemId, candidate: { figureText: _hidden, ...visible } }) => ({ ...visible, id: itemId, quizId: `${quiz.id}-variants-${batchId}` })),
   };
   const { solveRates, excluded } = await attacker.attack(variantQuiz, variantQuiz.items.map((i) => i.id));
   return { variantQuiz, solveRates: new Map(solveRates.map((s) => [s.itemId, s])), excluded };
@@ -126,11 +127,11 @@ export interface ExperimentRow {
 
 /** Write the candidate item and its proposed experiment to the experiment branch. */
 export async function writeProposed(db: Db, source: Item, row: ExperimentRow): Promise<void> {
-  const c = row.experiment.candidate;
+  const c = row.experiment.candidate as Candidate;
   await db.query(
-    `insert into item (id, quiz_id, stem, type, choices_json, answer_key, objective, original_item_id)
-     values ($1,$2,$3,$4,$5,$6,$7,$8)`,
-    [row.candidateItemId, source.quizId, c.stem, c.type, c.choices ? JSON.stringify(c.choices) : null, JSON.stringify(c.answerKey), c.objective, source.id],
+    `insert into item (id, quiz_id, stem, type, choices_json, answer_key, objective, original_item_id, figure_json, figure_text)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+    [row.candidateItemId, source.quizId, c.stem, c.type, c.choices ? JSON.stringify(c.choices) : null, JSON.stringify(c.answerKey), c.objective, source.id, c.figure ? JSON.stringify(c.figure) : null, c.figureText ?? null],
   );
   await saveExperiment(db, row);
 }

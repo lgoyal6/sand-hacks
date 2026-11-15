@@ -1,6 +1,11 @@
 import type { Item, Quiz, SolveRate, VariantExperiment, VariantStrategy } from "@unprompted/shared";
 
-export type Candidate = Omit<Item, "id" | "quizId">;
+export type Candidate = Omit<Item, "id" | "quizId"> & {
+  /** Shown to students and agents as an image only (A's sandbox renders item.figure). */
+  figure?: { src: string; alt: string };
+  /** The figure's data as text, for the answer checker and judges only. Stripped before any agent sees the item. */
+  figureText?: string;
+};
 
 /** What the generator returns: a candidate plus its own explanation (kept for the professor). */
 export interface GeneratedCandidate {

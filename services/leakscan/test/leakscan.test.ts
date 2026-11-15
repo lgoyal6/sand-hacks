@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { classify, isOrigin } from "../src/sources.js";
-import { exactWindows, keywordQuery, matchScore } from "../src/text.js";
-import { scanItem } from "../src/scan.js";
-import type { SearchClient, SerpResult } from "../src/brightdata.js";
+import { classify, isOrigin } from "../src/sources";
+import { exactWindows, keywordQuery, matchScore } from "../src/text";
+import { scanItem } from "../src/scan";
+import type { SearchClient, SerpResult } from "../src/brightdata";
 
 const STEM = "A sample of 25 has mean 40 and standard deviation 10. What is the standard error of the mean?";
 
@@ -84,7 +84,7 @@ describe("scanItem", () => {
 
 describe("noise filtering", () => {
   it("drops search-engine redirects and OER mirrors of the textbook", async () => {
-    const { isEngine } = await import("../src/sources.js");
+    const { isEngine } = await import("../src/sources");
     expect(isEngine("https://www.google.com/goto?url=abc")).toBe(true);
     expect(isOrigin("https://pressbooks-dev.oer.hawaii.edu/introductorystatistics/chapter/x")).toBe(true);
     expect(isOrigin("https://quizlet.com/1/")).toBe(false);
@@ -93,7 +93,7 @@ describe("noise filtering", () => {
 
 describe("archive url patterns", () => {
   it("builds whole-path regexes from distinctive words, digits kept", async () => {
-    const { urlPatterns } = await import("../src/archive.js");
+    const { urlPatterns } = await import("../src/archive");
     const p = urlPatterns("The average height of young adult males has a normal distribution with standard deviation of 2.5 inches.");
     expect(p[0]).toBe(".*average.*height.*young.*adult.*");
     expect(p.every((x) => x.startsWith(".*") && x.endsWith(".*"))).toBe(true);

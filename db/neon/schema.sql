@@ -36,3 +36,8 @@ alter table probe add column if not exists counterfactual_latency_source text;  
 alter table probe add column if not exists scribe_words_json jsonb;             -- compact [{t, s, e, spk}] for the student's answer turns (appeal + judge view)
 -- C: roles in the DB instead of an env allowlist (Neon Auth user ids).
 create table if not exists user_role (user_id text primary key, role text not null check (role in ('student','professor')));
+-- Figure-only items: the PNG (data URL) and its text (server-side only: answer checker, judges, accommodations).
+alter table item add column if not exists figure_json jsonb;
+alter table item add column if not exists figure_text text;
+-- C: accessible-version requests per attempt, e.g. [{itemId, kind: "figure_text", at}]
+alter table attempt add column if not exists accommodations jsonb default '[]';
