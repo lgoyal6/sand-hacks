@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Logo as BrandLogo } from "@/components/ui/logo";
 import { isActive, linksFor, useNav, type NavLinkDef } from "@/components/ui/nav";
 import { RoleSwitch } from "@/components/auth/role-switch";
+import { useLeakAlerts } from "@/components/dashboard/leak-alerts";
 
 export interface SidebarItem {
   id: string;
@@ -51,7 +52,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
   return <BrandLogo wordmark={!compact} size={compact ? 26 : 24} />;
 }
 
-export function ChatSidebar({ groups, collapsed, onCollapsedChange }: ChatSidebarProps) {
+function ChatSidebarInner({ groups, collapsed, onCollapsedChange }: ChatSidebarProps) {
   const pathname = usePathname() ?? "/";
   const nav = useNav();
   const role = nav.viewer?.role ?? null;
@@ -59,6 +60,7 @@ export function ChatSidebar({ groups, collapsed, onCollapsedChange }: ChatSideba
   const [searching, setSearching] = React.useState(false);
   const [switching, setSwitching] = React.useState(false);
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const unseenAlerts = useLeakAlerts(role === "professor").data?.unseen ?? 0;
   // Signed out with auth off (local dev): show both roles' links so every page stays reachable.
   const links: NavLinkDef[] = nav.loading ? [] : role ? linksFor(role) : [...linksFor("student"), ...linksFor("professor").map((l) => ({ ...l, section: l.section ?? "Professor" }))];
   const home = role === "professor" ? "/studio" : "/";
@@ -208,7 +210,12 @@ export function ChatSidebar({ groups, collapsed, onCollapsedChange }: ChatSideba
                   active && "bg-sidebar-accent font-medium text-foreground",
                 )}
               >
-                {l.icon} {l.label}
+                {l.icon} <span className="flex-1">{l.label}</span>
+                  {l.alerts && unseenAlerts > 0 && (
+                    <span className="num rounded-full bg-leak-soft px-1.5 py-0.5 text-[11px] font-medium leading-none text-leak" aria-label={`${unseenAlerts} new leak alert${unseenAlerts === 1 ? "" : "s"}`}>
+                      {unseenAlerts}
+                    </span>
+                  )}
               </Link>
             </React.Fragment>
           );
@@ -283,4 +290,16 @@ export function ChatSidebar({ groups, collapsed, onCollapsedChange }: ChatSideba
     </aside>
     );
   }
+}
+
+/**
+ * The sidebar reads the URL (active link), so it sits under its own Suspense boundary: pages that prerender
+ * (loading states, public pages) get a same-size placeholder instead of failing the build.
+ */
+export function ChatSidebar(props: ChatSidebarProps) {
+  return (
+    <React.Suspense fallback={<aside aria-hidden className={cn("hidden h-svh shrink-0 border-r border-sidebar-border bg-sidebar md:block", props.collapsed ? "w-14" : "w-[260px]")} />}>
+      <ChatSidebarInner {...props} />
+    </React.Suspense>
+  );
 }

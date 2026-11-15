@@ -6,7 +6,7 @@ import path from "node:path";
 import Link from "next/link";
 import { Download } from "lucide-react";
 import { DATA_DIR } from "@/lib/db/fixtures";
-import { SiteHeader } from "@/components/ui/site-header";
+import { PublicShell } from "@/components/ui/public-shell";
 import { AgentAvatar } from "@/components/ui/agent-avatar";
 import { AnchorBadge } from "@/components/dashboard/anchor-badge";
 import { loadAnchors } from "@/lib/notary/registry";
@@ -180,23 +180,22 @@ export default async function Page() {
   const totalResults = s.match_score_histogram.reduce((n, h) => n + h.results, 0);
 
   return (
-    <div className="min-h-svh bg-background">
-      <SiteHeader />
-      <main className="mx-auto flex max-w-[880px] flex-col gap-14 px-6 pb-24 pt-14">
-        <section className="flex flex-col gap-5">
-          <span className="flex items-center gap-2 text-sm text-muted-foreground">
-            <AgentAvatar agent="leak-scout" size={22} /> Leak study · {new Date(s.collected).toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-          </span>
-          <h1 className="text-[34px] font-semibold leading-[1.15] tracking-[-0.02em] sm:text-[40px]">The State of Leaked Homework</h1>
+    <PublicShell
+      title="Leak study"
+      subtitle={`The State of Leaked Homework, ${new Date(s.collected).toLocaleDateString("en-US", { month: "long", year: "numeric" })}`}
+      actions={<AgentAvatar agent="leak-scout" size="md" />}
+    >
+      <div className="flex flex-col gap-6">
+        <section className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
           <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
-            <span className="num text-[72px] font-semibold leading-none tracking-[-0.04em] sm:text-[88px]">{index ? `${Math.round(index.levels.strict.pct)}-${Math.round(index.levels.exact_phrase.pct)}` : Math.round(s.pct_found)}%</span>
-            <p className="max-w-[460px] pb-2 text-[17px] leading-relaxed text-muted-foreground">
+            <span className="num text-[48px] font-semibold leading-none tracking-[-0.03em] sm:text-[60px]">{index ? `${Math.round(index.levels.strict.pct)}-${Math.round(index.levels.exact_phrase.pct)}` : Math.round(s.pct_found)}%</span>
+            <p className="max-w-[480px] pb-1 text-[15px] leading-relaxed text-muted-foreground">
               {index
                 ? `of ${index.exercises} randomly sampled end-of-chapter exercises from ${Object.keys(index.by_book).length} open textbooks are already on homework-help sites: ${index.levels.strict.found} with the question visible in the search result, ${index.levels.exact_phrase.found} counting pages that quote an exact 10-word phrase.`
                 : `of real textbook exercises we searched were already on homework-help sites: ${s.found_on_study_sites} of ${s.exercises}, across 5 subjects.`}
             </p>
           </div>
-          <p className="max-w-[680px] text-[16px] leading-relaxed">
+          <p className="max-w-[680px] text-[15px] leading-relaxed">
             If a course reuses end-of-chapter questions, most of its answer key is a search away. The useful question isn&apos;t whether a quiz has leaked, but which questions to rewrite first.{" "}
             <Link href="/check" className="text-brand underline-offset-2 hover:underline">
               Check your own question
@@ -206,9 +205,9 @@ export default async function Page() {
         </section>
 
         {index && (
-          <section aria-labelledby="index" className="flex flex-col gap-6">
+          <section aria-labelledby="index" className="flex flex-col gap-6 rounded-lg border border-border bg-card p-5">
             <div className="flex flex-col gap-1">
-              <h2 id="index" className="text-lg font-semibold">
+              <h2 id="index" className="text-[15px] font-semibold">
                 Textbook Leak Index
               </h2>
               <p className="max-w-[680px] text-sm leading-relaxed text-muted-foreground">
@@ -260,9 +259,9 @@ export default async function Page() {
           </section>
         )}
 
-        <section aria-labelledby="by-subject" className="flex flex-col gap-4">
+        <section aria-labelledby="by-subject" className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
           <div className="flex flex-col gap-1">
-            <h2 id="by-subject" className="text-lg font-semibold">
+            <h2 id="by-subject" className="text-[15px] font-semibold">
               {index ? "Pilot study: by subject" : "By subject"}
             </h2>
             <p className="text-sm text-muted-foreground">Share of exercises found on at least one homework site.</p>
@@ -283,9 +282,9 @@ export default async function Page() {
           <p className="text-xs text-muted-foreground">Calculus has 12 exercises, the others 20. Physics is likely undercounted (see limits).</p>
         </section>
 
-        <section aria-labelledby="by-site" className="flex flex-col gap-4">
+        <section aria-labelledby="by-site" className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
           <div className="flex flex-col gap-1">
-            <h2 id="by-site" className="text-lg font-semibold">
+            <h2 id="by-site" className="text-[15px] font-semibold">
               Where they are
             </h2>
             <p className="text-sm text-muted-foreground">Exercises found on each site. One exercise can be on several sites.</p>
@@ -301,9 +300,9 @@ export default async function Page() {
         </section>
 
         {market && (
-          <section aria-labelledby="market" className="flex flex-col gap-6">
+          <section aria-labelledby="market" className="flex flex-col gap-6 rounded-lg border border-border bg-card p-5">
             <div className="flex flex-col gap-1">
-              <h2 id="market" className="text-lg font-semibold">
+              <h2 id="market" className="text-[15px] font-semibold">
                 The agent-for-hire market
               </h2>
               <p className="max-w-[680px] text-sm leading-relaxed text-muted-foreground">
@@ -370,9 +369,9 @@ export default async function Page() {
           </table>
         </details>
 
-        <section aria-labelledby="method" className="grid gap-8 sm:grid-cols-2">
+        <section aria-labelledby="method" className="grid gap-8 sm:grid-cols-2 rounded-lg border border-border bg-card p-5">
           <div className="flex flex-col gap-3">
-            <h2 id="method" className="text-lg font-semibold">
+            <h2 id="method" className="text-[15px] font-semibold">
               How we measured it
             </h2>
             <ul className="flex list-disc flex-col gap-2 pl-5 text-[15px] leading-relaxed">
@@ -393,7 +392,7 @@ export default async function Page() {
             </ul>
           </div>
           <div className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">Limits</h2>
+            <h2 className="text-[15px] font-semibold">Limits</h2>
             <ul className="flex list-disc flex-col gap-2 pl-5 text-[15px] leading-relaxed">
               <li>One search snapshot ({s.collected}). Results vary by day and region.</li>
               <li>
@@ -406,9 +405,9 @@ export default async function Page() {
           </div>
         </section>
 
-        <section aria-labelledby="data" className="flex flex-col gap-4 rounded-[20px] border border-border p-6">
+        <section aria-labelledby="data" className="flex flex-col gap-4 rounded-lg border border-border bg-card p-5">
           <div className="flex flex-col gap-1">
-            <h2 id="data" className="text-lg font-semibold">
+            <h2 id="data" className="text-[15px] font-semibold">
               Open data
             </h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
@@ -439,7 +438,7 @@ export default async function Page() {
         <p className="text-xs leading-relaxed text-muted-foreground">
           Exercises are referenced from OpenStax textbooks (Introductory Statistics 2e, Calculus Volume 1, Biology 2e, Principles of Microeconomics 3e, College Physics 2e), © OpenStax, licensed CC BY or CC BY-NC-SA. Exercise text was used only as a search query and is not redistributed. Search results via the Bright Data SERP API.
         </p>
-      </main>
-    </div>
+      </div>
+    </PublicShell>
   );
 }
