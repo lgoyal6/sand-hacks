@@ -15,7 +15,8 @@ import { openBranchStore } from "../db/index.js";
 import { ALL_STRATEGIES, runTransform } from "../runner.js";
 import { buildPanel, CliAttacker, GeminiCodeSolver, GeminiGenerator } from "../steps/adapters.js";
 import { envVal, GeminiModel, modelsFromEnv } from "../steps/llm.js";
-import type { Attacker, TransformEvent, TransformTarget } from "../steps/types.js";
+import { selectTargets } from "../steps/index.js";
+import type { Attacker, TransformEvent } from "../steps/types.js";
 
 const ROOT = path.resolve(import.meta.dirname, "../../../..");
 const FIX = path.join(ROOT, "data/fixtures");
@@ -60,25 +61,14 @@ const quiz = parseMarkdownQuiz(await readFile(quizFile, "utf8"), { quizId, cours
 const rates = await readJson<SolveRate[]>(path.join(FIX, "solve_rates.json"));
 const leaks = (await readJson<LeakFinding[]>(path.join(FIX, "leaks.json"))) ?? [];
 const assumed = values["assume-solve-rate"] != null ? Number(values["assume-solve-rate"]) : null;
-const wanted = values.items?.split(",").map((s) => s.trim());
-const targets: TransformTarget[] = [];
-const notes: string[] = [];
-for (const item of quiz.items) {
-  if (wanted && !wanted.includes(item.id)) continue;
-  const r = rates?.find((s) => s.itemId === item.id);
-  const leaked = leaks.some((l) => l.itemId === item.id);
-  if (!wanted && !(r?.agentSolvable || leaked)) continue;
-  let solveRate = r?.solveRate;
-  if (solveRate == null) {
-    if (assumed == null) {
-      console.error(`No solve rate for ${item.id} (data/fixtures/solve_rates.json from A). Pass --assume-solve-rate to proceed.`);
-      process.exit(1);
-    }
-    solveRate = assumed;
-    notes.push(`${item.id}: original solve rate ASSUMED ${assumed} (no agent runs yet)`);
-  }
-  targets.push({ item, solveRate, leaked });
+let picked;
+try {
+  picked = selectTargets(quiz, rates, leaks.map((l) => l.itemId), { itemIds: values.items?.split(",").map((s) => s.trim()), assumeSolveRate: assumed });
+} catch (e) {
+  console.error(String((e as Error).message));
+  process.exit(1);
 }
+const { targets, notes } = picked;
 if (!targets.length) {
   console.error(rates ? "No agent-solvable or leaked items to transform." : "No solve_rates.json yet; pass --items and --assume-solve-rate.");
   process.exit(1);

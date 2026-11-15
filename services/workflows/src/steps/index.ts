@@ -180,3 +180,37 @@ export async function loadExperiments(db: Db, quizId?: string): Promise<VariantE
     reasons: r.reasons_json ?? [],
   }));
 }
+
+// ---------- 0. target selection ----------
+
+export interface SelectOptions {
+  /** Explicit item ids; otherwise agent-solvable (A) or leaked (D) items. */
+  itemIds?: string[];
+  /** Used when A has no solve rate for an item; recorded as an assumption in notes. */
+  assumeSolveRate?: number | null;
+}
+
+/** Pick items to transform and attach their original solve rate. Throws rather than guessing a rate. */
+export function selectTargets(
+  quiz: Quiz,
+  solveRates: SolveRate[] | null,
+  leakedItemIds: string[],
+  opts: SelectOptions = {},
+): { targets: import("./types.js").TransformTarget[]; notes: string[] } {
+  const targets: import("./types.js").TransformTarget[] = [];
+  const notes: string[] = [];
+  for (const item of quiz.items) {
+    if (opts.itemIds && !opts.itemIds.includes(item.id)) continue;
+    const r = solveRates?.find((s) => s.itemId === item.id);
+    const leaked = leakedItemIds.includes(item.id);
+    if (!opts.itemIds && !(r?.agentSolvable || leaked)) continue;
+    let solveRate = r?.solveRate;
+    if (solveRate == null) {
+      if (opts.assumeSolveRate == null) throw new Error(`no solve rate for ${item.id} (A's solve_rates.json); pass assumeSolveRate to proceed`);
+      solveRate = opts.assumeSolveRate;
+      notes.push(`${item.id}: original solve rate ASSUMED ${opts.assumeSolveRate} (no agent runs yet)`);
+    }
+    targets.push({ item, solveRate, leaked });
+  }
+  return { targets, notes };
+}

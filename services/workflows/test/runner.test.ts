@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { loadSchema, PGliteBranchStore } from "../src/db/index.js";
 import { parseMarkdownQuiz, saveQuiz } from "../src/ingest/markdown.js";
 import { runTransform } from "../src/runner.js";
+import { createTransformWorkflow } from "../src/mastra/index.js";
 import { decide, loadExperiments, type Attacker, type Generator, type Judge, type Solver, type TransformEvent } from "../src/steps/index.js";
 import { sameAnswer, extractFinal } from "../src/steps/answers.js";
 
@@ -119,6 +120,33 @@ describe("transform runner (fake models, PGlite branches)", () => {
     expect(b.experiments[0]!.reasons[0]).toMatch(/^not verified: solver did not finish 3\/3/);
     const onMain = await loadExperiments((await store.main()).db, "sample-stats");
     expect(onMain.every((e) => e.status === "proposed")).toBe(true);
+    await store.close();
+  }, 60_000);
+
+  it("the Mastra wrapper runs the same steps and streams runner events", async () => {
+    const store = await PGliteBranchStore.create(await loadSchema());
+    const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
+    await saveQuiz((await store.main()).db, quiz);
+    const wf = createTransformWorkflow({
+      store,
+      deps: { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker },
+      opts: { candidatesPerItem: 1, strategies: ["isomorphic"] },
+    });
+    const run = await wf.createRun();
+    const stream = run.stream({
+      inputData: { quizId: "sample-stats", itemIds: ["sample-stats-q2"], solveRates: null, leakedItemIds: [], assumeSolveRate: 0.9 },
+    });
+    const types: string[] = [];
+    for await (const chunk of stream.fullStream) {
+      const c = chunk as { type: string; payload?: { output?: { type?: string } } };
+      if (c.type === "workflow-step-output" && c.payload?.output?.type) types.push(c.payload.output.type);
+    }
+    const res = await stream.result;
+    expect(res.status).toBe("success");
+    const out = (res as { result: { experiments: { status: string }[]; notes: string[] } }).result;
+    expect(out.experiments.map((e) => e.status)).toEqual(["verified"]);
+    expect(out.notes[0]).toMatch(/ASSUMED 0.9/);
+    expect(types).toContain("verified");
     await store.close();
   }, 60_000);
 
