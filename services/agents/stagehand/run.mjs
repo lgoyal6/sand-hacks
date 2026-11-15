@@ -36,7 +36,8 @@ async function waitFor(page, selector, ms = 15000) {
 
 let browser, stagehand;
 try {
-  browser = await localBrowser.launch({ headless: input.headless !== false });
+  // Fresh temporary profile; never touch the macOS Keychain.
+  browser = await localBrowser.launch({ headless: input.headless !== false, args: ["--use-mock-keychain", "--password-store=basic"] });
   // The browser context only exists once Stagehand is attached. In --dry-run there is no model, so no LLM calls.
   stagehand = await Stagehand.create(dryRun ? { browser } : {
     browser,

@@ -13,6 +13,10 @@
 (allow network-outbound (remote unix-socket))
 (allow network-outbound (literal "/private/var/run/mDNSResponder"))
 
+;; Keychain: every Chrome here runs with --use-mock-keychain --password-store=basic and a temporary profile, so it
+;; never uses the macOS Keychain. (Denying the Keychain mach services outright stops Chrome from starting, so that
+;; is enforced by flags, not by this profile.)
+
 ;; No process listing (ps/pgrep/top/lsof) and no shell-outs that reveal other processes.
 (deny process-exec
   (literal "/bin/ps") (literal "/usr/bin/pgrep") (literal "/usr/bin/top") (literal "/usr/sbin/lsof")

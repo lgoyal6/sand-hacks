@@ -143,7 +143,9 @@ async function session(browser, label, seed) {
   }
 }
 
-const browser = await chromium.launch({ channel: "chrome", headless: !process.argv.includes("--headed") });
+// Temporary profile (Playwright default) and no Keychain access.
+const browser = await chromium.launch({ channel: "chrome", headless: !process.argv.includes("--headed"),
+  args: ["--use-mock-keychain", "--password-store=basic"] });
 const start = await nextFreeIndex();
 const results = [];
 for (let n = start; n < start + COUNT; n++) {

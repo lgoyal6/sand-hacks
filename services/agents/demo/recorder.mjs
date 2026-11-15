@@ -7,7 +7,7 @@ import path from "node:path";
 
 const [cdp, dir] = process.argv.slice(2);
 mkdirSync(dir, { recursive: true });
-const browser = await chromium.connectOverCDP(cdp);
+const browser = await chromium.connectOverCDP(cdp); // attaches to the recorder's own temporary Chrome
 const t0 = Date.now();
 let stop = false;
 process.on("SIGTERM", () => (stop = true));

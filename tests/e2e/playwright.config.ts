@@ -10,7 +10,8 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3100",
-    channel: "chrome", // the installed Google Chrome, no Playwright browser download
+    channel: "chrome", // the installed Google Chrome, no Playwright browser download; temporary profile
+    launchOptions: { args: ["--use-mock-keychain", "--password-store=basic"] }, // never touch the macOS Keychain
     headless: true,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",

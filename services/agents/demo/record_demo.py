@@ -104,7 +104,9 @@ def main() -> int:
     profile = tempfile.mkdtemp(prefix="unprompted-demo-")
     frames = Path(tempfile.mkdtemp(prefix="unprompted-frames-"))
     chrome = subprocess.Popen([CHROME, f"--remote-debugging-port={port}", f"--user-data-dir={profile}", "--headless=new",
-                               "--window-size=1280,800", "--no-first-run", "--no-default-browser-check", "about:blank"],
+                               "--window-size=1280,800", "--no-first-run", "--no-default-browser-check",
+                               # never touch the macOS Keychain ("Chrome Safe Storage" prompts) or a real profile
+                               "--use-mock-keychain", "--password-store=basic", "about:blank"],
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     recorder = None
     try:
