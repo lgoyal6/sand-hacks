@@ -4,6 +4,8 @@
 // Options: --screenshots (Browser API, never solves CAPTCHAs), --captcha-off-at-zone (attest the zone's CAPTCHA
 //   Solver is OFF in the Bright Data dashboard, when the zone rejects the per-session CDP switch), --threshold 0.5, --no-fuzzy
 //   --rescreen re-screenshots the findings already in data/fixtures/leaks.json without new searches
+//   ... scan --quiz - --json [--max-items 25]   PURE mode: Quiz JSON on stdin, ItemScan[] JSON on stdout,
+//                                             no files written, logs on stderr (for A's course-site scan)
 // Without BRIGHTDATA_API_TOKEN + BRIGHTDATA_SERP_ZONE it exits non-zero. It never writes made-up findings.
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
@@ -31,6 +33,12 @@ async function loadTestset(dir: string, name: string) {
   return ts;
 }
 
+async function readStdin(): Promise<string> {
+  let s = "";
+  for await (const chunk of process.stdin) s += chunk;
+  return s;
+}
+
 async function main() {
   const cfg = brightDataFromEnv();
   if (!cfg) {
@@ -47,7 +55,8 @@ async function main() {
     items = ts.items.map((i: { id: string; stem: string }) => ({ id: i.id, stem: i.stem }));
     source = `testset:${testset}`;
   } else if (quizPath) {
-    const quiz: Quiz = JSON.parse(await readFile(resolve(ROOT, quizPath), "utf8"));
+    const raw = quizPath === "-" ? await readStdin() : await readFile(resolve(ROOT, quizPath), "utf8");
+    const quiz: Quiz = JSON.parse(raw);
     items = quiz.items.map((i) => ({ id: i.id, stem: i.stem }));
     source = `quiz:${quiz.id}`;
   } else {
@@ -55,10 +64,18 @@ async function main() {
     process.exit(2);
   }
 
+  const maxItems = Number(arg("max-items") ?? 0);
+  if (maxItems > 0) items = items.slice(0, maxItems);
+  const pure = flag("json");
   const threshold = Number(arg("threshold") ?? 0.5);
   const client = new BrightDataSerp(cfg);
   const started = new Date();
   const scans = await scanAll(items, client, { threshold, fuzzy: !flag("no-fuzzy") });
+  if (pure) {
+    process.stdout.write(JSON.stringify(scans) + "\n");
+    console.error(`scanned ${items.length} item(s), ${scans.reduce((n, s) => n + s.queries.length, 0)} SERP call(s)`);
+    return;
+  }
   const findings: LeakFinding[] = scans.flatMap((s) => s.findings);
 
   if (flag("screenshots")) {
