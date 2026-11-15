@@ -11,13 +11,33 @@ from .sandbox import Sandbox
 from .stats import solve_rates, summary
 
 
-# Provider-side failures (quota, overload, unknown model) say nothing about the agent; those runs are excluded from
-# solve rates and reported in summary.infraErrors instead.
-INFRA_MARKERS = ("ContentFilterError", "ModelRateLimitError", "ModelUnavailableError", "ModelNotFoundError", "status_code: 429", "status_code: 503")
+# A run whose loop died (status "error") before submitting says nothing about whether the agent can do the quiz:
+# the model provider refused or failed, or our local browser didn't start. Those runs are excluded from solve rates
+# and reported in summary.infraErrors with a reason. Runs that ran to the end (completed, max_steps, timeout) count,
+# including ones that never submitted: that is the agent failing.
+INFRA_REASONS = (
+    ("ContentFilterError", "provider content filter"),
+    ("ModelRateLimitError", "provider quota"),
+    ("status_code: 429", "provider quota"),
+    ("ModelUnavailableError", "provider unavailable"),
+    ("status_code: 503", "provider unavailable"),
+    ("ModelNotFoundError", "model not found"),
+    ("ModelRequestRejectedError", "provider rejected request"),
+    ("CDP WS handshake", "local browser failed to start"),
+)
 
 
-def is_infra_error(error: str | None) -> bool:
-    return bool(error) and any(m in error for m in INFRA_MARKERS)
+def infra_reason(status: str, error: str | None, submitted: bool) -> str | None:
+    if submitted or status != "error":
+        return None
+    for marker, reason in INFRA_REASONS:
+        if error and marker in error:
+            return reason
+    return "run crashed before submitting"
+
+
+def is_infra_error(error: str | None) -> bool:  # kept for callers; classification is infra_reason
+    return infra_reason("error", error, False) is not None
 
 
 def _now() -> str:
@@ -118,14 +138,15 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
         runs, meta = to_agent_runs(quiz, outcome, sandbox.run_results(run_id), item_ids)
         log(f"[attack]   status={meta['status']} submitted={meta['submitted']} score={meta['score']} "
             f"steps={meta['steps']} {meta['seconds']}s" + (f" error={meta['error']}" if meta["error"] else ""))
-        meta["infraError"] = is_infra_error(meta["error"]) and not meta["submitted"]
+        meta["infraReason"] = infra_reason(meta["status"], meta["error"], meta["submitted"])
+        meta["infraError"] = meta["infraReason"] is not None
         n_ok = sum(r["correct"] for r in runs)
-        emit("running", f"Run {i}/{len(plan)}: provider error, excluded" if meta["infraError"]
+        emit("running", f"Run {i}/{len(plan)}: excluded ({meta['infraReason']})" if meta["infraError"]
              else f"Run {i}/{len(plan)}: {short} got {n_ok}/{len(item_ids)} right in {meta['seconds']:.0f}s",
              {"name": "attack.run", "args": {"runId": run_id}, "result": {"correct": n_ok, "total": len(item_ids),
               "submitted": meta["submitted"], "providerError": meta["infraError"]}})
         if meta["infraError"]:
-            log("[attack]   provider error, run excluded from solve rates")
+            log(f"[attack]   excluded from solve rates: {meta['infraReason']}")
         else:
             all_runs += runs
         metas.append(meta)
@@ -137,6 +158,7 @@ def attack(quiz: dict, items: list[str] | None = None, *, agents=("browser-use",
             "quizId": quiz["id"],
             **summary(all_runs, [m for m in metas if not m["infraError"]]),
             "infraErrors": sum(m["infraError"] for m in metas),
+            "infraReasons": {r: sum(m.get("infraReason") == r for m in metas) for r in {m.get("infraReason") for m in metas} if r},
         },
         "runs": metas,
     }

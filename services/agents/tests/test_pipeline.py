@@ -64,13 +64,19 @@ def test_attack_grades_server_side(sandbox):
     assert all(m["submitted"] for m in res["runs"])
 
 
-def test_crashed_run_counts_as_incorrect(sandbox):
+def test_crash_before_submit_is_excluded_but_unfinished_run_counts(sandbox):
+    """status=error before submitting = infrastructure, excluded. A run that hit max_steps without submitting is the
+    agent failing, and counts as incorrect on every item."""
     def crash(sb, run_id, title, model):
-        return RunOutcome(run_id, "browser-use", model, "error", 0, 2.0, error="boom")
+        return RunOutcome(run_id, "browser-use", model, "error", 0, 2.0, error="fatal: CDP WS handshake failed")
+
+    def gave_up(sb, run_id, title, model):
+        return RunOutcome(run_id, "browser-use", model, "max_steps", 40, 300.0)
 
     res = attack(QUIZ, sandbox=sandbox, repeats=1, models=["test:crash"], runners={"browser-use": crash}, log=lambda m: None)
-    assert res["summary"]["itemCorrect"] == 0
-    assert not res["runs"][0]["submitted"]
+    assert res["agentRuns"] == [] and res["summary"]["infraReasons"] == {"local browser failed to start": 1}
+    res = attack(QUIZ, sandbox=sandbox, repeats=1, models=["test:slow"], runners={"browser-use": gave_up}, log=lambda m: None)
+    assert res["summary"]["itemRuns"] == 5 and res["summary"]["itemCorrect"] == 0 and res["summary"]["infraErrors"] == 0
 
 
 def test_refuses_remote_hosts():
