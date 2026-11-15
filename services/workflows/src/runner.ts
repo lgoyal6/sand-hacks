@@ -82,7 +82,9 @@ export async function runTransform(
     const source = target.item;
     const id = `${source.id}-v${k}`;
     const branchName = `exp/${source.id}/${k}`;
+    const stage = (st: "generating" | "solving" | "judging") => emit({ type: "stage", experimentId: id, itemId: source.id, strategy, stage: st });
     let gen;
+    stage("generating");
     try {
       gen = await generateCandidates(deps.generator, source, strategy, k);
     } catch (e) {
@@ -101,18 +103,21 @@ export async function runTransform(
       await writeProposed(branch.db, source, row);
       emit({ type: "proposed", experiment: structuredClone(row.experiment), rationale: gen.rationale });
 
+      stage("solving");
       const solve = await solveWithInterpreter(deps.solver, gen.candidate, opts.solveRepeats ?? 3);
       if (solve.incomplete) return leaveUnverified(row, solve.detail);
       row.experiment.checks.answerKeyConsistent = solve.passed;
       emit({ type: "check", experimentId: id, check: "answerKeyConsistent", passed: solve.passed, detail: solve.detail });
       if (!solve.passed) return reject(row, solve.detail);
 
+      stage("judging");
       const panel = await objectivePanel(deps.judges, source, gen.candidate);
       if (panel.incomplete) return leaveUnverified(row, panel.detail);
       row.experiment.checks.objectivePreserved = panel.objectivePreserved;
       row.experiment.checks.unambiguous = panel.unambiguous;
-      emit({ type: "check", experimentId: id, check: "objectivePreserved", passed: panel.objectivePreserved, detail: panel.detail });
-      emit({ type: "check", experimentId: id, check: "unambiguous", passed: panel.unambiguous, detail: panel.detail });
+      const total = deps.judges.length;
+      emit({ type: "check", experimentId: id, check: "objectivePreserved", passed: panel.objectivePreserved, detail: panel.detail, agree: panel.votes.filter((v) => v.objectivePreserved).length, total });
+      emit({ type: "check", experimentId: id, check: "unambiguous", passed: panel.unambiguous, detail: panel.detail, agree: panel.votes.filter((v) => v.unambiguous).length, total });
       if (!panel.objectivePreserved) return reject(row, `changed the learning objective: ${panel.detail}`);
       if (!panel.unambiguous) return reject(row, `ambiguous or wrong key: ${panel.detail}`);
 
@@ -133,6 +138,7 @@ export async function runTransform(
   if (alive.length) {
     const batchId = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
     const ids = alive.map((a) => a.row.candidateItemId);
+    for (const a of alive) emit({ type: "stage", experimentId: a.row.experiment.id, itemId: a.target.item.id, strategy: a.row.experiment.strategy, stage: "re-attacking" });
     emit({ type: "attack_started", quizId: `${quiz.id}-variants-${batchId}`, itemIds: ids });
     let rates;
     try {

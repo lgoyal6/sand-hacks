@@ -32,6 +32,7 @@ const { values } = parseArgs({
     "attack-models": { type: "string" },
     "assume-solve-rate": { type: "string" },
     concurrency: { type: "string", default: "2" },
+    events: { type: "string" },
   },
 });
 
@@ -83,15 +84,18 @@ const attacker: Attacker = values["no-attack"]
       log: (s) => process.stderr.write(`  [attack] ${s}\n`),
     });
 
-const eventsFile = path.join(FIX, "variants_events.jsonl");
+const eventsFile = values.events ? path.resolve(values.events) : path.join(FIX, "variants_events.jsonl");
 await mkdir(FIX, { recursive: true });
+await mkdir(path.dirname(eventsFile), { recursive: true });
 await writeFile(eventsFile, "");
 const t0 = Date.now();
 const log = async (e: TransformEvent) => {
   await appendFile(eventsFile, JSON.stringify({ t: Date.now() - t0, ...e }) + "\n");
   const id = ("experiment" in e ? e.experiment.id : "experimentId" in e ? e.experimentId : "") ?? "";
   const line =
-    e.type === "check"
+    e.type === "stage"
+      ? `... ${e.stage}`
+      : e.type === "check"
       ? `${e.passed ? "pass" : "FAIL"} ${e.check}: ${e.detail}`
       : e.type === "rejected"
         ? `REJECTED: ${e.experiment.reasons.at(-1)}`

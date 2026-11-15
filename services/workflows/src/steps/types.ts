@@ -70,9 +70,22 @@ export interface TransformOptions {
   onEvent?: (e: TransformEvent) => void;
 }
 
+export type TransformStage = "generating" | "solving" | "judging" | "re-attacking" | "merging";
+
 export type TransformEvent =
+  /** A step started; lets a UI show live work ("Rewriter · generating") before a result exists. */
+  | { type: "stage"; experimentId: string; itemId: string; strategy?: VariantStrategy; stage: TransformStage }
   | { type: "proposed"; experiment: VariantExperiment; rationale: string }
-  | { type: "check"; experimentId: string; check: keyof VariantExperiment["checks"]; passed: boolean; detail: string }
+  | {
+      type: "check";
+      experimentId: string;
+      check: keyof VariantExperiment["checks"];
+      passed: boolean;
+      detail: string;
+      /** Panel checks: how many seats agreed, out of how many. */
+      agree?: number;
+      total?: number;
+    }
   | { type: "rejected"; experiment: VariantExperiment }
   | { type: "verified"; experiment: VariantExperiment }
   | { type: "attack_started"; quizId: string; itemIds: string[] }
