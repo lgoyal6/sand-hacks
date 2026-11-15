@@ -6,7 +6,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { FIXTURES_DIR, readJson, REPO_ROOT } from "@/lib/db/fixtures";
+import { FIXTURES_DIR, REPO_ROOT } from "@/lib/db/fixtures";
 import { mastraAvailable, streamTransform } from "../../_lib/mastra";
 
 const g = globalThis as unknown as { __studioLiveRun?: ChildProcess | null };
@@ -123,10 +123,9 @@ async function viaMastra(url: URL, send: (d: unknown) => void, closed: () => boo
   const n = Math.min(5, Math.max(1, Number(url.searchParams.get("n") ?? 2)));
   const quiz = url.searchParams.get("quiz") ?? "sample-stats";
   if (!/^[\w-]+$/.test(quiz)) throw new Error("bad quiz id");
-  const solveRates = await readJson<unknown[] | null>(path.join(FIXTURES_DIR, "solve_rates.json"), null);
-
+  // solveRates: null lets the workflow compute a like-for-like baseline (same agent model as the retake).
   const { runId, chunks } = await streamTransform(
-    { quizId: quiz, itemIds: items, solveRates, leakedItemIds: [], assumeSolveRate: null, candidatesPerItem: n },
+    { quizId: quiz, itemIds: items, solveRates: null, leakedItemIds: [], assumeSolveRate: null, candidatesPerItem: n },
     signal,
   );
   send({ type: "run_started", mode: "live", label: `Mastra workflow run ${runId.slice(0, 8)} on ${items.join(", ")} (${n} candidate${n === 1 ? "" : "s"} each)`, runId });

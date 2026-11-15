@@ -28,7 +28,7 @@ setTransformContext({
 const wf = mastra.getWorkflow("transform");
 if (mode === "start") {
   const run = await wf.createRun();
-  const res = await run.start({ inputData: { quizId: "sample-stats", itemIds: ["sample-stats-q1"], solveRates: null, leakedItemIds: [], assumeSolveRate: 1, candidatesPerItem: 1 } });
+  const res = await run.start({ inputData: { quizId: "sample-stats", itemIds: ["sample-stats-q1"], solveRates: null, leakedItemIds: [], assumeSolveRate: 1, candidatesPerItem: 1, attackModel: "test:no-baseline" } });
   console.log(`status=${res.status} runId=${run.runId}`);
 } else {
   const run = await wf.createRun({ runId });

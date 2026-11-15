@@ -4,6 +4,7 @@ import type { BranchStore } from "./db/types.js";
 import { CliAttacker, FallbackSolver, GeminiCodeSolver, GeminiGenerator, ModelJudge } from "./steps/adapters.js";
 import { directGemini, envVal, gmiGemini, prettyModel } from "./steps/llm.js";
 import type { Attacker, TransformDeps } from "./steps/types.js";
+import { DEFAULT_ATTACK_MODEL } from "./steps/index.js";
 
 import { REPO_ROOT } from "./paths.js";
 export { REPO_ROOT };
@@ -51,7 +52,7 @@ export async function buildContext(opts: ContextOptions = {}, env = process.env)
     : new CliAttacker({
         repoRoot: REPO_ROOT,
         repeats: opts.attackRepeats ?? 3,
-        models: opts.attackModels ?? envVal("ATTACK_MODELS", env),
+        models: opts.attackModels ?? envVal("ATTACK_MODELS", env) ?? DEFAULT_ATTACK_MODEL,
         log: opts.log,
       });
   const store = await openBranchStore(env);

@@ -6,12 +6,15 @@
 import { Mastra } from "@mastra/core";
 import { createStep, createWorkflow } from "@mastra/core/workflows";
 import { PostgresStore } from "@mastra/pg";
-import type { SolveRate, VariantExperiment } from "@unprompted/shared";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import type { AgentRun, SolveRate, VariantExperiment } from "@unprompted/shared";
+import { FIXTURES_DIR } from "../paths.js";
 import { z } from "zod";
 import { buildContext, type ContextOptions, type TransformContext } from "../context.js";
 import { loadQuiz } from "../ingest/markdown.js";
 import { runTransform } from "../runner.js";
-import { applyApprovals, loadExperiments, selectTargets, type TransformTarget } from "../steps/index.js";
+import { applyApprovals, baselineSolveRates, DEFAULT_ATTACK_MODEL, loadExperiments, selectTargets, type TransformTarget } from "../steps/index.js";
 import { envVal } from "../steps/llm.js";
 
 // ---- live dependencies: built lazily from env, or injected (tests) ----
@@ -34,6 +37,8 @@ const Input = z.object({
   leakedItemIds: z.array(z.string()).default([]),
   assumeSolveRate: z.number().nullable().default(null),
   candidatesPerItem: z.number().int().min(1).max(5).default(2),
+  /** Agent model for the baseline (and the retake, which buildContext configures the same way). */
+  attackModel: z.string().default(DEFAULT_ATTACK_MODEL),
 });
 const Selected = z.object({
   quizId: z.string(),
@@ -70,11 +75,20 @@ export const selectTargetsStep = createStep({
   execute: async ({ inputData }) => {
     const { store } = await ctx();
     const quiz = await loadQuiz((await store.main()).db, inputData.quizId);
-    const { targets, notes } = selectTargets(quiz, inputData.solveRates as SolveRate[] | null, inputData.leakedItemIds, {
+    // Like-for-like baseline: A's runs with the same agent model the retake uses, unless the caller passed rates.
+    let rates = inputData.solveRates as SolveRate[] | null;
+    const notesExtra: string[] = [];
+    if (!rates) {
+      const runs = await readFile(path.join(FIXTURES_DIR, "agent_runs.json"), "utf8").then((t) => JSON.parse(t) as AgentRun[], () => []);
+      rates = baselineSolveRates(runs, inputData.attackModel, quiz.id);
+      if (rates.length) notesExtra.push(`baseline: ${inputData.attackModel}, ${rates.reduce((n, r) => n + r.runs, 0)} agent answers`);
+      else rates = null;
+    }
+    const { targets, notes } = selectTargets(quiz, rates, inputData.leakedItemIds, {
       itemIds: inputData.itemIds,
       assumeSolveRate: inputData.assumeSolveRate,
     });
-    return { quizId: quiz.id, targets, notes, candidatesPerItem: inputData.candidatesPerItem };
+    return { quizId: quiz.id, targets, notes: [...notesExtra, ...notes], candidatesPerItem: inputData.candidatesPerItem };
   },
 });
 

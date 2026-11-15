@@ -131,7 +131,7 @@ describe("transform runner (fake models, PGlite branches)", () => {
     const run = await mastra.getWorkflow("transform").createRun();
 
     const stream = run.stream({
-      inputData: { quizId: "sample-stats", itemIds: ["sample-stats-q2"], solveRates: null, leakedItemIds: [], assumeSolveRate: 0.9, candidatesPerItem: 2 },
+      inputData: { quizId: "sample-stats", itemIds: ["sample-stats-q2"], solveRates: null, leakedItemIds: [], assumeSolveRate: 0.9, candidatesPerItem: 2, attackModel: "test:no-baseline" },
     });
     const types: string[] = [];
     for await (const chunk of stream.fullStream) {

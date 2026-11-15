@@ -244,3 +244,24 @@ export async function applyApprovals(db: Db, decisions: ApprovalDecision[]): Pro
   }
   return changed;
 }
+
+// ---------- like-for-like baseline ----------
+
+/** The agent model used for retakes; the baseline must come from the same model. */
+export const DEFAULT_ATTACK_MODEL = "gmi:google/gemini-3.8-flash";
+
+/**
+ * Original solve rates for one agent model, from A's agent_runs.json. Comparing a variant's retake
+ * against a pooled baseline (several models) would mix model strength into the measured drop.
+ */
+export function baselineSolveRates(runs: import("@unprompted/shared").AgentRun[], model: string, quizId: string): SolveRate[] {
+  const by = new Map<string, { correct: number; runs: number }>();
+  for (const r of runs) {
+    if (r.quizId !== quizId || r.model !== model) continue;
+    const b = by.get(r.itemId) ?? { correct: 0, runs: 0 };
+    b.runs += 1;
+    if (r.correct) b.correct += 1;
+    by.set(r.itemId, b);
+  }
+  return [...by].map(([itemId, b]) => ({ itemId, runs: b.runs, correct: b.correct, solveRate: b.correct / b.runs, agentSolvable: b.correct / b.runs >= 0.6 }));
+}

@@ -10,10 +10,10 @@ import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { REPO_ROOT } from "../paths.js";
-import type { LeakFinding, SolveRate, VariantExperiment, VariantStrategy } from "@unprompted/shared";
+import type { AgentRun, LeakFinding, SolveRate, VariantExperiment, VariantStrategy } from "@unprompted/shared";
 import { loadQuiz, parseMarkdownQuiz, saveQuiz } from "../ingest/markdown.js";
 import { ALL_STRATEGIES, runTransform } from "../runner.js";
-import { selectTargets } from "../steps/index.js";
+import { baselineSolveRates, DEFAULT_ATTACK_MODEL, selectTargets } from "../steps/index.js";
 import type { TransformEvent } from "../steps/types.js";
 import { buildContext } from "../context.js";
 
@@ -48,7 +48,12 @@ const quizId = path.basename(quizFile, ".md");
 const quiz = parseMarkdownQuiz(await readFile(quizFile, "utf8"), { quizId, courseId: "sandbox-course" });
 
 // Which items to transform: agent-solvable (A) or leaked (D), unless --items says otherwise.
-const rates = await readJson<SolveRate[]>(path.join(FIX, "solve_rates.json"));
+// Like-for-like: baseline from A's runs with the same agent model the retake will use.
+const attackModel = values["attack-models"] ?? DEFAULT_ATTACK_MODEL;
+const agentRuns = (await readJson<AgentRun[]>(path.join(FIX, "agent_runs.json"))) ?? [];
+const sameModel = baselineSolveRates(agentRuns, attackModel, quizId);
+const rates = sameModel.length ? sameModel : await readJson<SolveRate[]>(path.join(FIX, "solve_rates.json"));
+if (!sameModel.length) console.log(`NOTE no ${attackModel} baseline for ${quizId}; using pooled solve_rates.json (not like-for-like)`);
 const leaks = (await readJson<LeakFinding[]>(path.join(FIX, "leaks.json"))) ?? [];
 const assumed = values["assume-solve-rate"] != null ? Number(values["assume-solve-rate"]) : null;
 let picked;
@@ -96,7 +101,7 @@ try {
   ctx = await buildContext({
     noAttack: values["no-attack"],
     attackRepeats: Number(values["attack-repeats"]),
-    attackModels: values["attack-models"],
+    attackModels: attackModel,
     log: (s) => process.stderr.write(`  [attack] ${s}\n`),
   });
 } catch (e) {
