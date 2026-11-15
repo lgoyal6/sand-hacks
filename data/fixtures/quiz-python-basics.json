@@ -1,0 +1,152 @@
+{
+  "id": "python-basics",
+  "courseId": "sandbox-course",
+  "title": "Intro Programming: Python Basics",
+  "sourceFormat": "markdown",
+  "items": [
+    {
+      "id": "python-basics-q1",
+      "quizId": "python-basics",
+      "stem": "What does this print? x = [1, 2, 3]; y = x; y.append(4); print(len(x))",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "3"
+        },
+        {
+          "id": "b",
+          "text": "4"
+        },
+        {
+          "id": "c",
+          "text": "An error"
+        },
+        {
+          "id": "d",
+          "text": "None"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "understand that assignment shares a reference to a mutable list",
+      "originalItemId": null
+    },
+    {
+      "id": "python-basics-q2",
+      "quizId": "python-basics",
+      "stem": "What is the value of 17 // 5 + 17 % 5 in Python?",
+      "type": "numeric",
+      "answerKey": "5",
+      "objective": "evaluate integer division and the modulo operator",
+      "originalItemId": null
+    },
+    {
+      "id": "python-basics-q3",
+      "quizId": "python-basics",
+      "stem": "How many times does the body of this loop run? for i in range(2, 10, 3): ...",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "2"
+        },
+        {
+          "id": "b",
+          "text": "3"
+        },
+        {
+          "id": "c",
+          "text": "4"
+        },
+        {
+          "id": "d",
+          "text": "8"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "trace range with a start, stop and step",
+      "originalItemId": null
+    },
+    {
+      "id": "python-basics-q4",
+      "quizId": "python-basics",
+      "stem": "A function has no return statement. What does calling it return?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0"
+        },
+        {
+          "id": "b",
+          "text": "An empty string"
+        },
+        {
+          "id": "c",
+          "text": "None"
+        },
+        {
+          "id": "d",
+          "text": "It raises an error"
+        }
+      ],
+      "answerKey": "c",
+      "objective": "know the default return value of a Python function",
+      "originalItemId": null
+    },
+    {
+      "id": "python-basics-q5",
+      "quizId": "python-basics",
+      "stem": "Which data structure gives the fastest average-case membership test for a large collection?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "list"
+        },
+        {
+          "id": "b",
+          "text": "tuple"
+        },
+        {
+          "id": "c",
+          "text": "set"
+        },
+        {
+          "id": "d",
+          "text": "string"
+        }
+      ],
+      "answerKey": "c",
+      "objective": "compare lookup cost of hash-based and sequential containers",
+      "originalItemId": null
+    },
+    {
+      "id": "python-basics-q6",
+      "quizId": "python-basics",
+      "stem": "What does this print? s = \"hello\"; print(s[1:4])",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "hel"
+        },
+        {
+          "id": "b",
+          "text": "ell"
+        },
+        {
+          "id": "c",
+          "text": "ello"
+        },
+        {
+          "id": "d",
+          "text": "hell"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "slice a string with an exclusive end index",
+      "originalItemId": null
+    }
+  ]
+}

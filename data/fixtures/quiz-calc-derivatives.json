@@ -1,0 +1,134 @@
+{
+  "id": "calc-derivatives",
+  "courseId": "sandbox-course",
+  "title": "Calculus I: Derivatives",
+  "sourceFormat": "markdown",
+  "items": [
+    {
+      "id": "calc-derivatives-q1",
+      "quizId": "calc-derivatives",
+      "stem": "What is the derivative of f(x) = 3x^2 + 5x - 7 at x = 2?",
+      "type": "numeric",
+      "answerKey": "17",
+      "objective": "apply the power rule and evaluate a derivative at a point",
+      "originalItemId": null
+    },
+    {
+      "id": "calc-derivatives-q2",
+      "quizId": "calc-derivatives",
+      "stem": "If f(x) = sin(x^2), what is f'(x)?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "cos(x^2)"
+        },
+        {
+          "id": "b",
+          "text": "2x cos(x^2)"
+        },
+        {
+          "id": "c",
+          "text": "2x sin(x)"
+        },
+        {
+          "id": "d",
+          "text": "cos(2x)"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "apply the chain rule to a composite function",
+      "originalItemId": null
+    },
+    {
+      "id": "calc-derivatives-q3",
+      "quizId": "calc-derivatives",
+      "stem": "A function has f'(c) = 0 and f''(c) > 0. What happens at x = c?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A local maximum"
+        },
+        {
+          "id": "b",
+          "text": "A local minimum"
+        },
+        {
+          "id": "c",
+          "text": "An inflection point"
+        },
+        {
+          "id": "d",
+          "text": "Nothing can be concluded"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "use the second derivative test to classify a critical point",
+      "originalItemId": null
+    },
+    {
+      "id": "calc-derivatives-q4",
+      "quizId": "calc-derivatives",
+      "stem": "A ball's height is h(t) = 20t - 5t^2 meters. What is its velocity at t = 1 second, in meters per second?",
+      "type": "numeric",
+      "answerKey": "10",
+      "objective": "interpret the derivative of position as instantaneous velocity",
+      "originalItemId": null
+    },
+    {
+      "id": "calc-derivatives-q5",
+      "quizId": "calc-derivatives",
+      "stem": "What is the derivative of e^x times x?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "e^x"
+        },
+        {
+          "id": "b",
+          "text": "x e^x"
+        },
+        {
+          "id": "c",
+          "text": "e^x (x + 1)"
+        },
+        {
+          "id": "d",
+          "text": "e^x / x"
+        }
+      ],
+      "answerKey": "c",
+      "objective": "apply the product rule",
+      "originalItemId": null
+    },
+    {
+      "id": "calc-derivatives-q6",
+      "quizId": "calc-derivatives",
+      "stem": "Which statement about a function differentiable at x = a is always true?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "It has a maximum at a"
+        },
+        {
+          "id": "b",
+          "text": "It is continuous at a"
+        },
+        {
+          "id": "c",
+          "text": "Its second derivative exists at a"
+        },
+        {
+          "id": "d",
+          "text": "Its derivative is zero at a"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "differentiability implies continuity",
+      "originalItemId": null
+    }
+  ]
+}

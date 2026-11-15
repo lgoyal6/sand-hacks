@@ -13,3 +13,22 @@ create table if not exists session_flag (id text primary key, attempt_id text re
 alter table variant_experiment add column if not exists candidate_item_id text references item(id);
 alter table variant_experiment add column if not exists checks_json jsonb default '{}';
 alter table variant_experiment add column if not exists created_at timestamptz default now();
+-- C: attempts, responses and probes live in Neon; each attempt records the quiz version it saw (appeals).
+alter table attempt add column if not exists finished_at timestamptz;
+alter table attempt add column if not exists user_agent text;
+alter table attempt add column if not exists probe_plan jsonb default '[]';        -- server-only policy state
+alter table attempt add column if not exists probes_triggered jsonb default '[]';
+alter table attempt add column if not exists quiz_version text;          -- sha256 of the items the student saw (stem, choices, key)
+alter table attempt add column if not exists quiz_snapshot_lsn pg_lsn;   -- pg_current_wal_lsn() at start: branch from this LSN for an appeal
+alter table attempt add column if not exists quiz_snapshot_at timestamptz;
+alter table response add column if not exists answered_at timestamptz default now();
+alter table probe add column if not exists mode text;
+alter table probe add column if not exists created_at timestamptz default now();
+alter table probe add column if not exists completed_at timestamptz;
+alter table probe add column if not exists explanation text;
+alter table probe add column if not exists counterfactual_answer text;
+alter table probe add column if not exists counterfactual_source text;
+alter table probe add column if not exists counterfactual_model text;
+alter table probe add column if not exists conversation_id text;
+alter table probe add column if not exists retried boolean default false;
+create unique index if not exists response_attempt_item on response (attempt_id, item_id);  -- one response per item; a re-submit upserts
