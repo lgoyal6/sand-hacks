@@ -208,13 +208,28 @@ The workflow pauses with `suspend()` until the professor approves or rejects eac
 
 #### Neon: app data, a branch per rewrite, time travel, sign-in
 
+Every rewrite is an experiment on its own copy-on-write Neon branch; only verified versions are copied into `main`, only the ones the professor approves reach students, and appeals time-travel to the exact database state a student saw.
+
+```mermaid
+flowchart LR
+    M[("main")] -->|one branch per candidate| B["exp/item/n"]
+    B --> C{"answer checker,<br/>judge panel,<br/>leak check"}
+    C -->|verified| V["copied into main<br/>as a verified version"]
+    C -->|rejected| R["record kept on main<br/>with the reason"]
+    V -->|professor approves| S["students see it"]
+    A["attempt starts:<br/>pg_current_wal_lsn()"] -.->|appeal| T["temporary branch<br/>appeal/attempt/id<br/>at that parent_lsn"]
+    T --> Q["read the quiz and answer key<br/>as the student saw them"]
+    Q --> D["branch deleted"]
+```
+
 | | |
 |---|---|
 | What it does | Holds all app data, gives every rewrite candidate its own database branch, rebuilds exactly what a student saw for an appeal, and handles sign-in. |
-| Features | **Branching API** (`console.neon.tech/api/v2`, create, list and delete branches): one branch per candidate; survivors are merged back to `main`. **Time travel**: each attempt records `pg_current_wal_lsn()` when it starts, and an appeal creates a short-lived branch at that `parent_lsn`, reads the quiz and answer key there, compares them with today's, then deletes the branch. **Neon Auth** (`@neon/auth`, Managed Better Auth) for sign-in and roles. Postgres also stores Mastra's workflow state. |
-| See it | Studio: the branch tree card, the branch race card (`/studio/api/race`) and the "Show what a student saw" chip (`/studio/api/appeal`). `/signin`. |
-| Key files | [`services/workflows/src/db/neon-store.ts`](services/workflows/src/db/neon-store.ts), [`db/merge.ts`](services/workflows/src/db/merge.ts), [`apps/web/app/studio/_lib/timetravel.ts`](apps/web/app/studio/_lib/timetravel.ts), [`apps/web/lib/auth/server.ts`](apps/web/lib/auth/server.ts), [`db/neon/schema.sql`](db/neon/schema.sql) |
-| Limits | Without `NEON_API_KEY` and `NEON_PROJECT_ID`, the workflows fall back to in-memory PGlite branches and appeals are unavailable. Sign-in is enforced only when Neon Auth is configured. |
+| In real data | The project has `main` plus 26 experiment branches across 10 questions (Neon API, Nov 15 2026), for example `exp/sample-stats-q1/14`. Every one was branched from `main` at a recorded `parent_lsn`. Appeal branches are deleted after each read, so none are left over. |
+| Features | **Branching API** (`console.neon.tech/api/v2`, create, list and delete branches): one copy-on-write branch per candidate, named `exp/<item>/<n>`. Neon has no native merge, so a candidate's experiment row is upserted into `main` either way (rejected ones keep their reason), and only verified candidates also bring their new item; the branch itself is kept. **Time travel**: each attempt records `pg_current_wal_lsn()` when it starts, and an appeal creates a short-lived branch at that `parent_lsn`, reads the quiz and answer key there, compares them with today's, then deletes the branch. **Neon Auth** (`@neon/auth`, Managed Better Auth) for sign-in and roles. **Postgres** for all app data, plus Mastra's `PostgresStore` (schema `mastra`), so a workflow paused with `suspend()` for professor approval survives a restart and continues with `resume()`. **Serverless driver** (`@neondatabase/serverless`) for the workflow branch connections; the web app uses `pg`. |
+| See it | Studio: the branch race card (`/studio/api/race`), the experiment tree (`/studio/api/tree`) and the "Show what a student saw" appeal (`/studio/api/appeal`). `/signin`. |
+| Key files | [`services/workflows/src/db/neon-store.ts`](services/workflows/src/db/neon-store.ts), [`db/merge.ts`](services/workflows/src/db/merge.ts), [`apps/web/app/studio/_lib/timetravel.ts`](apps/web/app/studio/_lib/timetravel.ts), [`apps/web/lib/auth/server.ts`](apps/web/lib/auth/server.ts), [`db/neon/schema.sql`](db/neon/schema.sql), [`services/workflows/scripts/neon-killtest.ts`](services/workflows/scripts/neon-killtest.ts) |
+| Limits | Without `NEON_API_KEY` and `NEON_PROJECT_ID`, the workflows fall back to in-memory PGlite branches and appeals are unavailable. Sign-in is enforced only when Neon Auth is configured. We publish no branch timing numbers: the Neon kill test prints its timings but doesn't save them. |
 
 #### Bright Data: finding questions that are already online
 
