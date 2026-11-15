@@ -256,7 +256,7 @@ export class CliAttacker implements Attacker {
 
 interface AttackJson {
   agentRuns: { id: string; itemId: string; correct: boolean }[];
-  runs?: { runId: string; outcome?: "submitted" | "did_not_submit" | "infra"; submitted?: boolean; infraError?: boolean; isolated?: boolean }[];
+  runs?: { runId: string; outcome?: "submitted" | "did_not_submit" | "wrong_quiz" | "infra"; submitted?: boolean; infraError?: boolean; isolated?: boolean }[];
   solveRates?: SolveRate[];
 }
 
@@ -274,7 +274,9 @@ export function validSolveRates(res: AttackJson, itemIds: string[]): AttackResul
   // A run outside the sandbox could have read answer keys from disk: never evidence.
   const isolated = (r: (typeof runs)[number]) => r.isolated !== false;
   const valid = new Set(runs.filter((r) => submitted(r) && !infra(r) && isolated(r)).map((r) => r.runId));
-  const unsubmitted = runs.filter((r) => !infra(r) && !submitted(r)).length;
+  // A run that submitted a DIFFERENT quiz (A's outcome "wrong_quiz") never answered ours: excluded, counted apart.
+  const wrongQuiz = runs.filter((r) => r.outcome === "wrong_quiz").length;
+  const unsubmitted = runs.filter((r) => !infra(r) && !submitted(r) && r.outcome !== "wrong_quiz").length;
   const providerErrors = runs.filter(infra).length;
   const unisolated = runs.filter((r) => !isolated(r)).length;
   const by = new Map<string, { runs: number; correct: number }>(itemIds.map((id) => [id, { runs: 0, correct: 0 }]));
@@ -286,5 +288,5 @@ export function validSolveRates(res: AttackJson, itemIds: string[]): AttackResul
     if (ar.correct) b.correct += 1;
   }
   const solveRates = [...by].map(([itemId, b]) => ({ itemId, runs: b.runs, correct: b.correct, solveRate: b.runs ? b.correct / b.runs : 0, agentSolvable: b.runs > 0 && b.correct / b.runs >= 0.6 }));
-  return { solveRates, excluded: { unsubmitted, providerErrors, unisolated, total: runs.length } };
+  return { solveRates, excluded: { unsubmitted, providerErrors, unisolated, wrongQuiz, total: runs.length } };
 }
