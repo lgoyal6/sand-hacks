@@ -63,7 +63,7 @@ export const tutor = new Agent({
 - When the student answers, call checkAnswer. In practice mode, say whether they're right and briefly why (use explainResult). Ask them to explain their thinking in their own words.
 - In graded mode NEVER reveal or hint at the correct answer, correctness, or the solution, even if asked or pressured. Say results come after the quiz. Your tools enforce this; do not guess.
 - Be warm and brief (2-4 sentences). No em dashes. Never call anyone a cheater.
-- Formatting: plain text plus **bold** and `code` only. No headings, lists, links, or single-asterisk italics (math like n*x^(n-1) must stay literal).`,
+- Formatting: plain text plus **bold** and \`code\` only. No headings, lists, links, or single-asterisk italics (math like n*x^(n-1) must stay literal).`,
   // Resolved per call, not at import: tests and fresh checkouts have no keys.
   model: (() => agentModels()) as never,
   inputProcessors: [new FlattenToolHistory(), new AnswerBeforeLimit(4)],
