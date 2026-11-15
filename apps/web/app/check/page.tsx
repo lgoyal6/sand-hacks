@@ -73,10 +73,10 @@ export default function Page() {
   return (
     <div className="min-h-svh bg-background">
       <SiteHeader />
-      <main className="mx-auto flex max-w-[760px] flex-col gap-8 px-6 pb-20 pt-14">
+      <main className="mx-auto flex max-w-[760px] flex-col gap-6 px-4 pb-16 pt-8 sm:gap-8 sm:px-6 sm:pb-20 sm:pt-14">
         <div className="flex flex-col items-center gap-4 text-center">
           <AgentAvatar agent="leak-scout" size="lg" state={phase === "scanning" ? "active" : "idle"} />
-          <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.02em]">Is your question already online?</h1>
+          <h1 className="text-[28px] font-semibold leading-tight tracking-[-0.02em] sm:text-[32px]">Is your question already online?</h1>
           <p className="max-w-[540px] text-[16px] leading-relaxed text-muted-foreground">
             Paste a quiz or homework question. We search the web live and show which homework sites have it. In our 500-exercise index, 36 to 48% of textbook exercises were already there.
           </p>
@@ -95,9 +95,11 @@ export default function Page() {
             placeholder="e.g. A sample of 25 has mean 40 and standard deviation 10. What is the standard error of the mean?"
             className="block w-full resize-none bg-transparent px-5 pb-1 pt-4 text-[16px] leading-relaxed outline-none placeholder:text-muted-foreground"
           />
-          <div className="flex items-center justify-between gap-3 px-4 pb-3">
-            <span className="num text-xs text-muted-foreground">{question.trim().length}/600</span>
-            <PillButton id="check-submit" type="submit" disabled={!valid || phase === "scanning"}>
+          <div className="flex flex-col-reverse items-stretch gap-2 px-3 pb-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-4">
+            <span className="num px-1 text-xs text-muted-foreground">
+              {question.trim().length}/600{question.trim().length > 0 && question.trim().length < 20 ? " · at least 20 characters" : ""}
+            </span>
+            <PillButton id="check-submit" type="submit" disabled={!valid || phase === "scanning"} className="h-11 w-full text-[15px] sm:h-9 sm:w-auto sm:text-sm">
               {phase === "scanning" ? "Searching..." : "Check the web"}
             </PillButton>
           </div>
@@ -140,14 +142,23 @@ export default function Page() {
         )}
 
         {phase === "error" && error && (
-          <p role="alert" className="rounded-2xl bg-muted px-4 py-3 text-sm">
-            {error}
-          </p>
+          <div role="alert" className="flex flex-col gap-1 rounded-2xl bg-muted px-4 py-3 text-sm">
+            <span>{error}</span>
+            {/check(s)? in 10 minutes/i.test(error) && (
+              <span className="text-muted-foreground">
+                The limit keeps live web searches fair for everyone. Meanwhile,{" "}
+                <Link href="/study" className="underline">
+                  see what we found across 500 textbook exercises
+                </Link>
+                .
+              </span>
+            )}
+          </div>
         )}
 
         {phase === "done" && done && (
           <section aria-label="Report" className="overflow-hidden rounded-[20px] border border-border">
-            <div className="flex flex-col gap-1 border-b border-border px-5 py-4">
+            <div className="flex flex-col gap-1 border-b border-border px-4 py-4 sm:px-5">
               <span className="text-lg font-semibold">
                 {done.found ? `Found on ${done.sites.length} site${done.sites.length > 1 ? "s" : ""}` : "Not found in today's search"}
               </span>
@@ -160,7 +171,7 @@ export default function Page() {
             {hits.length > 0 && (
               <ul className="divide-y divide-border">
                 {hits.map((h) => (
-                  <li key={h.url} className="flex flex-wrap items-center gap-3 px-5 py-3">
+                  <li key={h.url} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3 sm:px-5">
                     <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-medium", h.partial ? "border border-dashed border-leak/40 text-leak/90" : "bg-leak-soft text-leak")}>{h.site}</span>
                     <a href={h.url} target="_blank" rel="noreferrer noopener nofollow" className="flex min-w-0 flex-1 items-center gap-1 truncate text-sm text-brand hover:underline">
                       <span className="truncate">{h.host}</span>
@@ -177,11 +188,11 @@ export default function Page() {
                 ))}
               </ul>
             )}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-muted/30 px-5 py-4">
+            <div className="flex flex-col gap-3 border-t border-border bg-muted/30 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
               <span className="text-sm">
                 {done.found ? "Rewrite it so a copied answer won't fit, and keep testing the same skill." : "Want to know if it leaks later, or whether an AI agent can answer it?"}
               </span>
-              <Link href="/studio" className="inline-flex h-9 items-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90">
+              <Link href="/studio" className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90 sm:h-9">
                 {done.found ? "Rewrite it with Unprompted" : "Open the professor studio"} <ArrowRight className="size-4" aria-hidden />
               </Link>
             </div>
