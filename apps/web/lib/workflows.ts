@@ -7,7 +7,7 @@ import path from "node:path";
 import { REPO_ROOT } from "@/lib/db/fixtures";
 
 const WORKFLOWS = path.join(REPO_ROOT, "services/workflows");
-const CLI = { ingest: "ingest", transform: "transform", qti: "qti", council: "council" } as const;
+const CLI = { ingest: "ingest", transform: "transform", qti: "qti", council: "council", leakscan: "leakscan" } as const;
 
 export function spawnWorkflow(script: keyof typeof CLI, args: string[]): ChildProcessWithoutNullStreams;
 export function spawnWorkflow(script: keyof typeof CLI, args: string[], opts: SpawnOptions): ChildProcess;

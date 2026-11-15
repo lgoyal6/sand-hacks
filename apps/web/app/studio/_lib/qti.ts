@@ -2,13 +2,20 @@
 import "server-only";
 import { spawnWorkflow } from "@/lib/workflows";
 
-export function runQti(args: string[]): Promise<{ code: number | null; json: unknown; out: string }> {
+export function runQti(args: string[]) {
+  return runWorkflows("qti", args);
+}
+
+/** Any workflows package script; the last JSON line of its output is the result. */
+export function runWorkflows(script: "qti" | "leakscan", args: string[], timeoutMs = 5 * 60_000): Promise<{ code: number | null; json: unknown; out: string }> {
   return new Promise((resolve) => {
-    const child = spawnWorkflow("qti", args);
+    const child = spawnWorkflow(script, args);
+    const timer = setTimeout(() => child.kill("SIGTERM"), timeoutMs);
     let out = "";
     child.stdout.on("data", (d) => (out += d));
     child.stderr.on("data", (d) => (out += d));
     child.on("close", (code) => {
+      clearTimeout(timer);
       const line = out.split("\n").map((l) => l.trim()).filter((l) => l.startsWith("{")).at(-1);
       let json: unknown = null;
       try {
