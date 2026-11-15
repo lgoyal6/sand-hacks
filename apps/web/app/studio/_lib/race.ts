@@ -12,6 +12,11 @@ export interface RaceLane {
   label: string; // "Version 3 · new numbers"
   branch: string; // exp/<item>/<k>
   branchLive: boolean;
+  /** Neon branch id and console page, for live branches (from the Neon API). */
+  branchId?: string;
+  consoleUrl?: string;
+  /** Where the branch forked from, as Neon reports it. */
+  parent?: { name: string; lsn?: string };
   status: VariantExperiment["status"];
   stem: string;
   checks: {

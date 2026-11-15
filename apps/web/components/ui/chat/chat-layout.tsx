@@ -32,9 +32,11 @@ export interface ChatLayoutProps {
    * column dims and the scene replaces the thread and composer; the sidebar and Agents panel stay.
    */
   scene?: React.ReactNode;
+  /** Optional footer for the Agents panel (e.g. the studio's Database line). */
+  panelFooter?: React.ReactNode;
 }
 
-export function ChatLayout({ sidebar, agents, activeAgentId, children, empty, home, composer, composerNote, title, scene }: ChatLayoutProps) {
+export function ChatLayout({ sidebar, agents, activeAgentId, children, empty, home, composer, composerNote, title, scene, panelFooter }: ChatLayoutProps) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [agentsOpen, setAgentsOpen] = React.useState(true);
 
@@ -102,7 +104,7 @@ export function ChatLayout({ sidebar, agents, activeAgentId, children, empty, ho
       </LayoutGroup>
 
       {agents && agentsOpen && (
-        <AgentPanel agents={agents} activeId={activeAgentId} onClose={() => setAgentsOpen(false)} className="hidden lg:flex" />
+        <AgentPanel agents={agents} activeId={activeAgentId} onClose={() => setAgentsOpen(false)} className="hidden lg:flex" footer={panelFooter} />
       )}
     </div>
   );

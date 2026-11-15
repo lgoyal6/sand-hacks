@@ -2,7 +2,7 @@
 // Experiment tree card (owner: B): a git-style graph of a quiz's Neon branches. Calm and light:
 // main down the left, one forked lane per branch, dashed when the branch was pruned. No red, no emojis.
 import { useState } from "react";
-import { Check, GitMerge } from "lucide-react";
+import { Check, ExternalLink, GitMerge } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NeonFacts, TreeData, TreeLane } from "../_lib/tree";
 
@@ -60,10 +60,25 @@ function Lane({ lane, last }: { lane: TreeLane; last: boolean }) {
           <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium", o.chip)}>{o.label}</span>
           {dashed ? <span className="shrink-0 text-[11px] text-muted-foreground">pruned</span> : null}
         </span>
-        <span className="mt-0.5 block truncate font-mono text-[11px] text-muted-foreground">{lane.branch}</span>
-        {lane.reason ? <span className="mt-0.5 block truncate text-xs text-muted-foreground">{lane.reason}</span> : null}
+        <span className="mt-0.5 block truncate font-mono text-[11px] text-muted-foreground">
+          {lane.branch}
+          {lane.branchId ? <span className="text-muted-foreground/70"> · {lane.branchId}</span> : null}
+        </span>
+        {lane.parent ? (
+          <span className="num mt-0.5 block truncate text-[11px] text-muted-foreground">
+            created from {lane.parent.name}
+            {lane.parent.lsn ? ` @ LSN ${lane.parent.lsn}` : ""}
+            {lane.parent.at ? `, ${time(lane.parent.at)}` : ""}
+          </span>
+        ) : null}
+        {lane.status ? <span className="mt-0.5 block truncate text-xs text-foreground/80">{lane.status}</span> : lane.reason ? <span className="mt-0.5 block truncate text-xs text-muted-foreground">{lane.reason}</span> : null}
         <Facts f={lane.neon} />
       </button>
+      {lane.consoleUrl ? (
+        <a href={lane.consoleUrl} target="_blank" rel="noreferrer" className="ml-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+          View in Neon console <ExternalLink className="size-3" aria-hidden />
+        </a>
+      ) : null}
       {open ? (
         <ol className="mb-2 ml-6 space-y-1 border-l border-border pl-3">
           {lane.steps.map((s, i) => (
@@ -89,7 +104,7 @@ export function TreeCard({ data }: { data: TreeData }) {
           {data.source.appeals ? `, ${data.source.appeals} appeal${data.source.appeals === 1 ? "" : "s"}` : ""}
         </p>
         <p className="text-xs text-muted-foreground">
-          Every rewrite runs on its own copy-on-write branch of the quiz database. {liveCount} still exist; the rest were pruned after their result was recorded on main.
+          Every rewrite candidate runs on its own copy-on-write Neon branch of the quiz database, forked from main. Kept candidates are merged back into main; every result is recorded on main. {liveCount} branch{liveCount === 1 ? "" : "es"} still exist; the rest were pruned after their result was recorded. Click a branch for the checks that decided it.
           {data.source.neonApi ? "" : " Live branch details are unavailable (no Neon API key)."}
         </p>
       </div>
@@ -98,6 +113,11 @@ export function TreeCard({ data }: { data: TreeData }) {
           <span className="absolute left-[7px] top-[9px] size-2.5 rounded-full bg-foreground" aria-hidden />
           <span className="absolute left-[11px] top-4 h-[calc(100%-8px)] w-0.5 bg-border" aria-hidden />
           <span className="text-sm font-medium">main</span>
+          {data.main.consoleUrl ? (
+            <a href={data.main.consoleUrl} target="_blank" rel="noreferrer" className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+              {data.main.branchId ?? "Neon console"}
+            </a>
+          ) : null}
           <span className="truncate">
             <Facts f={data.main.neon} isMain />
           </span>

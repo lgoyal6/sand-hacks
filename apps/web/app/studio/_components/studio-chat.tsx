@@ -9,6 +9,7 @@ import { CourseScanCard } from "./course-scan-card";
 import { replayCookieOn, studioFetch, syncReplayCookie } from "../_lib/replay-client";
 import { AppealPicker } from "./appeal-picker";
 import { ObjectiveConfirm } from "./objective-confirm";
+import { NeonStatus } from "./neon-status";
 import { TreeCard } from "./tree-card";
 import type { TreeData } from "../_lib/tree";
 import type { LeakFinding } from "@unprompted/shared";
@@ -436,6 +437,7 @@ export function StudioChat({ data }: { data: StudioData }) {
       <ChatLayout
         sidebar={sidebar}
         agents={agents}
+        panelFooter={<NeonStatus />}
         empty={msgs.length === 0}
         home={{
           greeting: "Which quiz should we test?",
@@ -620,6 +622,7 @@ export function StudioChat({ data }: { data: StudioData }) {
     <ChatLayout
       sidebar={sidebar}
       agents={agents}
+      panelFooter={<NeonStatus />}
       empty={msgs.length === 0}
       title={title}
       home={{

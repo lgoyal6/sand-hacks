@@ -5,6 +5,7 @@
 import "server-only";
 import type { VariantExperiment } from "@unprompted/shared";
 import { neon } from "@/lib/db/neon";
+import { consoleUrl, listBranches, type BranchInfo } from "./neon-branches";
 
 export interface NeonFacts {
   createdAt?: string;
@@ -27,51 +28,41 @@ export interface TreeLane {
   neon?: NeonFacts;
   steps: string[];
   variantId?: string;
+  /** Neon's branch id (br-…), when the branch still exists. */
+  branchId?: string;
+  /** What it was created from, as Neon reports it. */
+  parent?: { name: string; lsn?: string; at?: string };
+  /** Neon console page for the branch (live branches only). */
+  consoleUrl?: string;
+  /** One plain line: kept and merged into main / rejected: reason / still open. */
+  status?: string;
 }
 
 export interface TreeData {
   quizId: string;
-  main: { branch: "main"; neon?: NeonFacts };
+  main: { branch: "main"; neon?: NeonFacts; branchId?: string; consoleUrl?: string };
   lanes: TreeLane[];
   source: { neonApi: boolean; experiments: number; appeals: number };
 }
 
-interface NeonBranch {
-  name: string;
-  default?: boolean;
-  primary?: boolean;
-  created_at?: string;
-  parent_lsn?: string;
-  parent_timestamp?: string;
-  logical_size?: number;
-  written_data_bytes?: number;
-}
-
-async function neonBranches(): Promise<NeonBranch[] | null> {
-  const key = process.env.NEON_API_KEY?.trim();
-  const project = process.env.NEON_PROJECT_ID?.trim();
-  if (!key || !project) return null;
-  try {
-    const r = await fetch(`https://console.neon.tech/api/v2/projects/${project}/branches`, {
-      headers: { Authorization: `Bearer ${key}`, Accept: "application/json" },
-      signal: AbortSignal.timeout(8000),
-      cache: "no-store",
-    });
-    return r.ok ? ((await r.json()) as { branches: NeonBranch[] }).branches : null;
-  } catch {
-    return null;
-  }
-}
-
-function facts(b: NeonBranch | undefined): NeonFacts | undefined {
+function facts(b: BranchInfo | undefined): NeonFacts | undefined {
   if (!b) return undefined;
   const f: NeonFacts = {};
-  if (b.created_at) f.createdAt = b.created_at;
-  if (b.parent_timestamp) f.forkTimestamp = b.parent_timestamp;
-  if (b.parent_lsn) f.forkLsn = b.parent_lsn;
-  if (typeof b.logical_size === "number") f.logicalSizeBytes = b.logical_size;
-  if (typeof b.written_data_bytes === "number") f.writtenBytes = b.written_data_bytes;
+  if (b.createdAt) f.createdAt = b.createdAt;
+  if (b.parentTimestamp) f.forkTimestamp = b.parentTimestamp;
+  if (b.parentLsn) f.forkLsn = b.parentLsn;
+  if (typeof b.logicalSizeBytes === "number") f.logicalSizeBytes = b.logicalSizeBytes;
+  if (typeof b.writtenBytes === "number") f.writtenBytes = b.writtenBytes;
   return f;
+}
+
+/** Status line from the experiment record on main (the branch itself may have been pruned). */
+function statusOf(e: VariantExperiment, live: boolean): string {
+  const why = chip(e.reasons.at(-1));
+  if (e.status === "approved") return "Kept: merged into main and approved";
+  if (e.status === "verified") return "Kept: merged into main, waiting for your approval";
+  if (e.status === "rejected") return `Rejected${why ? `: ${why}` : ""} (record kept on main)`;
+  return live ? `Still open${why ? `: ${why}` : ""}` : `Not verified${why ? `: ${why}` : ""} (record kept on main)`;
 }
 
 const STRATEGY: Record<string, string> = {
@@ -106,9 +97,11 @@ function stepsOf(e: VariantExperiment): string[] {
 }
 
 export async function buildTree(quizId: string, experiments: VariantExperiment[]): Promise<TreeData> {
-  const branches = await neonBranches();
+  const list = await listBranches({ maxAgeMs: 0 });
+  const branches = list?.branches ?? null;
   const byName = new Map((branches ?? []).map((b) => [b.name, b]));
-  const mainBranch = branches?.find((b) => b.default || b.primary);
+  const mainBranch = branches?.find((b) => b.isDefault);
+  const link = (b?: BranchInfo) => (list && b ? consoleUrl(list.projectId, b.id) : undefined);
   const db = neon();
   const created = new Map<string, string>();
   if (db) {
@@ -126,7 +119,7 @@ export async function buildTree(quizId: string, experiments: VariantExperiment[]
       kind: "experiment",
       branch: e.neonBranch,
       label: `Q${q} v${k} · ${STRATEGY[e.strategy] ?? e.strategy}`,
-      at: b?.parent_timestamp ?? b?.created_at ?? created.get(e.id) ?? new Date(0).toISOString(),
+      at: b?.parentTimestamp ?? b?.createdAt ?? created.get(e.id) ?? new Date(0).toISOString(),
       outcome: outcomeOf(e),
       reason: chip(e.reasons.at(-1)),
       live: !!b,
@@ -134,6 +127,8 @@ export async function buildTree(quizId: string, experiments: VariantExperiment[]
       neon: facts(b),
       steps: stepsOf(e),
       variantId: e.id,
+      ...(b ? { branchId: b.id, consoleUrl: link(b), parent: { name: b.parentName ?? "main", lsn: b.parentLsn, at: b.parentTimestamp ?? b.createdAt } } : {}),
+      status: statusOf(e, !!b),
     };
   });
 
@@ -164,7 +159,7 @@ export async function buildTree(quizId: string, experiments: VariantExperiment[]
   lanes.sort((x, y) => x.at.localeCompare(y.at));
   return {
     quizId,
-    main: { branch: "main", neon: facts(mainBranch) },
+    main: { branch: "main", neon: facts(mainBranch), ...(mainBranch ? { branchId: mainBranch.id, consoleUrl: link(mainBranch) } : {}) },
     lanes,
     source: { neonApi: !!branches, experiments: exps.length, appeals },
   };
