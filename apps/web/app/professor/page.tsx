@@ -77,7 +77,10 @@ async function KpiRow() {
   ]);
   const s = summary.data;
   const items = quiz.data?.items.length ?? solve.data.length;
-  const solvable = solve.data.filter((r) => r.agentSolvable).length;
+  // solve_rates.json covers every quiz A has attacked; count only this quiz's items.
+  const quizItems = new Set(quiz.data?.items.map((i) => i.id) ?? []);
+  const solveHere = quizItems.size ? solve.data.filter((r) => quizItems.has(r.itemId)) : solve.data;
+  const solvable = solveHere.filter((r) => r.agentSolvable).length;
   const leakedItems = new Set(leaks.data.map((l) => l.itemId)).size;
   const verified = variants.data.filter((v) => v.status === "verified" || v.status === "approved").length;
   const cells = buildCells(attempts.data, probes.data);
@@ -91,7 +94,7 @@ async function KpiRow() {
         sub={s ? `${s.itemCorrect}/${s.itemRuns} answers · 95% CI ${pct(s.accuracyCI95[0])}-${pct(s.accuracyCI95[1])}` : "No agent runs yet"}
         tone="agent"
       />
-      <Kpi label="Questions agents can solve" value={solve.data.length ? `${solvable}/${items}` : "-"} sub="Solve rate 60% or more" />
+      <Kpi label="Questions agents can solve" value={solveHere.length ? `${solvable}/${items}` : "-"} sub="Solve rate 60% or more" />
       <Kpi label="Questions found online" value={leaks.origin === "none" ? "-" : `${leakedItems}/${items}`} sub="Exact-phrase web search" tone="leak" />
       <Kpi
         label="Explain gaps"
@@ -109,6 +112,9 @@ async function AgentAttackPanel() {
   const labels = itemLabels(quiz.data);
   const items = [...labels.entries()].map(([id, l]) => ({ id, label: l.label, stem: l.stem }));
   const infra = summary.data?.infraErrors ?? 0;
+  const reasons = Object.entries(summary.data?.infraReasons ?? {})
+    .map(([r, n]) => `${n} ${r}`)
+    .join(", ");
   return (
     <Panel
       title="What agents can do"
@@ -118,7 +124,11 @@ async function AgentAttackPanel() {
       {runs.data.length && items.length ? (
         <>
           <SolveRateHeatmap items={items} runs={runs.data} />
-          {infra > 0 && <p className="mt-1 text-xs text-muted-foreground">{infra} runs failed for infrastructure reasons and are excluded.</p>}
+          {infra > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {infra} runs never reached the quiz and are excluded from every number here{reasons ? ` (${reasons})` : ""}.
+            </p>
+          )}
         </>
       ) : (
         <PanelEmpty>No agent runs yet. Start an attack from Studio.</PanelEmpty>
