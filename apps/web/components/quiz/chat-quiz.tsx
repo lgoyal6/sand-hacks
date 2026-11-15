@@ -15,6 +15,7 @@ import { ConversationProvider } from "@elevenlabs/react";
 import { ChatLayout, Chip, Composer, Message, PillButton, QuestionCard, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
 import { useTelemetry } from "@/lib/telemetry/use-telemetry";
 import { emitAgentStatus } from "@/lib/telemetry/agent-status";
+import { agentTurn } from "@/lib/agents/agent-turn";
 import { ConfidenceScale } from "@/components/probe/confidence-scale";
 import { useVoiceProbe, type ProbePhase, type VoiceResult } from "@/components/probe/use-voice-probe";
 import { ItemView, type ItemResult } from "./item-view";
@@ -50,6 +51,27 @@ const now = () => performance.now();
 function isEmpty(a: Answer) {
   return Array.isArray(a) ? a.length === 0 : a.trim() === "";
 }
+// Minimal inline Markdown for agent replies: **bold**, `code`, and line breaks. No single-* italics:
+// math like n*x^(n-1) must stay intact. No HTML injection.
+function RichText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*[^*\n]+\*\*|`[^`\n]+`|\n)/g);
+  return (
+    <>
+      {parts.map((p, i) =>
+        p === "\n" ? (
+          <br key={i} />
+        ) : p.startsWith("**") && p.endsWith("**") && p.length > 4 ? (
+          <strong key={i}>{p.slice(2, -2)}</strong>
+        ) : p.startsWith("`") && p.endsWith("`") && p.length > 2 ? (
+          <code key={i} className="rounded bg-muted px-1 text-[0.9em]">{p.slice(1, -1)}</code>
+        ) : (
+          p
+        ),
+      )}
+    </>
+  );
+}
+
 // Calm practice feedback: what the answer is and what the question was about. Not color-only.
 function feedbackText(item: PublicItem, correct: boolean, key: string[] | null) {
   const why = item.objective ? ` The skill here: ${item.objective.replace(/\.$/, "")}.` : "";
@@ -123,6 +145,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const [entries, setEntries] = useState<Entry[]>([]);
   const [lastCorrect, setLastCorrect] = useState<boolean | null>(null);
   const [lastKey, setLastKey] = useState<string[] | null>(null);
+  const [tutorLive, setTutorLive] = useState<string | null>(null); // streaming Tutor reply
   const [lastCardId, setLastCardId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -450,16 +473,33 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   }
 
   // Free text outside a probe step: the tutor's open chat arrives with B's agent API. Until then, steer to the quiz.
+  // Free text goes to the Tutor agent (B's Mastra agent behind /api/agents/tutor/turn).
+  const askTutor = async (text: string, fallback?: () => void) => {
+    const history = entries
+      .filter((e): e is Extract<Entry, { who: "tutor" | "student" }> => e.who !== "card")
+      .slice(-8)
+      .map((e) => ({ role: e.who === "student" ? ("user" as const) : ("assistant" as const), content: e.text }));
+    setTutorLive("");
+    const r = await agentTurn("tutor", { attemptId, input: text, history }, (soFar) => setTutorLive(soFar));
+    setTutorLive(null);
+    if (r.text) say("tutor", r.text);
+    else if (fallback) fallback();
+    else say("tutor", "I can't answer right now. Let's keep going, and ask me again in a moment.");
+  };
+
   const freeText = (text: string) => {
     say("student", text);
-    const match = matchQuiz(quizzes, text);
+    const match = attemptId ? null : matchQuiz(quizzes, text);
     if (match) {
       setQuizId(match.id);
       say("tutor", `Let's work on ${match.title}: ${match.items.length} questions. Practice run, or the graded quiz?`, { agent: "Tutor" });
       setPhase("intro");
-    } else {
+    } else if (text === "I'm not sure what to study.") {
       say("tutor", "Happy to help. Which topic are we working on? Pick one and I'll quiz you, with a short think-aloud along the way.", { agent: "Tutor" });
       setPhase("pick");
+    } else {
+      if (phase === "home") setPhase("pick");
+      askTutor(text, () => say("tutor", "Which topic are we working on? Pick one and I'll quiz you, with a short think-aloud along the way."));
     }
   };
 
@@ -472,7 +512,12 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     ? { textareaId: composer.textareaId, submitId: composer.submitId, placeholder: composer.placeholder, disabled: false }
     : phase === "home" || phase === "intro" || phase === "pick"
       ? { textareaId: "composer-input", submitId: "composer-send", placeholder: "Tell me what you're studying, or say \"quiz me\"...", disabled: false }
-      : { textareaId: "composer-input", submitId: "composer-send", placeholder: phase === "done" ? "Nice work. Start a new session from the sidebar." : "Answer the question above", disabled: true };
+      : {
+          textareaId: "composer-input",
+          submitId: "composer-send",
+          placeholder: phase === "done" ? "Ask the tutor about your results..." : "Ask the tutor about this question...",
+          disabled: tutorLive !== null || phase === "checking" || phase.startsWith("probe_"),
+        };
 
   const composerEl = (
     <Composer
@@ -539,7 +584,9 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           {entries.map((e) =>
             e.who === "tutor" ? (
               <Message key={e.id} role="tutor" agentName={e.agent && e.agent !== "Tutor" ? e.agent : undefined}>
-                <p>{e.text}</p>
+                <p>
+                  <RichText text={e.text} />
+                </p>
               </Message>
             ) : e.who === "card" ? (
               <AnsweredCard key={e.id} entry={e} quiz={quiz} />
@@ -745,6 +792,17 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
               </div>
             </Message>
           )}
+
+          {tutorLive !== null &&
+            (tutorLive ? (
+              <Message role="tutor">
+                <p id="tutor-live">
+                  <RichText text={tutorLive} />
+                </p>
+              </Message>
+            ) : (
+              <Thinking label="Tutor is thinking" />
+            ))}
 
           {error && (
             <p role="alert" className="text-sm text-destructive">
