@@ -195,7 +195,7 @@ export default async function Page() {
               </li>
               <li>Physics (50%) is probably undercounted: reposted physics problems often change the numbers, which an exact-phrase search misses.</li>
               <li>A match score measures text overlap, not proof of a correct answer on the page.</li>
-              <li>Our daily web-archive watch can only see sites that put the question in the page address (Chegg, Studocu, Course Hero, Vaia), not Quizlet or Brainly.</li>
+              <li>Our web-archive watch (last 24 hours) can only see sites that put the question in the page address (Chegg, Studocu, Course Hero, Vaia), not Quizlet or Brainly.</li>
             </ul>
           </div>
         </section>
