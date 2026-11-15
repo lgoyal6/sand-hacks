@@ -1,7 +1,8 @@
 import { after as afterResponse, NextResponse } from "next/server";
 import { getProbe, patchProbe } from "../../../../../_lib/probes";
 import { gradeProbeAsync } from "@/lib/agents/council";
-import { cfLatencyFromWords, deleteConversation, formatTranscript, getConversation, scribeCall } from "../../../../../_lib/elevenlabs";
+import { deleteProbeAudio } from "@/lib/retention";
+import { cfLatencyFromWords, formatTranscript, getConversation, scribeCall } from "../../../../../_lib/elevenlabs";
 
 // After the call: pull the finalized transcript (with per-turn times) from ElevenLabs and store it.
 export async function POST(req: Request, ctx: RouteContext<"/api/probes/[id]/voice/finish">) {
@@ -48,15 +49,10 @@ export async function POST(req: Request, ctx: RouteContext<"/api/probes/[id]/voi
     // Privacy: our copy of the transcript and word timestamps is saved, so delete the call (audio + their
     // transcript) at ElevenLabs. Only once the call is final; never blocks or fails the student's request.
     if (conv.status === "done" || conv.status === "failed") {
-      afterResponse(async () => {
-        try {
-          if (!(await deleteConversation(conversationId))) console.warn(`[voice] ElevenLabs audio delete refused for ${conversationId}`);
-        } catch (err) {
-          console.warn(`[voice] ElevenLabs audio delete failed for ${conversationId}:`, (err as Error).message);
-        }
-      });
+      // Records probe.audio_deleted_at on success; failures are logged and the professor-page sweep retries.
+      afterResponse(() => deleteProbeAudio(id, conversationId).then(() => undefined));
     } else {
-      console.warn(`[voice] call ${conversationId} not final (${conv.status}); audio not deleted yet`);
+      console.warn(`[voice] call ${conversationId} not final (${conv.status}); the audio sweep deletes it later`);
     }
     // If the student already finished the probe (confidence after), the transcript is the last piece: grade now.
     const after = await getProbe(id);

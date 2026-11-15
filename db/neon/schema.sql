@@ -89,3 +89,6 @@ alter table leak_finding add column if not exists seen_at timestamptz;
 alter table item add column if not exists leak_scanned_at timestamptz;
 -- D's Archive watch (daily): candidate pages per question. Candidates, never confirmed leaks.
 create table if not exists leak_archive_watch (item_id text, run_at timestamptz, candidates int, error text, primary key (item_id, run_at));
+-- Retention: when the ElevenLabs call audio was deleted, and when the professor deleted our transcript.
+alter table probe add column if not exists audio_deleted_at timestamptz;
+alter table probe add column if not exists transcript_deleted_at timestamptz;

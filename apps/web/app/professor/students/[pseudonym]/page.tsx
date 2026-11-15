@@ -3,15 +3,18 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { connection } from "next/server";
+import { after, connection } from "next/server";
 import { ArrowLeft, Check, Mic, Keyboard, Accessibility, X } from "lucide-react";
 import { AppShell } from "@/components/ui/app-shell";
 import { Kpi, Panel } from "@/components/dashboard/panel";
 import { loadStudent, type AttemptDetail } from "../_lib";
 import { CalibrationText } from "../roster-table";
 import { ApproveButton } from "./approve-button";
+import { DeleteTranscriptButton } from "./delete-transcript-button";
+import { sweepProbeAudio } from "@/lib/retention";
 import { LoadingShell } from "@/components/ui/page-loader";
 
+const time = (iso: string) => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "");
 
 export default function Page({ params }: PageProps<"/professor/students/[pseudonym]">) {
@@ -30,6 +33,8 @@ async function Student({ params }: { params: Promise<{ pseudonym: string }> }) {
   const data = await loadStudent(pseudonym);
   if (!data) notFound();
   const { row, attempts } = data;
+  // Retry any call audio that wasn't deleted at transcription time (after the response, never slows the page).
+  after(() => sweepProbeAudio(attempts.map((a) => a.attemptId)).then(() => undefined));
   return (
     <AppShell wide title={pseudonym} subtitle={row.who === "human" ? "Student" : `Not a student: ${row.who}`}>
       <div className="space-y-6">
@@ -52,6 +57,10 @@ async function Student({ params }: { params: Promise<{ pseudonym: string }> }) {
         {attempts.map((a) => (
           <AttemptPanel key={a.attemptId} a={a} />
         ))}
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Data retention: </span>
+          voice audio is deleted at ElevenLabs once the explanation is transcribed. Transcripts stay until you delete them here.
+        </p>
       </div>
     </AppShell>
   );
@@ -124,8 +133,13 @@ function ProbeView({ p }: { p: NonNullable<AttemptDetail["items"][number]["probe
         {p.mode === "voice" ? "Spoken" : p.mode === "accommodation" ? "Accommodation (not checked)" : "Typed"}
         <span className="num">confidence {p.confidenceBefore}/7{p.confidenceAfter != null ? ` then ${p.confidenceAfter}/7` : ""}</span>
       </p>
-      <blockquote className="border-l-2 border-border pl-3 text-sm whitespace-pre-wrap">{said || <span className="text-muted-foreground">No explanation recorded.</span>}</blockquote>
-      {p.mode === "voice" && <p className="text-xs text-muted-foreground">Transcript only: the audio is deleted once the explanation is transcribed.</p>}
+      <blockquote className="border-l-2 border-border pl-3 text-sm whitespace-pre-wrap">{said || <span className="text-muted-foreground">{p.transcriptDeletedAt ? "Transcript deleted." : "No explanation recorded."}</span>}</blockquote>
+      {(p.mode === "voice" || said || p.transcriptDeletedAt) && (
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {p.hadCall && <span>{p.audioDeletedAt ? `Audio deleted ${time(p.audioDeletedAt)}` : "Audio deletion pending"}</span>}
+          {p.transcriptDeletedAt ? <span>Transcript deleted {time(p.transcriptDeletedAt)}</span> : said ? <DeleteTranscriptButton probeId={p.probeId} /> : null}
+        </p>
+      )}
       {p.counterfactualPrompt && (
         <div className="space-y-1">
           <p className="text-xs font-medium">Follow-up: {p.counterfactualPrompt}</p>

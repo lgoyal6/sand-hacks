@@ -136,6 +136,11 @@ export interface ProbeDetail {
   professorApproved: boolean;
   notes: string[];
   accommodated: boolean;
+  /** Retention: when the ElevenLabs call audio was deleted, and when the professor deleted our transcript. */
+  audioDeletedAt: string | null;
+  transcriptDeletedAt: string | null;
+  /** A voice call exists at ElevenLabs (or did), so there is audio to delete. */
+  hadCall: boolean;
 }
 
 export interface AttemptDetail {
@@ -164,8 +169,9 @@ export async function loadStudent(pseudonym: string): Promise<{ row: RosterRow; 
       [itemIds],
     ),
     db.query<{ attempt_id: string; item_id: string; answer: unknown }>("select attempt_id, item_id, answer from response where attempt_id = any($1)", [ids]),
-    db.query<{ id: string; explanation: string | null; transcript: string | null; counterfactual_prompt: string | null; counterfactual_answer: string | null }>(
-      "select id, explanation, transcript, counterfactual_prompt, counterfactual_answer from probe where attempt_id = any($1)",
+    // select *: audio_deleted_at / transcript_deleted_at may not exist until the retention columns are added.
+    db.query<{ id: string; explanation: string | null; transcript: string | null; counterfactual_prompt: string | null; counterfactual_answer: string | null; audio_deleted_at?: Date | null; transcript_deleted_at?: Date | null; conversation_id?: string | null }>(
+      "select * from probe where attempt_id = any($1)",
       [ids],
     ),
   ]);
@@ -224,6 +230,9 @@ export async function loadStudent(pseudonym: string): Promise<{ row: RosterRow; 
                 // Accommodations are never checked.
                 notes: !accommodated && p.mode === "typed" && p.explainSignals ? describe(p.explainSignals as Record<string, FieldSignals>).notes : [],
                 accommodated,
+                audioDeletedAt: t?.audio_deleted_at?.toISOString() ?? null,
+                transcriptDeletedAt: t?.transcript_deleted_at?.toISOString() ?? null,
+                hadCall: Boolean(t?.conversation_id),
               }
             : null,
         };
