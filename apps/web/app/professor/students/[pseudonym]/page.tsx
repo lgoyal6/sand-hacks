@@ -162,6 +162,9 @@ function ProbeView({ p }: { p: NonNullable<AttemptDetail["items"][number]["probe
 // Which path wrote the follow-up: a Gemini model reading this student's explanation, or the generic template.
 function FollowupBy({ source, model }: { source: "gemini" | "template" | null; model: string | null }) {
   if (!source) return null;
-  const text = source === "template" ? "Follow-up from the generic template (Gemini unavailable)" : `Follow-up by ${model ?? "Gemini"}`;
+  // "gmi:google/gemini-3.5-flash-lite" = the same Gemini model, served through GMI after the direct key was busy.
+  const viaGmi = model?.startsWith("gmi:") ?? false;
+  const name = model?.replace(/^gmi:/, "").replace(/^google\//, "") ?? "Gemini";
+  const text = source === "template" ? "Follow-up from the generic template (Gemini unavailable)" : `Follow-up by ${name}${viaGmi ? " via GMI" : ""}`;
   return <p className="text-[11px] text-muted-foreground/80">{text}</p>;
 }

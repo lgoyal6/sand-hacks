@@ -1,5 +1,6 @@
 // Gemini only (Dat's call). Agents reach Gemini through GMI's OpenAI-compatible API when
 // GMI_API_KEY is set (no free-tier cap), else Mastra's google provider on the direct key.
+import { geminiRouter, gmiModelId } from "@unprompted/shared/gemini-policy";
 import { envVal } from "../steps/llm.js";
 
 export type AgentModel = string | { providerId: string; modelId: string; url: string; apiKey: string };
@@ -11,7 +12,8 @@ export type AgentModel = string | { providerId: string; modelId: string; url: st
  */
 export function gemini(model = envVal("AGENT_MODEL") ?? "gemini-3.5-flash-lite"): AgentModel {
   const key = envVal("GMI_API_KEY");
-  if (key) return { providerId: "gmi", modelId: `google/${model}`, url: envVal("GMI_BASE_URL") ?? "https://api.gmi-serving.com/v1", apiKey: key };
+  const gmiId = gmiModelId(model);
+  if (key && gmiId) return { providerId: "gmi", modelId: gmiId, url: envVal("GMI_BASE_URL") ?? "https://api.gmi-serving.com/v1", apiKey: key };
   // Mastra's google provider reads GOOGLE_GENERATIVE_AI_API_KEY.
   const direct = envVal("GEMINI_API_KEY");
   if (direct && !process.env.GOOGLE_GENERATIVE_AI_API_KEY) process.env.GOOGLE_GENERATIVE_AI_API_KEY = direct;
@@ -27,7 +29,11 @@ export function agentModels(primary = envVal("AGENT_PRIMARY_MODEL") ?? "gemini-3
   const list: { model: AgentModel; maxRetries: number }[] = [];
   if (envVal("GMI_API_KEY")) list.push({ model: gemini(primary), maxRetries: 1 });
   const direct = envVal("GEMINI_API_KEY");
-  if (direct) {
+  // Evaluated per request: while the shared policy has this model cooling down on the direct key
+  // (a 429 / 503 / timeout seen by any caller in this process), leave the direct key out.
+  const cool = geminiRouter().coolingFor(primary);
+  if (direct && cool > 0) console.log(`[gemini] model=${primary} route=gmi reason=cooldown(${Math.ceil(cool / 1000)}s) caller=agents`);
+  if (direct && cool === 0) {
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) process.env.GOOGLE_GENERATIVE_AI_API_KEY = direct;
     list.push({ model: `google/${primary}`, maxRetries: 0 });
   }

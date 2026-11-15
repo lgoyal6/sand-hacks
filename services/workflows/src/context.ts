@@ -2,7 +2,7 @@
 import { openBranchStore } from "./db/index.js";
 import type { BranchStore } from "./db/types.js";
 import { CliAttacker, FallbackSolver, GeminiCodeSolver, GeminiGenerator, ModelJudge } from "./steps/adapters.js";
-import { directGemini, envVal, gmiGemini, prettyModel } from "./steps/llm.js";
+import { directGemini, envVal, geminiModel, gmiGemini, prettyModel } from "./steps/llm.js";
 import type { Attacker, TransformDeps } from "./steps/types.js";
 import { DEFAULT_ATTACK_MODEL } from "./steps/index.js";
 import { SerpLeakChecker } from "./steps/leakcheck.js";
@@ -33,7 +33,8 @@ export interface ContextOptions {
  *  - Panel:     three different Gemini models via GMI. One model family, and labelled that way.
  */
 export async function buildContext(opts: ContextOptions = {}, env = process.env): Promise<TransformContext> {
-  const pick = (m: string) => gmiGemini(m, env) ?? directGemini(m.replace(/^google\//, ""), env);
+  // GMI first as before; the direct key is the fallback, both under the shared routing policy.
+  const pick = (m: string) => geminiModel(m, env);
   const genModel = envVal("GEN_MODEL", env) ?? "gemini-3.6-flash";
   const generator = pick(genModel);
   if (!generator) throw new Error("No Gemini access: set GMI_API_KEY or GEMINI_API_KEY in the repo-root .env.local. Refusing to fake variants.");
