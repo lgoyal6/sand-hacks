@@ -325,12 +325,13 @@ export function StudioChat({ data }: { data: StudioData }) {
     const url = URL.createObjectURL(await res.blob());
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${quiz.id}-canvas-qti.zip`;
+    const file = `${quiz.id}-canvas.imscc`;
+    a.download = file;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 10_000);
     const n = summary.variants?.length ?? 0;
     say(
-      `Downloaded ${quiz.id}-canvas-qti.zip with ${summary.exported ?? "the"} questions${n ? `, including ${n} approved rewrite${n === 1 ? "" : "s"}` : " (no approved rewrites yet, so these are the originals)"}. In Canvas: Settings, Import Course Content, "QTI .zip file".`,
+      `Downloaded ${file} with ${summary.exported ?? "the"} questions${n ? `, including ${n} approved rewrite${n === 1 ? "" : "s"}` : " (no approved rewrites yet, so these are the originals)"}. In Canvas: Settings, Import Course Content, "Canvas Course Export Package", then Select specific content, Quizzes.`,
     );
   }, [push, quiz, say]);
 
@@ -409,9 +410,9 @@ export function StudioChat({ data }: { data: StudioData }) {
       <input
         ref={fileRef}
         type="file"
-        accept=".zip,application/zip"
+        accept=".zip,.imscc,application/zip"
         className="hidden"
-        aria-label="Canvas quiz export (.zip)"
+        aria-label="Canvas export (.zip or .imscc)"
         onChange={(e) => {
           const f = e.target.files?.[0];
           e.target.value = "";
