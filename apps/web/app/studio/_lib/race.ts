@@ -101,7 +101,7 @@ export function buildRace(itemId: string, experiments: VariantExperiment[], bran
   const wAgents = w ? parseAgents(exps.find((e) => e.id === w.id)!.reasons) : null;
   return {
     itemId,
-    title: `${lanes.length} version${lanes.length === 1 ? "" : "s"} raced. ${winners.length} made it.`,
+    title: `${lanes.length} version${lanes.length === 1 ? "" : "s"} raced. ${winners.length} ready (same answer, same skill, not online).`,
     note: "Each version runs on its own Neon database branch. A version is kept when it reproduces its answer key, tests the same skill, and isn't already online. The agent solve rate is shown for information.",
     lanes,
     survivor: w

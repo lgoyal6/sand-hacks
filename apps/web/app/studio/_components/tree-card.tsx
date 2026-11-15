@@ -8,7 +8,7 @@ import type { NeonFacts, TreeData, TreeLane } from "../_lib/tree";
 
 const OUTCOME: Record<TreeLane["outcome"], { label: string; dot: string; chip: string }> = {
   approved: { label: "Approved", dot: "bg-verified", chip: "bg-verified-soft text-verified" },
-  verified: { label: "Verified", dot: "bg-brand", chip: "bg-brand-soft text-brand" },
+  verified: { label: "Ready", dot: "bg-brand", chip: "bg-brand-soft text-brand" },
   rejected: { label: "Rejected", dot: "bg-muted-foreground/40", chip: "bg-muted text-muted-foreground" },
   "not verified": { label: "Not verified", dot: "border border-muted-foreground/50 bg-background", chip: "bg-muted text-muted-foreground" },
   appeal: { label: "Appeal", dot: "bg-agent-soft border border-agent/40", chip: "bg-agent-soft text-agent" },

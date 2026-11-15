@@ -101,6 +101,7 @@ export function RaceCard({ data, onMerge }: { data: RaceData; onMerge?: (id: str
                 {s.was ? ` (original ${s.was})` : ""}, for information
               </p>
             ) : null}
+            {s.status === "verified" ? <span className="text-xs font-medium text-verified">Ready: same answer, same skill, not online</span> : null}
             {s.status === "verified" && onMerge ? (
               <PillButton variant="primary" className="ml-auto" onClick={() => onMerge(s.id)}>
                 Merge into the quiz

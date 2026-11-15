@@ -100,7 +100,7 @@ function stepsOf(e: VariantExperiment): string[] {
   if (e.checks.leakFree === true) s.push("Leak check: not found online");
   else if (e.checks.leakFree === false) s.push(`Leak check: found online on ${(e.checks.leakSources ?? []).join(", ") || "the web"}`);
   if (e.checks.newSolveRate !== undefined && e.status !== "proposed") s.push(`Agent solve rate: ${Math.round(e.checks.newSolveRate * 100)}% (for information)`);
-  s.push(e.status === "approved" ? "Approved and merged into the quiz" : e.status === "verified" ? "Merged to main, waiting for approval" : e.status === "rejected" ? "Rejected, record kept on main" : "Not verified, record kept on main");
+  s.push(e.status === "approved" ? "Approved and merged into the quiz" : e.status === "verified" ? "Ready (same answer, same skill, not online), merged to main, waiting for approval" : e.status === "rejected" ? "Rejected, record kept on main" : "Not verified, record kept on main");
   return s;
 }
 
