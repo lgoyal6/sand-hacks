@@ -42,8 +42,17 @@ try {
     const out = exportQti({ id: quizId, title, items });
     await writeFile(path.resolve(b!), out.zip);
     console.log(JSON.stringify({ exported: out.exported.length, skipped: out.skipped, variants: rows.filter((r) => r.is_variant).map((r) => r.item_id), bytes: out.zip.length }));
+  } else if (cmd === "save") {
+    // A Quiz JSON produced elsewhere (e.g. the Canvas API import in apps/web) -> Neon main + fixture.
+    const quiz = JSON.parse(await readFile(path.resolve(a!), "utf8")) as import("@unprompted/shared").Quiz;
+    let quizId = quiz.id;
+    for (let i = 2; (await db.query("select 1 from quiz where id = $1", [quizId])).rows.length; i++) quizId = `${quiz.id}-${i}`;
+    const renamed = { ...quiz, id: quizId, items: quiz.items.map((it, i) => ({ ...it, id: `${quizId}-q${i + 1}`, quizId })) };
+    await saveQuiz(db, renamed);
+    await writeFile(path.join(REPO_ROOT, "data/fixtures", `quiz-${quizId}.json`), JSON.stringify(renamed, null, 2) + "\n");
+    console.log(JSON.stringify({ quizId, title: renamed.title, items: renamed.items.length, types: renamed.items.map((i) => i.type) }));
   } else {
-    throw new Error("usage: qti.ts import <zip> | export <quizId> <out.zip>");
+    throw new Error("usage: qti.ts import <zip> | export <quizId> <out.zip> | save <quiz.json>");
   }
 } finally {
   await store.close();
