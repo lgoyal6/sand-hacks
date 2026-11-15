@@ -2,6 +2,7 @@ import { after, NextResponse } from "next/server";
 import { anchorRecord } from "@/lib/notary";
 import { quizVersionRecord } from "@unprompted/shared";
 import { neon } from "@/lib/db/neon";
+import { tiger } from "@/lib/db/tiger";
 import { createAttempt, listAttempts, type AttemptMode } from "../../quiz/_lib/attempts";
 import { getQuiz, quizVoiceRequired } from "../../quiz/_lib/quizzes";
 import { planProbes } from "../../_lib/policy";
@@ -33,6 +34,9 @@ export async function POST(req: Request) {
     consentAudio: body.consentAudio,
     userAgent: req.headers.get("user-agent") ?? undefined,
   });
+  // Warm the telemetry pool while the student reads the first question. If Tiger is unreachable, this
+  // opens the breaker now, so the first answer's probe check falls back at once instead of waiting.
+  after(() => tiger()?.query("select 1").catch(() => {}));
   if (attempt.store === "neon") {
     after(async () => {
       // Keyed (HMAC with the server-only NOTARY_SALT) because the record contains answer keys; anchorRecord

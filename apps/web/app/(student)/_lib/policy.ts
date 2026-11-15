@@ -9,6 +9,22 @@ import type { LeakFinding, SolveRate } from "@unprompted/shared";
 import { fixturePath, readJson } from "@/lib/db/fixtures";
 import { itemSignals } from "./signals";
 
+/** The submit-time anomaly check may take at most this long; past it the plan decides alone. */
+export const SIGNALS_BUDGET_MS = 800;
+
+/** Session anomaly for this item, or null when telemetry can't be read in time. Never throws. */
+async function anomalyWithin(attemptId: string, itemId: string, ms = SIGNALS_BUDGET_MS): Promise<number | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<null>((resolve) => (timer = setTimeout(() => resolve(null), ms)));
+  try {
+    return await Promise.race([itemSignals(attemptId, itemId).then((s) => s.anomaly), late]);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export const MAX_PROBES = { graded: 2, practice: 2 } as const;
 export const MIN_PROBES = { graded: 1, practice: 1 } as const;
 
@@ -55,14 +71,16 @@ export async function shouldProbe(args: {
   // think-aloud, even past the cap. It is never penalized; the explanation is the evidence.
   if (plan.includes(`acc:${itemId}`)) return { probe: true, anomaly: 0, reason: "accommodation" };
   if (triggered.length >= cap) return { probe: false, anomaly: 0, reason: "cap reached" };
-  const signals = await itemSignals(attemptId, itemId);
-  const anomaly = signals.anomaly;
-  if (plan.includes(itemId)) return { probe: true, anomaly, reason: "planned" };
+  // The plan (drawn at attempt start from solve rate, leaks and randomness) needs no telemetry.
+  if (plan.includes(itemId)) return { probe: true, anomaly: 0, reason: "planned" };
+  // The policy must never block the student: without telemetry in time, fall back to the plan alone.
+  const measured = await anomalyWithin(attemptId, itemId);
+  const anomaly = measured ?? 0;
   // 0.2 * anomaly is the anomaly term of the priority formula; a strong signal alone can pull a probe forward.
   if (0.2 * anomaly >= 0.15) return { probe: true, anomaly, reason: "session anomaly" };
   // Guarantee the minimum before the quiz ends (planned items may have been skipped).
   const min = MIN_PROBES[mode];
   const plannedLeft = plan.filter((p) => !p.includes(":") && !triggered.includes(p) && p !== itemId).length;
   if (remainingItems === 0 && triggered.length < min && plannedLeft === 0) return { probe: true, anomaly, reason: "minimum" };
-  return { probe: false, anomaly, reason: "not selected" };
+  return { probe: false, anomaly, reason: measured === null ? "not selected (telemetry unavailable)" : "not selected" };
 }
