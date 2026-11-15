@@ -18,6 +18,8 @@ export interface AttackSummary {
   attemptsCompleted: number;
   infraErrors: number;
   infraReasons?: Record<string, number>;
+  /** true = every run came from a sandboxed agent (no answer keys, secrets or open web). */
+  isolated?: boolean;
   byAgentModel: Record<string, { itemRuns: number; accuracy: number }>;
   runs: { runId: string; agent: string; model: string; seconds: number; steps: number; score: number | null; answerChanges?: Record<string, number> }[];
 }

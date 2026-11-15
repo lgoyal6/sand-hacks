@@ -95,7 +95,13 @@ async function KpiRow() {
       <Kpi
         label="Agent accuracy on this quiz"
         value={s ? pct(s.accuracy) : "-"}
-        sub={s ? `${s.itemCorrect}/${s.itemRuns} answers · 95% CI ${pct(s.accuracyCI95[0])}-${pct(s.accuracyCI95[1])}` : "No agent runs yet"}
+        sub={
+          s
+            ? `${s.itemCorrect}/${s.itemRuns} answers · 95% CI ${pct(s.accuracyCI95[0])}-${pct(s.accuracyCI95[1])}${
+                s.isolated === true ? " · sandboxed agents" : s.isolated === false ? " · pre-isolation run" : ""
+              }`
+            : "No agent runs yet"
+        }
         tone="agent"
       />
       <Kpi label="Questions agents can solve" value={solveHere.length ? `${solvable}/${items}` : "-"} sub="Solve rate 60% or more" />
