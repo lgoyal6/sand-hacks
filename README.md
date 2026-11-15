@@ -153,10 +153,20 @@ flowchart LR
 
 ### Sponsors: exactly how each one is used
 
-Every claim below points at the code that does it. Open a sponsor for the details.
+Every claim below points at the code that does it. The overview comes first, then each sponsor in detail.
 
-<details>
-<summary><b>Gemini</b>: every model call in the product</summary>
+| Sponsor | What it does | Where to see it |
+|---|---|---|
+| Gemini | Every model call: rewrites, answer checks, the judge panel, think-aloud scores, the "what if" follow-up, the helper agents and the attacking browser agents | Studio rewrite cards, student chat, `/professor/students/<pseudonym>` |
+| Mastra | Three tool-using agents and the rewrite workflow, which pauses until the professor approves | Student chat (Tutor, Researcher), studio (Leak scout, rewrite runs) |
+| Neon | App data, a branch per rewrite candidate, time travel for appeals, sign-in | Studio branch tree and race cards, "Show what a student saw", `/signin` |
+| Bright Data | Finds questions already online, checks rewrites, captures evidence, watches homework sites | [`/check`](https://unprompted.courses/check), [`/study`](https://unprompted.courses/study), the leak radar |
+| ElevenLabs | The voice think-aloud with one "what if" follow-up, timed with Scribe | Student chat "Talk it through", `/professor/students/<pseudonym>` |
+| Tiger Data | Interaction telemetry turned into behavior signals, as evidence and never a verdict | `/professor` "Session patterns" |
+| Solana | A public notary on devnet for quiz versions, agent results and the open dataset | [`/study`](https://unprompted.courses/study), `GET /study/verify` |
+| Vultr + domain (Porkbun) | Hosting at unprompted.courses | [unprompted.courses](https://unprompted.courses) |
+
+#### Gemini: every model call in the product
 
 | | |
 |---|---|
@@ -166,10 +176,7 @@ Every claim below points at the code that does it. Open a sponsor for the detail
 | Key files | [`services/workflows/src/context.ts`](services/workflows/src/context.ts), [`steps/adapters.ts`](services/workflows/src/steps/adapters.ts), [`steps/llm.ts`](services/workflows/src/steps/llm.ts), [`council/index.ts`](services/workflows/src/council/index.ts), [`agents/model.ts`](services/workflows/src/agents/model.ts), [`packages/probe-core/src/gemini.ts`](packages/probe-core/src/gemini.ts) |
 | Limits | GMI (`GMI_BASE_URL`) is only an OpenAI-compatible route to the same `google/gemini-*` models, used when the free-tier key is out of quota. It is not a sponsor and no other model family is called. The judge panel is three models from one family, and it is labelled that way. |
 
-</details>
-
-<details>
-<summary><b>Mastra</b>: the helper agents and the rewrite workflow</summary>
+#### Mastra: the helper agents and the rewrite workflow
 
 | | |
 |---|---|
@@ -179,10 +186,7 @@ Every claim below points at the code that does it. Open a sponsor for the detail
 | Key files | [`services/workflows/src/mastra/index.ts`](services/workflows/src/mastra/index.ts), [`agents/`](services/workflows/src/agents), [`apps/web/app/studio/_lib/mastra.ts`](apps/web/app/studio/_lib/mastra.ts), [`apps/web/app/api/agents/[agent]/turn/route.ts`](apps/web/app/api/agents/[agent]/turn/route.ts), [`studio/api/variants/[id]/route.ts`](apps/web/app/studio/api/variants/[id]/route.ts) |
 | Limits | The server runs `mastra dev` on the VM. "Answer checker", "Judge panel", "Rewriter" and "Quiz checker" are workflow steps shown as agents in the studio, not separate Mastra agents. |
 
-</details>
-
-<details>
-<summary><b>Neon</b>: app data, a branch per rewrite, time travel, sign-in</summary>
+#### Neon: app data, a branch per rewrite, time travel, sign-in
 
 | | |
 |---|---|
@@ -192,10 +196,7 @@ Every claim below points at the code that does it. Open a sponsor for the detail
 | Key files | [`services/workflows/src/db/neon-store.ts`](services/workflows/src/db/neon-store.ts), [`db/merge.ts`](services/workflows/src/db/merge.ts), [`apps/web/app/studio/_lib/timetravel.ts`](apps/web/app/studio/_lib/timetravel.ts), [`apps/web/lib/auth/server.ts`](apps/web/lib/auth/server.ts), [`db/neon/schema.sql`](db/neon/schema.sql) |
 | Limits | Without `NEON_API_KEY` and `NEON_PROJECT_ID`, the workflows fall back to in-memory PGlite branches and appeals are unavailable. Sign-in is enforced only when Neon Auth is configured. |
 
-</details>
-
-<details>
-<summary><b>Bright Data</b>: finding questions that are already online</summary>
+#### Bright Data: finding questions that are already online
 
 | | |
 |---|---|
@@ -205,10 +206,7 @@ Every claim below points at the code that does it. Open a sponsor for the detail
 | Key files | [`services/leakscan/src/brightdata.ts`](services/leakscan/src/brightdata.ts), [`archive.ts`](services/leakscan/src/archive.ts), [`scan.ts`](services/leakscan/src/scan.ts), [`apps/web/app/check/_lib/check.ts`](apps/web/app/check/_lib/check.ts), [`services/workflows/src/steps/leakcheck.ts`](services/workflows/src/steps/leakcheck.ts), [`leakwatch.ts`](services/workflows/src/leakwatch.ts), [`agents/researcher.ts`](services/workflows/src/agents/researcher.ts) |
 | Limits | Web Unlocker is deliberately not used, and no CAPTCHA is solved or bypassed. The Archive API returns counts, not pages, so an archive hit is labelled a candidate until confirmed. Searches are capped: at most 2 per question (4 per `/check`), cached 24 hours (1 hour for `/check`). |
 
-</details>
-
-<details>
-<summary><b>ElevenLabs</b>: the voice think-aloud</summary>
+#### ElevenLabs: the voice think-aloud
 
 | | |
 |---|---|
@@ -218,10 +216,7 @@ Every claim below points at the code that does it. Open a sponsor for the detail
 | Key files | [`apps/web/components/probe/use-voice-probe.ts`](apps/web/components/probe/use-voice-probe.ts), [`apps/web/app/(student)/_lib/elevenlabs.ts`](apps/web/app/(student)/_lib/elevenlabs.ts), [`api/probes/[id]/voice/route.ts`](apps/web/app/(student)/api/probes/[id]/voice/route.ts), [`api/probes/[id]/voice/finish/route.ts`](apps/web/app/(student)/api/probes/[id]/voice/finish/route.ts), [`apps/web/lib/retention.ts`](apps/web/lib/retention.ts) |
 | Limits | When Scribe is unavailable, the timing falls back to the browser's voice activity detection. Typing is always available instead of voice. |
 
-</details>
-
-<details>
-<summary><b>Tiger Data</b>: behavior telemetry</summary>
+#### Tiger Data: behavior telemetry
 
 | | |
 |---|---|
@@ -231,10 +226,7 @@ Every claim below points at the code that does it. Open a sponsor for the detail
 | Key files | [`db/tiger/schema.sql`](db/tiger/schema.sql), [`db/tiger/aggregates.sql`](db/tiger/aggregates.sql), [`apps/web/lib/telemetry/server.ts`](apps/web/lib/telemetry/server.ts), [`apps/web/app/professor/_data.ts`](apps/web/app/professor/_data.ts) |
 | Limits | The only human baseline is the instructor's own practice sessions, so there are no accuracy claims. Without `TIGER_DATABASE_URL`, events go to local JSON files. |
 
-</details>
-
-<details>
-<summary><b>Solana</b>: a public notary on devnet</summary>
+#### Solana: a public notary on devnet
 
 | | |
 |---|---|
@@ -244,10 +236,7 @@ Every claim below points at the code that does it. Open a sponsor for the detail
 | Key files | [`apps/web/lib/notary/index.ts`](apps/web/lib/notary/index.ts), [`registry.ts`](apps/web/lib/notary/registry.ts), [`cli.ts`](apps/web/lib/notary/cli.ts), [`data/open/anchors.json`](data/open/anchors.json), [`apps/web/app/(student)/api/attempts/route.ts`](apps/web/app/(student)/api/attempts/route.ts) |
 | Limits | Devnet only: the notary refuses any other cluster by URL and by genesis hash. No student data goes on-chain. The three published files are currently `not_anchored` because the devnet wallet has no SOL to pay fees, so `/study/verify` reports them as not anchored until it is funded. |
 
-</details>
-
-<details>
-<summary><b>Vultr + domain</b>: hosting at unprompted.courses</summary>
+#### Vultr + domain: hosting at unprompted.courses
 
 | | |
 |---|---|
@@ -256,8 +245,6 @@ Every claim below points at the code that does it. Open a sponsor for the detail
 | See it | [unprompted.courses](https://unprompted.courses) (also `144-202-119-181.sslip.io`). |
 | Key files | [`infra/README.md`](infra/README.md) |
 | Limits | One VM, no autoscaling. The attack sandbox is not deployed there; agent runs happen locally in isolation. |
-
-</details>
 
 <details>
 <summary><b>Rewrite workflow in detail</b></summary>
