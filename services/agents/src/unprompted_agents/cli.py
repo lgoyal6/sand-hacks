@@ -40,6 +40,14 @@ def write_fixtures(out: Path, quiz_id: str, result: dict, runtime: bool = False)
     quiz is measured the same way.
     """
     summary = {**result["summary"], "quizId": quiz_id, "runs": result["runs"]}
+    summary["isolated"] = bool(result["runs"]) and all(m.get("isolated") is True for m in result["runs"])
+    if not summary["isolated"]:
+        # Headline numbers come only from sandboxed agents. Anything else is kept, labelled, in the history file.
+        hist = _load(out / "attack_history_unisolated.json", {})
+        hist.setdefault(quiz_id, []).append({**summary, "agentRuns": result["agentRuns"]})
+        _dump(out / "attack_history_unisolated.json", hist)
+        print(f"[fixtures] {quiz_id}: runs were not isolated; saved to attack_history_unisolated.json, headline untouched")
+        return
     prefix = "runtime_" if runtime else ""
     runs = [r for r in _load(out / f"{prefix}agent_runs.json", []) if r["quizId"] != quiz_id]
     _dump(out / f"{prefix}agent_runs.json", runs + [{**r, "quizId": quiz_id} for r in result["agentRuns"]])

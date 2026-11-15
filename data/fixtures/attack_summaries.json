@@ -259,7 +259,8 @@
       "provider rejected request": 2,
       "local browser failed to start": 1
     },
-    "didNotSubmit": 0
+    "didNotSubmit": 0,
+    "isolated": false
   },
   "stats-inference": {
     "quizId": "stats-inference",
@@ -529,7 +530,8 @@
     "infraReasons": {
       "provider content filter": 2
     },
-    "didNotSubmit": 0
+    "didNotSubmit": 0,
+    "isolated": false
   },
   "calc-derivatives": {
     "quizId": "calc-derivatives",
@@ -793,7 +795,8 @@
         "outcome": "submitted"
       }
     ],
-    "didNotSubmit": 0
+    "didNotSubmit": 0,
+    "isolated": false
   },
   "python-basics": {
     "quizId": "python-basics",
@@ -1045,7 +1048,8 @@
         "outcome": "submitted"
       }
     ],
-    "didNotSubmit": 0
+    "didNotSubmit": 0,
+    "isolated": false
   },
   "bio-cells": {
     "quizId": "bio-cells",
@@ -1302,7 +1306,8 @@
         "outcome": "infra"
       }
     ],
-    "didNotSubmit": 0
+    "didNotSubmit": 0,
+    "isolated": false
   },
   "econ-micro": {
     "quizId": "econ-micro",

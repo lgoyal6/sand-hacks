@@ -258,5 +258,6 @@
     "provider rejected request": 2,
     "local browser failed to start": 1
   },
-  "didNotSubmit": 0
+  "didNotSubmit": 0,
+  "isolated": false
 }

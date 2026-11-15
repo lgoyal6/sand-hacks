@@ -208,3 +208,18 @@ def test_browser_agents_refuse_to_run_unisolated(sandbox, monkeypatch):
         runners.run_browser_use(sandbox, "run-x", "t", "gemini:x")
     with pytest.raises(RuntimeError, match="refusing to start"):
         runners.run_stagehand(sandbox, "run-x", "t", "gemini:x")
+
+
+def test_unisolated_results_never_reach_headline(tmp_path):
+    from unprompted_agents.cli import write_fixtures
+
+    def result(isolated):
+        return {"agentRuns": [{"id": "r:q1", "quizId": "qz", "itemId": "qz-q1", "correct": True}],
+                "solveRates": [{"itemId": "qz-q1", "runs": 1, "correct": 1, "solveRate": 1.0, "agentSolvable": True}],
+                "summary": {"accuracy": 1.0}, "runs": [{"runId": "r", "isolated": isolated}]}
+
+    write_fixtures(tmp_path, "qz", result(False))
+    assert not (tmp_path / "solve_rates.json").exists()
+    assert json.loads((tmp_path / "attack_history_unisolated.json").read_text())["qz"][0]["isolated"] is False
+    write_fixtures(tmp_path, "qz", result(True))
+    assert json.loads((tmp_path / "attack_summaries.json").read_text())["qz"]["isolated"] is True
