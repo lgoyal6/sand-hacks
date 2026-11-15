@@ -156,7 +156,10 @@ export async function buildTree(quizId: string, experiments: VariantExperiment[]
       });
     }
   }
-  lanes.sort((x, y) => x.at.localeCompare(y.at));
+  // Kept candidates first, then the rest; appeals last. Oldest first within each group.
+  const rank = (l: TreeLane) =>
+    l.kind === "appeal" ? 5 : l.outcome === "approved" ? 0 : l.outcome === "verified" ? 1 : l.outcome === "not verified" && l.live ? 2 : l.outcome === "rejected" ? 3 : 4;
+  lanes.sort((x, y) => rank(x) - rank(y) || x.at.localeCompare(y.at));
   return {
     quizId,
     main: { branch: "main", neon: facts(mainBranch), ...(mainBranch ? { branchId: mainBranch.id, consoleUrl: link(mainBranch) } : {}) },
