@@ -127,7 +127,7 @@ export async function loadPseudonyms(ids: string[]): Promise<Map<string, string>
   return out;
 }
 
-interface FieldSignals {
+export interface FieldSignals {
   keys?: number;
   charsTyped?: number;
   finalLength?: number;
@@ -158,7 +158,7 @@ export interface ProbeEvidence {
 }
 
 /** Combine C's per-field signals (explanation + follow-up) into neutral notes. */
-function describe(sig: Record<string, FieldSignals | undefined>): Pick<ProbeEvidence, "chars" | "keys" | "pastedChars" | "untypedChars" | "medianKeyMs" | "notes"> {
+export function describe(sig: Record<string, FieldSignals | undefined>): Pick<ProbeEvidence, "chars" | "keys" | "pastedChars" | "untypedChars" | "medianKeyMs" | "notes"> {
   const f = Object.values(sig).filter(Boolean) as FieldSignals[];
   const sum = (k: keyof FieldSignals) => f.reduce((n, x) => n + (Number(x[k]) || 0), 0);
   const chars = sum("finalLength");

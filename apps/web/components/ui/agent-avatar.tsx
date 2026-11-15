@@ -13,13 +13,14 @@ export type AgentKey =
   | "explain-coach"
   | "researcher"
   | "quiz-checker"
+  | "answer-checker"
   | "rewriter"
   | "judge-panel"
   | "leak-scout";
 
-type Pattern = "hub" | "sheen" | "waves" | "rings" | "grid" | "facets" | "dots" | "radar";
+type Pattern = "hub" | "sheen" | "waves" | "rings" | "grid" | "facets" | "dots" | "radar" | "checks";
 /** Every agent has two eyes (the family trait); the style varies. */
-type EyeStyle = "round" | "oval" | "arc" | "curious" | "pill" | "tilted" | "lidded" | "squint";
+type EyeStyle = "round" | "oval" | "arc" | "curious" | "pill" | "tilted" | "lidded" | "squint" | "dash";
 
 export interface AgentIdentity {
   key: AgentKey;
@@ -39,6 +40,7 @@ export const AGENTS: Record<AgentKey, AgentIdentity> = {
   "explain-coach": { key: "explain-coach", name: "Explain coach", role: "listens to your reasoning", hue: 195, pattern: "waves", eyes: "arc" },
   researcher: { key: "researcher", name: "Researcher", role: "finds sources and examples", hue: 290, pattern: "rings", eyes: "curious" },
   "quiz-checker": { key: "quiz-checker", name: "Quiz checker", role: "tests questions against agents", hue: 150, pattern: "grid", eyes: "pill" },
+  "answer-checker": { key: "answer-checker", name: "Answer checker", role: "solves each variant 3 times with code", hue: 110, pattern: "checks", eyes: "dash" },
   rewriter: { key: "rewriter", name: "Rewriter", role: "writes question variants", hue: 75, pattern: "facets", eyes: "tilted" },
   "judge-panel": { key: "judge-panel", name: "Judge panel", role: "three models score explanations", hue: 330, pattern: "dots", eyes: "lidded" },
   "leak-scout": { key: "leak-scout", name: "Leak scout", role: "watches the web for leaked questions", hue: 40, pattern: "radar", eyes: "squint" },
@@ -59,6 +61,9 @@ export function resolveAgent(nameOrKey: string | undefined | null): AgentIdentit
     judge: "judge-panel",
     council: "judge-panel",
     checker: "quiz-checker",
+    solver: "answer-checker",
+    verifier: "answer-checker",
+    "key-checker": "answer-checker",
     "attack-agents": "quiz-checker",
     "red-team": "quiz-checker",
     transformer: "rewriter",
@@ -188,6 +193,15 @@ function PatternLayer({ pattern }: { pattern: Pattern }) {
           <circle className="aa-anim aa-dot3" cx="26" cy="29" r="2" />
         </g>
       );
+    case "checks":
+      // Three check marks, one per solve; they light up in turn while the agent works.
+      return (
+        <g fill="none" stroke={w} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path className="aa-anim aa-dot1" d="M9 28.5l2 2 3.5-4" />
+          <path className="aa-anim aa-dot2" d="M17 28.5l2 2 3.5-4" />
+          <path className="aa-anim aa-dot3" d="M25 28.5l2 2 3.5-4" />
+        </g>
+      );
     case "radar":
       return (
         <g>
@@ -208,7 +222,7 @@ function PatternLayer({ pattern }: { pattern: Pattern }) {
         <g className="aa-anim aa-breathe" stroke={w} strokeWidth="1.4" strokeLinecap="round" fill={w}>
           {[0, 60, 120, 180, 240, 300].map((deg) => {
             const r = (deg * Math.PI) / 180;
-            return <line key={deg} x1="20" y1="20" x2={20 + 9 * Math.cos(r)} y2={20 + 9 * Math.sin(r)} opacity=".7" />;
+            return <line key={deg} x1="20" y1="20" x2={(20 + 9 * Math.cos(r)).toFixed(2)} y2={(20 + 9 * Math.sin(r)).toFixed(2)} opacity=".7" />;
           })}
           <circle cx="20" cy="20" r="3.4" stroke="none" />
         </g>
@@ -253,6 +267,9 @@ function Eyes({ style, simple }: { style: EyeStyle; simple: boolean }) {
         return <ellipse key={i} cx={cx} cy={y} rx="1.8" ry="3.1" fill={w} transform={`rotate(${i ? 14 : -14} ${cx} ${y})`} />;
       case "lidded":
         return <path key={i} d={`M${cx - 2.6} ${y - 0.6}h5.2a2.6 2.6 0 0 1 -5.2 0z`} fill={w} />;
+      case "dash":
+        // Focused, reading-a-line look: short level bars.
+        return <rect key={i} x={cx - 2.4} y={y - 1.1} width="4.8" height="2.2" rx="1.1" fill={w} />;
       case "squint":
         return <ellipse key={i} cx={cx - 0.6} cy={y} rx="2.8" ry="1.6" fill={w} />;
       case "round":
@@ -276,6 +293,7 @@ const BLINK: Record<EyeStyle, string> = {
   tilted: "6.8s",
   lidded: "8.5s",
   squint: "5s",
+  dash: "7.6s",
 };
 
 export function AgentAvatar({ agent, state = "idle", size = "sm", className, title }: AgentAvatarProps) {
