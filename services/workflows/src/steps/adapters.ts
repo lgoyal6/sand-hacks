@@ -99,7 +99,12 @@ export function normalizeCandidate(out: z.infer<typeof CandidateSchema>, source:
       .filter(Boolean);
     if (keys.length === 0 || keys.some((k) => !ids.has(k))) throw new Error(`answer key "${out.answerKey}" is not one of the choices`);
     if (type === "mcq" && keys.length !== 1) throw new Error("mcq candidate has more than one key");
-    answerKey = type === "mcq" ? keys[0]! : keys;
+    // Canonical letters by position (models sometimes invent ids like "id_b" or "option2"),
+    // so the answer checker and graders compare like with like.
+    const letter = new Map(choices.map((c, i) => [c.id, String.fromCharCode(97 + i)]));
+    choices = choices.map((c) => ({ ...c, id: letter.get(c.id)! }));
+    const mapped = keys.map((k) => letter.get(k)!);
+    answerKey = type === "mcq" ? mapped[0]! : mapped;
   } else {
     choices = undefined;
   }

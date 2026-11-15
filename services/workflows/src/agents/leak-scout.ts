@@ -5,10 +5,10 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { Agent } from "@mastra/core/agent";
 import { createTool } from "@mastra/core/tools";
-import { spawn } from "node:child_process";
 import type { LeakFinding } from "@unprompted/shared";
 import { z } from "zod";
-import { FIXTURES_DIR, REPO_ROOT } from "../paths.js";
+import { FIXTURES_DIR } from "../paths.js";
+import { runLeakScan } from "../steps/leakcheck.js";
 import { AnswerBeforeLimit, FlattenToolHistory } from "./compat.js";
 import { getQuiz, store } from "./data.js";
 import { agentModels } from "./model.js";
@@ -82,32 +82,6 @@ export const scanQuizForLeaks = createTool({
     };
   },
 });
-
-type ItemScan = { itemId: string; findings: LeakFinding[]; queries: { error?: string }[] };
-
-/** D's scan in a tsx child process: keeps @unprompted/leakscan out of the Mastra bundle. */
-function runLeakScan(items: { id: string; stem: string }[]): Promise<ItemScan[]> {
-  return new Promise((resolve, reject) => {
-    const cwd = path.join(REPO_ROOT, "services/workflows");
-    const child = spawn("npx", ["tsx", "--env-file-if-exists=../../.env.local", "scripts/leakscan-json.ts"], { cwd, stdio: ["pipe", "pipe", "pipe"] });
-    let out = "";
-    let err = "";
-    const timer = setTimeout(() => child.kill("SIGTERM"), 5 * 60_000);
-    child.stdout.on("data", (d) => (out += d));
-    child.stderr.on("data", (d) => (err += d));
-    child.on("error", reject);
-    child.on("close", (code) => {
-      clearTimeout(timer);
-      if (code !== 0) return reject(new Error(`leak scan failed (${code}): ${err.trim().split("\n").at(-1) ?? ""}`));
-      try {
-        resolve((JSON.parse(out) as { scans: ItemScan[] }).scans);
-      } catch {
-        reject(new Error("leak scan output was not JSON"));
-      }
-    });
-    child.stdin.end(JSON.stringify({ items }));
-  });
-}
 
 export const leakScout = new Agent({
   id: "leak-scout",

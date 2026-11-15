@@ -5,6 +5,7 @@ import { CliAttacker, FallbackSolver, GeminiCodeSolver, GeminiGenerator, ModelJu
 import { directGemini, envVal, gmiGemini, prettyModel } from "./steps/llm.js";
 import type { Attacker, TransformDeps } from "./steps/types.js";
 import { DEFAULT_ATTACK_MODEL } from "./steps/index.js";
+import { SerpLeakChecker } from "./steps/leakcheck.js";
 
 import { REPO_ROOT } from "./paths.js";
 export { REPO_ROOT };
@@ -58,7 +59,8 @@ export async function buildContext(opts: ContextOptions = {}, env = process.env)
   const store = await openBranchStore(env);
   return {
     store,
-    deps: { generator: new GeminiGenerator(generator), solver, judges, attacker },
+    // Leak check on each rewrite (D's scan, at most 2 searches) when Bright Data is configured.
+    deps: { generator: new GeminiGenerator(generator), solver, judges, attacker, ...(envVal("BRIGHTDATA_API_TOKEN", env) && envVal("BRIGHTDATA_SERP_ZONE", env) ? { leakChecker: new SerpLeakChecker() } : {}) },
     describe: `rewriter ${prettyModel(generator.name)}; solver ${prettyModel(solverId)} with code${gmiGemini(solverId, env) ? " (falls back to no-code via GMI on quota)" : ""}; panel: three Gemini models [${seats.slice(0, 3).map((m) => prettyModel(m.name)).join(", ")}]`,
     independentPanel: false,
   };

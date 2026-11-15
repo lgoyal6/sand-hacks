@@ -73,6 +73,10 @@ export interface VariantExperiment {
     objectivePreserved?: boolean;
     unambiguous?: boolean;
     newSolveRate?: number;
+    /** Leak check on the rewritten stem (D's scan, at most 2 searches): true = not found online. */
+    leakFree?: boolean;
+    /** Hosts where the rewritten stem was found, when leakFree is false. */
+    leakSources?: string[];
   };
   reasons: string[];
 }
