@@ -1,0 +1,17 @@
+{
+  "id": "course-65959aa6978f-q2",
+  "courseId": "sandbox-course",
+  "title": "Course site problem q2",
+  "sourceFormat": "course_site",
+  "items": [
+    {
+      "id": "course-65959aa6978f-q2-q1",
+      "quizId": "course-65959aa6978f-q2",
+      "stem": "Two fair six-sided dice are rolled. What is the probability that the sum of the two dice is 7?",
+      "type": "numeric",
+      "answerKey": "1/6",
+      "objective": "probability by counting equally likely outcomes of two dice",
+      "originalItemId": null
+    }
+  ]
+}

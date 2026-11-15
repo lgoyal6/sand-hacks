@@ -18,7 +18,10 @@ const quizId = values["quiz-id"] ?? path.basename(file, ".md");
 const quiz = parseMarkdownQuiz(await readFile(path.resolve(ROOT, file), "utf8"), { quizId, courseId: values["course-id"]! });
 const store = await openBranchStore();
 try {
-  await saveQuiz((await store.main()).db, quiz);
+  const db = (await store.main()).db;
+  await saveQuiz(db, quiz);
+  // The curated course quizzes (data/quizzes/*.md) are what students see; studio imports start unpublished.
+  if (path.resolve(ROOT, file).startsWith(path.join(REPO_ROOT, "data/quizzes") + path.sep)) await db.query("update quiz set published = true where id = $1", [quiz.id]);
 } finally {
   await store.close();
 }

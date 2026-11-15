@@ -20,7 +20,7 @@ export interface Quiz {
   id: string;
   courseId: string;
   title: string;
-  sourceFormat: "markdown" | "qti" | "canvas_api";
+  sourceFormat: "markdown" | "qti" | "canvas_api" | "course_site";
   items: Item[];
 }
 
