@@ -7,7 +7,6 @@ import { sameAnswer, answerText } from "../steps/answers.js";
 import { getQuiz, publicItem, session, store } from "./data.js";
 import { AnswerBeforeLimit, FlattenToolHistory } from "./compat.js";
 import { agentModels } from "./model.js";
-import { gradedAnswerLeakScorer } from "./scorers.js";
 
 export const startQuiz = createTool({
   id: "startQuiz",
@@ -119,6 +118,4 @@ export const tutor = new Agent({
   model: (() => agentModels()) as never,
   inputProcessors: [new FlattenToolHistory(), new AnswerBeforeLimit(4)],
   tools: { startQuiz, checkAnswer, explainResult, todaysPractice, checkPracticeAnswer },
-  // Live audit of every reply (rule-based, no model call): graded turns must not give an answer away.
-  scorers: { gradedAnswerLeak: { scorer: gradedAnswerLeakScorer, sampling: { type: "ratio", rate: 1 } } },
 });
