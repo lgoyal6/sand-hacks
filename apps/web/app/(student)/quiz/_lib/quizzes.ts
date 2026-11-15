@@ -141,7 +141,18 @@ export async function listQuizzes(): Promise<Quiz[]> {
     }
   }
   const quizzes = await Promise.all([...ids].sort().map((id) => getQuiz(id).catch(() => null)));
-  return quizzes.filter((q): q is Quiz => q !== null && q.items.length > 0);
+  // Student-facing list. Stopgap until B's quiz.published flag: hide studio imports that aren't course quizzes
+  // (course-site single problems, tiny imports). Direct /quiz/<id> links still work for any quiz.
+  const hidden = new Set<string>();
+  if (db) {
+    try {
+      const { rows } = await db.query<{ id: string }>("select id from quiz where source_format = 'course_site'");
+      rows.forEach((r) => hidden.add(r.id));
+    } catch {
+      /* Neon unreachable: files only */
+    }
+  }
+  return quizzes.filter((q): q is Quiz => q !== null && q.items.length >= 3 && !hidden.has(q.id));
 }
 
 // Optional figure fields (packages/shared Item.figure; figureText stays server-side, see the accommodation rule).
