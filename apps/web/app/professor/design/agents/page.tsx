@@ -15,6 +15,7 @@ const PATTERN_NOTE: Record<string, string> = {
   facets: "tilted eyes · facets",
   dots: "half-lidded eyes · three judges",
   radar: "squinting eyes · radar sweep",
+  checks: "level dash eyes · three check marks",
 };
 const STATES = ["idle", "active", "thinking", "speaking", "muted"] as const;
 
@@ -28,7 +29,7 @@ export default function Page() {
         <div>
           <h1 className="text-[26px] font-semibold tracking-tight">Agent family</h1>
           <p className="mt-1 text-[15px] text-muted-foreground">
-            One sphere with eyes, eight siblings: each agent has its own hue, texture and eye style. Eyes react to state; at 24px and below they simplify to two dots.
+            One sphere with eyes, nine siblings: each agent has its own hue, texture and eye style. Eyes react to state; at 24px and below they simplify to two dots.
           </p>
         </div>
         <Link href="/professor/design" className="text-sm text-brand hover:underline">

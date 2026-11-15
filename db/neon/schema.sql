@@ -77,3 +77,5 @@ alter table quiz add column if not exists voice_required boolean not null defaul
 -- D/C: full SHA-256 of quizVersionRecord(served quiz) at attempt start, and its Solana devnet anchor (AnchorRecord).
 alter table attempt add column if not exists quiz_version_sha256 text;
 alter table attempt add column if not exists quiz_version_anchor jsonb;
+-- B (for C): only published quizzes appear on the student home; studio imports (Canvas, course site) start unpublished.
+alter table quiz add column if not exists published boolean not null default false;

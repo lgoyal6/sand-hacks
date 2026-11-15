@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { useRouter } from "next/navigation";
 import { Download, FileUp, GitBranch, Globe, History, Link2, Target } from "lucide-react";
 import { CanvasCard } from "./canvas-card";
+import { CourseScanCard } from "./course-scan-card";
 import { replayCookieOn, studioFetch, syncReplayCookie } from "../_lib/replay-client";
 import { AppealPicker } from "./appeal-picker";
 import { TreeCard } from "./tree-card";
@@ -45,6 +46,7 @@ type Msg =
   | { id: string; role: "assistant"; agent?: string; kind: "scan"; quizId: string; quizTitle: string; result: LeakScanView | null; error?: string; replayed?: string }
   | { id: string; role: "assistant"; agent?: string; kind: "tree" }
   | { id: string; role: "assistant"; agent?: string; kind: "canvas" }
+  | { id: string; role: "assistant"; agent?: string; kind: "coursescan" }
   | { id: string; role: "assistant"; agent?: string; kind: "appeal" };
 
 const pct = (x: number) => `${Math.round(x * 100)}%`;
@@ -335,6 +337,7 @@ export function StudioChat({ data }: { data: StudioData }) {
       if (/replay|recorded/i.test(t)) return replay();
       if (/leak|online|published|posted|quizlet|chegg|reddit/i.test(t)) return void checkLeaks();
       if (/what .*saw|appeal|time.?travel/i.test(t)) return push({ id: nid(), role: "assistant", kind: "appeal" });
+      if (/course\s*(web)?\s*site|scan my course/i.test(t)) return push({ id: nid(), role: "assistant", agent: "Leak scout", kind: "coursescan" });
       if (/connect\s+canvas|import.*canvas|canvas.*course/i.test(t)) return push({ id: nid(), role: "assistant", kind: "canvas" });
       if (/export|canvas/i.test(t)) return void exportCanvas();
       if (/tree|branch|neon/i.test(t)) return push({ id: nid(), role: "assistant", agent: "Rewriter", kind: "tree" });
@@ -541,6 +544,13 @@ export function StudioChat({ data }: { data: StudioData }) {
         </Message>
       );
     }
+    if (m.kind === "coursescan") {
+      return (
+        <Message key={m.id} role="assistant" agentName={nameFor(m)}>
+          <CourseScanCard onRewrite={writeNewVersion} />
+        </Message>
+      );
+    }
     if (m.kind === "canvas") {
       return (
         <Message key={m.id} role="assistant" agentName={nameFor(m)}>
@@ -621,6 +631,9 @@ export function StudioChat({ data }: { data: StudioData }) {
             </Chip>
             <Chip icon={<Link2 />} onClick={() => handle("connect canvas")}>
               Connect Canvas
+            </Chip>
+            <Chip icon={<Globe />} onClick={() => handle("scan my course website")}>
+              Scan my course website
             </Chip>
           </>
         ),

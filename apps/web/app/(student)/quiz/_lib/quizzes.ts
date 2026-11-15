@@ -122,25 +122,29 @@ export async function getQuiz(id: string): Promise<Quiz | null> {
   }
 }
 
-// Quizzes students can take: B's ingested fixtures (data/fixtures/quiz-*.json) plus raw data/quizzes/*.md.
+// Quizzes students can take: the PUBLISHED quizzes in Neon (B's quiz.published; studio imports stay hidden until a
+// professor publishes them). Files (fixture JSON, data/quizzes/*.md) only when Neon is unreachable.
+// Direct /quiz/<id> links work for any quiz.
 export async function listQuizzes(): Promise<Quiz[]> {
-  const [fixtures, mds] = await Promise.all([
-    fs.readdir(path.join(DATA_DIR, "fixtures")).catch(() => [] as string[]),
-    fs.readdir(path.join(DATA_DIR, "quizzes")).catch(() => [] as string[]),
-  ]);
-  const ids = new Set([
-    ...fixtures.filter((f) => /^quiz-.+\.json$/.test(f)).map((f) => f.slice(5, -5)),
-    ...mds.filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3)),
-  ]);
+  let ids: string[] | null = null;
   const db = neon();
   if (db) {
     try {
-      for (const r of (await db.query<{ id: string }>("select id from quiz")).rows) ids.add(r.id);
-    } catch {
-      /* Neon unreachable: files only */
+      ids = (await db.query<{ id: string }>("select id from quiz where published order by id")).rows.map((r) => r.id);
+    } catch (err) {
+      console.error("[quizzes] published list failed, using files:", (err as Error).message);
     }
   }
-  const quizzes = await Promise.all([...ids].sort().map((id) => getQuiz(id).catch(() => null)));
+  if (!ids) {
+    const [fixtures, mds] = await Promise.all([
+      fs.readdir(path.join(DATA_DIR, "fixtures")).catch(() => [] as string[]),
+      fs.readdir(path.join(DATA_DIR, "quizzes")).catch(() => [] as string[]),
+    ]);
+    ids = [
+      ...new Set([...fixtures.filter((f) => /^quiz-.+\.json$/.test(f)).map((f) => f.slice(5, -5)), ...mds.filter((f) => f.endsWith(".md")).map((f) => f.slice(0, -3))]),
+    ].sort();
+  }
+  const quizzes = await Promise.all(ids.map((id) => getQuiz(id).catch(() => null)));
   return quizzes.filter((q): q is Quiz => q !== null && q.items.length > 0);
 }
 

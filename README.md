@@ -12,6 +12,10 @@ A learning app for the age of AI agents. Unprompted attacks a quiz with the same
 
 ---
 
+## Live demo
+
+**https://144-202-119-181.sslip.io** (Vultr). Public, no sign-in: `/check` (live leak checker), `/study` (Textbook Leak Index and open dataset) and `/qr`. Everything else is behind a team password, then the one-click demo student or professor sign-in.
+
 ## Why
 
 Agents can now log into a student's LMS and finish quizzes on their own, and there is no technical fix on the LMS side. Detectors that judge how text *looks* misfire on non-native writers. And rewriting questions does not stop agents either: we tried 12 rewrites of one question across five strategies (new numbers, real-world setting, figure-only, find-the-error) and Gemini browser agents still solved every one we could measure (6/6 and 8/8 valid runs). Every attempt is kept as a Neon branch you can inspect. So Unprompted stops trying to out-write the agent:
@@ -135,6 +139,16 @@ sequenceDiagram
     EL->>EC: end_probe → transcript + word timestamps
     EC->>St: confidence 1–7 again (the calibration lesson)
 ```
+
+## Professor workflows
+
+| Workflow | What happens |
+|---|---|
+| Import from Canvas (QTI) | The quiz is imported, every question is leak-checked with Bright Data, and each leaked one gets a one-click "Write a new version" |
+| Scan my course website | For a public course site you own: posted problems are extracted, leak-checked, and can be rewritten |
+| Attack my quiz | Sandboxed browser agents take the quiz; solve rates with confidence intervals |
+| Students | Class roster with explanation scores, explanation mode (voice or typed) and typing evidence; "Show what they saw" via Neon time travel; approve grades |
+| Export to Canvas | The delivered quiz, approved rewrites included, as a Canvas-importable zip |
 
 ## Public tools (no sign-in)
 

@@ -87,7 +87,7 @@
     "neonBranch": "exp/sample-stats-q1/7",
     "strategy": "find_error",
     "candidate": {
-      "stem": "A student attempted to compute the standard error of the mean for a sample with size n = 36, sample mean x\u0304 = 85, and sample standard deviation s = 12. Their worked solution is below:\n\nStep 1: Identify the given sample values: n = 36, s = 12, x\u0304 = 85.\nStep 2: Recall the formula for the standard error: SE = s / \u221an.\nStep 3: Substitute the values into the formula: SE = 12 / 36.\nStep 4: Calculate the final result: SE \u2248 0.33.\n\nIn which step did the student make an error?",
+      "stem": "A student attempted to compute the standard error of the mean for a sample with size n = 36, sample mean x̄ = 85, and sample standard deviation s = 12. Their worked solution is below:\n\nStep 1: Identify the given sample values: n = 36, s = 12, x̄ = 85.\nStep 2: Recall the formula for the standard error: SE = s / √n.\nStep 3: Substitute the values into the formula: SE = 12 / 36.\nStep 4: Calculate the final result: SE ≈ 0.33.\n\nIn which step did the student make an error?",
       "type": "mcq",
       "choices": [
         {
@@ -118,7 +118,7 @@
       "unambiguous": true
     },
     "reasons": [
-      "changed the learning objective: Gemini 3.8 Flash (Gemini panel): Because Step 2 explicitly provides the formula SE = s / \u221an, students can spot the substitution error in Step 3 through pattern matching without actually knowing how to compute standard error."
+      "changed the learning objective: Gemini 3.8 Flash (Gemini panel): Because Step 2 explicitly provides the formula SE = s / √n, students can spot the substitution error in Step 3 through pattern matching without actually knowing how to compute standard error."
     ]
   },
   {
@@ -555,7 +555,7 @@
     "neonBranch": "exp/sample-stats-q3/2",
     "strategy": "application",
     "candidate": {
-      "stem": "During a quality control check, two independent automated sensors (Sensor A and Sensor B) each randomly assign a severity rating from 1 to 4 with equal probability. Sensor A also logs the ambient temperature (22\u00b0C). What is the probability that the sum of the ratings from the two sensors equals 5?",
+      "stem": "During a quality control check, two independent automated sensors (Sensor A and Sensor B) each randomly assign a severity rating from 1 to 4 with equal probability. Sensor A also logs the ambient temperature (22°C). What is the probability that the sum of the ratings from the two sensors equals 5?",
       "type": "mcq",
       "choices": [
         {
@@ -845,7 +845,7 @@
     "neonBranch": "exp/calc-derivatives-q2/2",
     "strategy": "application",
     "candidate": {
-      "stem": "In a bioreactor, internal pressure $P$ (in kPa) depends on temperature $T$ (in \u00b0C) according to $P(T) = \\sin(T^2)$. The temperature increases over time $t$ (in minutes) according to $T(t) = 2t + 1$. The reactor maintains a constant volume of 50 L throughout the process. Which of the following expressions represents the instantaneous rate of change of pressure with respect to time, $\\frac{dP}{dt}$?",
+      "stem": "In a bioreactor, internal pressure $P$ (in kPa) depends on temperature $T$ (in °C) according to $P(T) = \\sin(T^2)$. The temperature increases over time $t$ (in minutes) according to $T(t) = 2t + 1$. The reactor maintains a constant volume of 50 L throughout the process. Which of the following expressions represents the instantaneous rate of change of pressure with respect to time, $\\frac{dP}{dt}$?",
       "type": "mcq",
       "choices": [
         {
@@ -1041,6 +1041,90 @@
     },
     "reasons": [
       "changed the learning objective: Gemini 3.8 Flash (Gemini panel): The rewrite tests proportional reasoning about how scaling variables affects elasticity rather than directly computing price elasticity of demand from given percentage changes."
+    ]
+  },
+  {
+    "id": "course-65959aa6978f-q2-q1-v1",
+    "itemId": "course-65959aa6978f-q2-q1",
+    "neonBranch": "exp/course-65959aa6978f-q2-q1/1",
+    "strategy": "isomorphic",
+    "candidate": {
+      "stem": "In a tabletop game, a player rolls two fair standard six-sided dice (one red and one blue). To score a bonus, the product of the two numbers showing on top must be at least 20. What is the probability that the player scores a bonus on a single roll?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "5/36"
+        },
+        {
+          "id": "b",
+          "text": "2/9"
+        },
+        {
+          "id": "c",
+          "text": "1/4"
+        },
+        {
+          "id": "d",
+          "text": "7/36"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "probability by counting equally likely outcomes of two dice",
+      "originalItemId": "course-65959aa6978f-q2-q1"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)",
+      "course-65959aa6978f-q2-q1: no agent baseline; chosen because it was found online"
+    ]
+  },
+  {
+    "id": "course-65959aa6978f-q2-q1-v2",
+    "itemId": "course-65959aa6978f-q2-q1",
+    "neonBranch": "exp/course-65959aa6978f-q2-q1/2",
+    "strategy": "application",
+    "candidate": {
+      "stem": "During an automated test of a tabletop game component, a robotic arm rolls two standard fair six-sided dice simultaneously. A sensor logs a 'target state' whenever the sum of the face values of the two dice equals 7. The testing room is maintained at a constant 22°C. What is the theoretical probability that a single roll triggers the target state?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "5/36"
+        },
+        {
+          "id": "b",
+          "text": "1/6"
+        },
+        {
+          "id": "c",
+          "text": "7/36"
+        },
+        {
+          "id": "d",
+          "text": "1/12"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "probability by counting equally likely outcomes of two dice",
+      "originalItemId": "course-65959aa6978f-q2-q1"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)",
+      "course-65959aa6978f-q2-q1: no agent baseline; chosen because it was found online"
     ]
   }
 ]

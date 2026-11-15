@@ -42,7 +42,7 @@ def free_port() -> int:
         return s.getsockname()[1]
 
 
-def wait_cdp(url: str, timeout: float = 20) -> None:
+def wait_cdp(url: str, timeout: float = 60) -> None:  # Chrome starts slowly under memory pressure
     import httpx
 
     end = time.time() + timeout
@@ -129,7 +129,13 @@ def main() -> int:
         chrome.terminate()
         shutil.rmtree(profile, ignore_errors=True)
 
-    runs, meta = to_agent_runs(quiz, outcome, sandbox.run_results(run_id), [i["id"] for i in quiz["items"]])
+    try:
+        attempts = sandbox.run_results(run_id)
+        results_error = None
+    except Exception as e:  # a broken results read must not lose the recording; the facts say it's ungraded
+        attempts, results_error = [], f"results read failed: {e!r}"[:300]
+    runs, meta = to_agent_runs(quiz, outcome, attempts, [i["id"] for i in quiz["items"]])
+    meta["resultsError"] = results_error
     facts = {**meta, "quizId": quiz["id"], "isolated": isolated(), "target": a.target,
              "voiceRequired": a.target == "runtime" and os.environ.get("RUNTIME_VOICE_REQUIRED") == "1", "recorder": json.loads(rec_info[0]) if rec_info else None,
              "note": "Real browser-use run, graded server-side by the sandbox. No answers were given to the agent."}
