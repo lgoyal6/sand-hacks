@@ -328,6 +328,8 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     for (const l of r.lines) say(l.role === "agent" ? "tutor" : "student", l.text, l.role === "agent" ? { agent: "Explain coach" } : {});
     if (r.conversationId && probeIdRef.current) post(`/api/probes/${probeIdRef.current}`, { conversationId: r.conversationId }, "PATCH").catch(() => {});
     setChannel("typed");
+    // The coach already asked the opening out loud; don't ask it twice.
+    if (r.lines.some((l) => l.role === "agent")) setOpening("Go ahead and type it instead. Same question, your own words.");
     if (r.counterfactualPrompt) {
       setCfPrompt(r.counterfactualPrompt);
       setPhase("probe_cf");

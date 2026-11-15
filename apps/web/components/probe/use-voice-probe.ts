@@ -169,6 +169,7 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
     finished.current = true;
     conversation.endSession();
     go("ended");
+    emitAgentStatus("explain-coach", "switched to typing", "idle");
     return result();
   }, [conversation, result]);
 
