@@ -6,6 +6,19 @@ import { geminiJson, type GeminiOptions } from "./gemini";
 
 export const FALLBACK_FOLLOWUP = "Good. Now suppose one number in the problem changed, say it doubled. What would happen to your answer, and why?";
 
+// Generic "what if" follow-ups per question type, for when Gemini is unavailable (quota, outage).
+export function fallbackFollowup(item: Pick<Item, "type">): string {
+  switch (item.type) {
+    case "numeric":
+      return "Suppose one of the numbers in the problem doubled. What would happen to your answer, and why?";
+    case "mcq":
+    case "multi":
+      return "Pick one of the other options. What would have to be different about the problem for that one to be right?";
+    default:
+      return "What is one change to the situation in the question that would change your answer? Walk me through why.";
+  }
+}
+
 export interface FollowupInput {
   item: Item; // needs the answer key: only call server-side
   answer: string | string[] | undefined;
@@ -62,14 +75,14 @@ export const FOLLOWUP_SCHEMA = {
 // Never throws: falls back to a generic template question if Gemini is unavailable.
 export async function generateFollowup(input: FollowupInput, gemini: Partial<GeminiOptions> = {}): Promise<Followup> {
   const apiKey = gemini.apiKey ?? (typeof process !== "undefined" ? process.env.GEMINI_API_KEY?.trim() : undefined);
-  if (!apiKey) return { question: FALLBACK_FOLLOWUP, source: "template" };
+  if (!apiKey) return { question: fallbackFollowup(input.item), source: "template" };
   try {
     const out = await geminiJson<{ question: string; changed: string }>(buildFollowupPrompt(input), FOLLOWUP_SCHEMA, { ...gemini, apiKey });
     const q = out.question?.trim();
-    if (!q || q.length > 400) return { question: FALLBACK_FOLLOWUP, source: "template" };
+    if (!q || q.length > 400) return { question: fallbackFollowup(input.item), source: "template" };
     return { question: q, changed: out.changed, source: "gemini", model: out._model };
   } catch (err) {
     console.error("[probe-core] follow-up generation failed, using template:", (err as Error).message);
-    return { question: FALLBACK_FOLLOWUP, source: "template" };
+    return { question: fallbackFollowup(input.item), source: "template" };
   }
 }

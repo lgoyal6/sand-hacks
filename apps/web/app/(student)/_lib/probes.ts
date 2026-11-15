@@ -6,7 +6,7 @@ import path from "node:path";
 import type { Item, Probe } from "@unprompted/shared";
 import { appendJsonl, DATA_DIR, fixturePath, readJson, updateJson } from "@/lib/db/fixtures";
 import { tiger } from "@/lib/db/tiger";
-import { DEFAULT_GEMINI_CHAIN, FALLBACK_FOLLOWUP, generateFollowup, openingPrompt } from "@unprompted/probe-core";
+import { DEFAULT_GEMINI_CHAIN, fallbackFollowup, generateFollowup, openingPrompt } from "@unprompted/probe-core";
 
 const geminiAvailable = () => Boolean(process.env.GEMINI_API_KEY?.trim());
 
@@ -83,7 +83,7 @@ export { openingPrompt };
 
 // A counterfactual follow-up (4.4), cached locally to spare the shared free-tier Gemini quota.
 export async function counterfactualFor(item: Item, answer: string | string[] | undefined, explanation: string) {
-  const fallback = { prompt: FALLBACK_FOLLOWUP, source: "template" as const };
+  const fallback = { prompt: fallbackFollowup(item), source: "template" as const };
   if (!geminiAvailable() || process.env.PROBE_COUNTERFACTUAL === "template") return fallback;
   const itemAnswer = `${item.id}|${JSON.stringify(answer ?? null)}`;
   const exactKey = createHash("sha256").update(`${itemAnswer}|${explanation.trim().toLowerCase()}`).digest("hex").slice(0, 24);
@@ -92,7 +92,7 @@ export async function counterfactualFor(item: Item, answer: string | string[] | 
   if (hit) return { prompt: hit.prompt, source: "gemini" as const, model: hit.model ? `${hit.model.replace(/ \(cached\)$/, "")} (cached)` : "cached" };
   const models = process.env.GEMINI_MODEL?.trim() ? [process.env.GEMINI_MODEL.trim(), ...DEFAULT_GEMINI_CHAIN] : undefined;
   const f = await generateFollowup({ item, answer, explanation }, { apiKey: process.env.GEMINI_API_KEY!.trim(), models });
-  if (f.source !== "gemini") return fallback;
+  if (f.source !== "gemini") return { prompt: f.question, source: "template" as const };
   await updateJson<CfCache>(CF_CACHE, {}, (c) => ({ ...c, [exactKey]: { prompt: f.question, model: f.model, itemAnswer, at: new Date().toISOString() } }));
   return { prompt: f.question, source: "gemini" as const, model: f.model };
 }

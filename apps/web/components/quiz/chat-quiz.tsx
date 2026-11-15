@@ -24,6 +24,7 @@ import { rememberSession, useSessions } from "./sessions";
 
 type Phase =
   | "home"
+  | "pick"
   | "intro"
   | "question"
   | "checking"
@@ -41,6 +42,9 @@ type Phase =
 
 type Entry = { id: number; who: "tutor" | "student"; text: string; agent?: string; tone?: "good" | "review" };
 
+// Clock for event handlers (wrapped so the React compiler doesn't mistake handler code for render code).
+const now = () => performance.now();
+
 function isEmpty(a: Answer) {
   return Array.isArray(a) ? a.length === 0 : a.trim() === "";
 }
@@ -56,7 +60,9 @@ async function post<T>(url: string, body?: unknown, method = "POST"): Promise<T>
 }
 
 interface ChatQuizProps {
-  quiz: PublicQuiz;
+  quizzes: PublicQuiz[];
+  /** Quiz route: preselect this quiz and open at the tutor's intro. */
+  initialQuizId?: string;
   suggestedMode?: Mode;
   student?: string;
   /** Home page: start in the empty state (greeting, centered composer, chips). */
@@ -77,8 +83,22 @@ export function ChatQuiz(props: ChatQuizProps) {
   );
 }
 
-function ChatQuizInner({ quiz, suggestedMode = "practice", student, startEmpty = false }: ChatQuizProps) {
+// Match free text like "help me with derivatives" to a quiz by title and objectives.
+function matchQuiz(quizzes: PublicQuiz[], text: string): PublicQuiz | null {
+  const words = text.toLowerCase().match(/[a-z]{4,}/g) ?? [];
+  let best: { q: PublicQuiz; score: number } | null = null;
+  for (const q of quizzes) {
+    const hay = `${q.title} ${q.items.map((i) => i.objective).join(" ")}`.toLowerCase();
+    const score = words.filter((w) => hay.includes(w.replace(/s$/, ""))).length;
+    if (score > 0 && (!best || score > best.score)) best = { q, score };
+  }
+  return best?.q ?? null;
+}
+
+function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", student, startEmpty = false }: ChatQuizProps) {
   const [phase, setPhase] = useState<Phase>(startEmpty ? "home" : "intro");
+  const [quizId, setQuizId] = useState(initialQuizId ?? quizzes[0]?.id);
+  const quiz = quizzes.find((q) => q.id === quizId) ?? quizzes[0];
   const sessions = useSessions();
   const [mode, setMode] = useState<Mode>(suggestedMode);
   const [attemptId, setAttemptId] = useState<string | null>(null);
@@ -131,32 +151,34 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student, startEmpty =
   // ---- probe timing (D's probe_latency view uses these exact phase names and wall-clock ts) ----
   const mark = useCallback((phaseName: ProbePhase) => {
     if (marks.current[phaseName] !== undefined || !probeIdRef.current) return;
-    const now = performance.now();
-    marks.current[phaseName] = now;
-    post(`/api/probes/${probeIdRef.current}/timing`, { phases: [{ phase: phaseName, ms: Math.round(now - t0.current), ts: new Date().toISOString() }] }).catch(() => {});
+    const at = now();
+    marks.current[phaseName] = at;
+    post(`/api/probes/${probeIdRef.current}/timing`, { phases: [{ phase: phaseName, ms: Math.round(at - t0.current), ts: new Date().toISOString() }] }).catch(() => {});
   }, []);
 
   // ---- quiz flow ----
-  const start = async (m: Mode) => {
+  const start = async (m: Mode, chosen?: PublicQuiz) => {
+    const target = chosen ?? quiz;
     setBusy(true);
     setError(null);
     try {
-      const d = await post<{ attemptId: string }>("/api/attempts", { quizId: quiz.id, mode: m, studentPseudonym: student });
+      const d = await post<{ attemptId: string }>("/api/attempts", { quizId: target.id, mode: m, studentPseudonym: student });
+      setQuizId(target.id);
       setMode(m);
       setAttemptId(d.attemptId);
-      rememberSession({ id: d.attemptId, quizId: quiz.id, title: quiz.title, mode: m, startedAt: new Date().toISOString() });
-      if (window.location.pathname === "/") window.history.replaceState(null, "", `/quiz/${quiz.id}?mode=${m}`);
+      rememberSession({ id: d.attemptId, quizId: target.id, title: target.title, mode: m, startedAt: new Date().toISOString() });
+      if (window.location.pathname !== `/quiz/${target.id}`) window.history.replaceState(null, "", `/quiz/${target.id}?mode=${m}`);
       say("student", m === "practice" ? "Let's practice." : "I'm ready for the graded quiz.");
       say(
         "tutor",
         m === "practice"
-          ? `Great. ${quiz.items.length} questions on ${quiz.title}. After each one I'll tell you how it went. Sometimes I'll ask you to talk through your thinking. That's the part that makes it stick.`
-          : `${quiz.items.length} questions on ${quiz.title}. You'll see your results at the end. Once or twice I'll ask you to explain your reasoning in your own words.`,
+          ? `Great. ${target.items.length} questions on ${target.title}. After each one I'll tell you how it went. Sometimes I'll ask you to talk through your thinking. That's the part that makes it stick.`
+          : `${target.items.length} questions on ${target.title}. You'll see your results at the end. Once or twice I'll ask you to explain your reasoning in your own words.`,
         { agent: "Tutor" },
       );
       setIndex(0);
       setAnswer("");
-      shownAt.current = performance.now();
+      shownAt.current = now();
       setPhase("question");
     } catch (e) {
       setError((e as Error).message);
@@ -180,14 +202,14 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student, startEmpty =
     setIndex((i) => i + 1);
     setAnswer("");
     setLastCorrect(null);
-    shownAt.current = performance.now();
+    shownAt.current = now();
     setPhase("question");
     telemetry.emit("answer", { type: "item_shown", index: index + 2 }, quiz.items[index + 1]?.id);
   };
 
   const changeAnswer = (v: Answer) => {
     setAnswer(v);
-    telemetry.emit("answer", { type: "change", value: v, sinceShownMs: Math.round(performance.now() - shownAt.current) });
+    telemetry.emit("answer", { type: "change", value: v, sinceShownMs: Math.round(now() - shownAt.current) });
   };
 
   const submitAnswer = async () => {
@@ -197,7 +219,7 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student, startEmpty =
     setPhase("checking");
     emitAgentStatus("Tutor", "checking your answer");
     try {
-      const seconds = Math.round(((performance.now() - shownAt.current) / 1000) * 10) / 10;
+      const seconds = Math.round(((now() - shownAt.current) / 1000) * 10) / 10;
       const d = await post<{ correct?: boolean; probe?: boolean }>(`/api/attempts/${attemptId}/responses`, { itemId: item.id, answer, seconds });
       telemetry.emit("answer", { type: "submit", value: answer, seconds });
       telemetry.flush();
@@ -250,7 +272,7 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student, startEmpty =
       probeIdRef.current = d.probeId;
       setOpening(d.opening);
       marks.current = {};
-      t0.current = performance.now();
+      t0.current = now();
       if (channel === "voice") {
         try {
           const v = await post<{ signedUrl: string; dynamicVariables: Record<string, string> }>(`/api/probes/${d.probeId}/voice`, { consent: true });
@@ -310,7 +332,7 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student, startEmpty =
     setRetried(true);
     setDraft("");
     marks.current = {};
-    t0.current = performance.now();
+    t0.current = now();
     mark("prompt");
   };
 
@@ -392,8 +414,15 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student, startEmpty =
   // Free text outside a probe step: the tutor's open chat arrives with B's agent API. Until then, steer to the quiz.
   const freeText = (text: string) => {
     say("student", text);
-    say("tutor", `I can walk you through ${quiz.title} as a practice run or as the graded quiz. Pick one below and we'll start.`, { agent: "Tutor" });
-    setPhase("intro");
+    const match = matchQuiz(quizzes, text);
+    if (match) {
+      setQuizId(match.id);
+      say("tutor", `Let's work on ${match.title}: ${match.items.length} questions. Practice run, or the graded quiz?`, { agent: "Tutor" });
+      setPhase("intro");
+    } else {
+      say("tutor", "Happy to help. Which topic are we working on? Pick one and I'll quiz you, with a short think-aloud along the way.", { agent: "Tutor" });
+      setPhase("pick");
+    }
   };
 
   const today = new Date().toDateString();
@@ -404,9 +433,11 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student, startEmpty =
     .filter((g) => g.items.length)
     .map((g) => ({ label: g.label, items: g.items.map((x) => ({ id: x.id, title: x.title, href: `/quiz/${x.quizId}?mode=${x.mode}`, subtitle: `${x.mode === "practice" ? "Practice" : "Quiz"} · ${new Date(x.startedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` })) }));
 
+  sidebarGroups.unshift({ label: "Topics", items: quizzes.map((q) => ({ id: `topic-${q.id}`, title: q.title, href: `/quiz/${q.id}`, subtitle: `${q.items.length} questions` })) });
+
   const composerProps = composer
     ? { textareaId: composer.textareaId, submitId: composer.submitId, placeholder: composer.placeholder, disabled: false }
-    : phase === "home" || phase === "intro"
+    : phase === "home" || phase === "intro" || phase === "pick"
       ? { textareaId: "composer-input", submitId: "composer-send", placeholder: "Ask about statistics, or say \"quiz me\"...", disabled: false }
       : { textareaId: "composer-input", submitId: "composer-send", placeholder: phase === "done" ? "Nice work. Start a new session from the sidebar." : "Answer the question above", disabled: true };
 
@@ -446,12 +477,15 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student, startEmpty =
       empty={phase === "home"}
       home={{
         greeting: "What are we learning today?",
-        sub: `${quiz.title} · ${quiz.items.length} questions`,
+        sub: "Tell me what you're studying, or pick a topic. I'll quiz you and ask you to explain your thinking.",
         chips: (
           <>
-            <Chip onClick={() => start("graded")}>Start Quiz 1</Chip>
-            <Chip onClick={() => start("practice")}>Practice a weak topic</Chip>
-            <Chip onClick={() => freeText("Can you explain a concept?")}>Explain a concept</Chip>
+            {quizzes.slice(0, 4).map((q) => (
+              <Chip key={q.id} onClick={() => start("practice", q)}>
+                Practice {q.title.replace(/^[^:]*:\s*/, "")}
+              </Chip>
+            ))}
+            <Chip onClick={() => freeText("I'm not sure what to study.")}>Help me choose</Chip>
           </>
         ),
       }}
@@ -478,6 +512,24 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student, startEmpty =
                 {e.text}
               </Message>
             ),
+          )}
+
+          {phase === "pick" && (
+            <div id="topic-picker" className="flex flex-wrap gap-2">
+              {quizzes.map((q) => (
+                <Chip
+                  key={q.id}
+                  onClick={() => {
+                    setQuizId(q.id);
+                    say("student", q.title);
+                    say("tutor", `${q.title}: ${q.items.length} questions. Practice run, or the graded quiz?`, { agent: "Tutor" });
+                    setPhase("intro");
+                  }}
+                >
+                  {q.title}
+                </Chip>
+              ))}
+            </div>
           )}
 
           {phase === "intro" && (
