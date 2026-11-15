@@ -2,7 +2,7 @@
 
 # Unprompted
 
-**Quizzes that still measure learning when AI agents can take them.**
+**Your quizzes stopped measuring learning. Fixing that shouldn't be another job.**
 
 [Live demo](https://unprompted.courses) · [Check a question](https://unprompted.courses/check) · [Leak study](https://unprompted.courses/study)
 
@@ -10,21 +10,30 @@
 
 ---
 
-## What it is
+## The problem
 
-AI browser agents can now log into a course site and finish a quiz on their own. Many quiz questions are also already posted, with answers, on homework sites. A score no longer shows whether a student understood the material.
+Professors are already stretched thin. Now the quizzes they spent years writing don't work:
 
-Unprompted is a quiz app for instructors and students that deals with this honestly. It does not try to detect AI-written text or catch cheaters. It does three things:
+- **Students hand the quiz to AI.** Browser agents can log into a course site and finish a quiz on their own. We ran them on six quizzes and they got **175 of 175** answers right.
+- **The answers are already online.** **36–48%** of textbook exercises are posted on homework sites.
+- **A good score no longer means a student learned anything.** Students who lean on AI skip the thinking the quiz was supposed to check.
 
-1. **Measures.** Runs real AI agents against your quiz and searches homework sites, so you see which questions an agent can answer and which are already online.
-2. **Rewrites.** For leaked questions, writes new versions that test the same skill and have the same answer, so a copied answer key stops working.
-3. **Asks.** On a question an agent could have answered, the student explains their reasoning out loud for 30 to 60 seconds and answers one "what if" follow-up. Instructors see the gap between *answered* and *understood*.
+The usual advice is to redesign every assessment, learn to spot AI writing, or move everything to in-class exams. That is hours of new work per course, AI detectors misfire on non-native writers, and it still doesn't hold: we rewrote one question 10 different ways and agents solved every version we could measure.
 
-Every flag is a reason for a conversation, never a verdict.
+## What Unprompted does
 
-## Why not just write harder questions?
+**Nothing changes for the professor.** You keep your quiz, your course and your Canvas. The AI does the work, inside the bounds of the material you already teach.
 
-We tried. We wrote 10 versions of one statistics question using four strategies (new numbers, a real-world setting, find-the-error, table lookup). Gemini browser agents solved every version we could measure. You can't write a question an agent can't answer, so Unprompted checks understanding in the one place an agent can't stand in: the student's own explanation.
+| Step | You do | Unprompted does |
+|---|---|---|
+| 1. Import | Upload your Canvas quiz, or point at your course site | Reads every question |
+| 2. Check | Nothing | Searches homework sites for each question, and has real AI agents take the quiz in a sandbox |
+| 3. Rewrite | Nothing | Writes new versions of leaked questions: same skill, same answer, not findable online, so a copied answer key stops working |
+| 4. Approve | One click per question | Nothing reaches students until you approve it |
+| 5. Check understanding | Nothing | On one or two questions, students explain their answer out loud and get one "what if" follow-up, so you see who *answered* and who *understood* |
+| 6. Export | Download | The finished quiz goes back to Canvas |
+
+No new teaching strategy, no AI detector, no accusations. Every flag is a reason for a conversation, never a verdict.
 
 ## What we found
 
@@ -65,16 +74,7 @@ Everything except the public pages is behind a team password.
 
 ## How it works
 
-### For instructors
-
-| Step | What happens |
-|---|---|
-| Import | From Canvas (QTI export), a public course website you own, or a Markdown file |
-| Check | Every question is searched on homework sites, and sandboxed agents take the quiz |
-| Rewrite | Leaked or agent-solvable questions get new versions, each checked three ways (below) |
-| Approve | Nothing reaches students until you approve it |
-| Review | Class roster with explanation scores, plus "Show what they saw" for appeals |
-| Export | The final quiz back to Canvas as a QTI zip |
+### What makes a rewrite safe to use
 
 A rewrite is kept only if:
 - an independent solver gets the same answer 3 times out of 3,
@@ -83,7 +83,7 @@ A rewrite is kept only if:
 
 Its agent solve rate is measured and shown either way.
 
-### For students
+### What students see
 
 The quiz runs as a chat. On one or two questions, picked partly at random and weighted toward ones agents can solve or that are leaked, the student:
 
