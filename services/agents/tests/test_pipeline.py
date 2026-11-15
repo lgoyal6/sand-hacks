@@ -93,3 +93,14 @@ def test_provider_errors_are_excluded(sandbox):
     res = attack(QUIZ, sandbox=sandbox, repeats=1, models=["test:quota"], runners={"browser-use": quota}, log=lambda m: None)
     assert res["agentRuns"] == [] and res["summary"]["infraErrors"] == 1
     assert res["solveRates"][0]["runs"] == 0
+
+
+@pytest.mark.skipif(not (REPO / "services/agents/node_modules/@browserbasehq/stagehand").exists(), reason="pnpm install")
+def test_stagehand_dry_run_logs_in_and_opens_quiz(sandbox):
+    """Real local browser, no model: checks Stagehand launch, login and quiz navigation."""
+    from unprompted_agents.runners import run_stagehand
+
+    out = run_stagehand(sandbox, "run-dry", QUIZ["title"], "gemini:unused", dry_run=True, timeout=120)
+    assert out.status == "completed", out.error
+    assert out.steps == 0  # no model calls
+    assert any(e["kind"] == "dry-run" and e["questions"] == 5 for e in out.trace)

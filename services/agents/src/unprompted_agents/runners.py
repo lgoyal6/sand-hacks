@@ -122,7 +122,39 @@ def run_browser_use(sandbox: Sandbox, run_id: str, quiz_title: str, model: str, 
     )
 
 
-RUNNERS: dict[str, Callable[..., RunOutcome]] = {"browser-use": run_browser_use}
+STAGEHAND_SCRIPT = Path(__file__).resolve().parents[2] / "stagehand" / "run.mjs"
+
+
+def stagehand_model(model: str) -> str:
+    provider, _, name = model.partition(":")
+    if provider == "gemini":
+        return f"google/{name}"
+    raise ValueError(f"stagehand runner supports gemini:<id> models only, not {model!r}")
+
+
+def run_stagehand(sandbox: Sandbox, run_id: str, quiz_title: str, model: str, *, headless: bool = True,
+                  timeout: float = 600, dry_run: bool = False) -> RunOutcome:
+    """Runs stagehand/run.mjs (Node) and reads its JSON result from the last stdout line."""
+    import subprocess
+
+    payload = {"loginUrl": sandbox.login_url(run_id), "quizTitle": quiz_title, "headless": headless,
+               "model": None if dry_run else stagehand_model(model)}
+    t0 = time.monotonic()
+    try:
+        p = subprocess.run(["node", str(STAGEHAND_SCRIPT), *(["--dry-run"] if dry_run else [])],
+                           input=json.dumps(payload), capture_output=True, text=True, timeout=timeout,
+                           cwd=STAGEHAND_SCRIPT.parent.parent)
+        lines = [ln for ln in p.stdout.splitlines() if ln.startswith("{")]
+        if not lines:
+            raise RuntimeError(f"no result from stagehand (exit {p.returncode}): {p.stderr[-400:]}")
+        r = json.loads(lines[-1])
+    except Exception as e:
+        return RunOutcome(run_id, "stagehand", model, "error", 0, time.monotonic() - t0, error=repr(e)[:500])
+    return RunOutcome(run_id, "stagehand", model, r["status"], r["steps"], r["seconds"], error=r.get("error"),
+                      trace=r.get("trace", []))
+
+
+RUNNERS: dict[str, Callable[..., RunOutcome]] = {"browser-use": run_browser_use, "stagehand": run_stagehand}
 
 
 def save_trace(outcome: RunOutcome, traces_dir: Path) -> Path:
