@@ -6,11 +6,11 @@ import { loadQuiz } from "../src/ingest/markdown.js";
 import { runTransform } from "../src/runner.js";
 import { FreshDataGenerator } from "../src/steps/adapters.js";
 import { blsSeries, FRESH_SOURCES } from "../src/steps/freshdata.js";
-import { gmiGemini, directGemini } from "../src/steps/llm.js";
+import { geminiModel } from "../src/steps/llm.js";
 
 const [itemId, nArg] = process.argv.slice(2);
 const ctx = await buildContext({ noAttack: true });
-const model = gmiGemini("gemini-3.6-flash") ?? directGemini("gemini-3.6-flash");
+const model = geminiModel("gemini-3.6-flash");
 if (!model) throw new Error("No Gemini access (GMI_API_KEY or GEMINI_API_KEY).");
 const quizId = itemId!.replace(/-q\d+$/, "");
 const quiz = await loadQuiz((await ctx.store.main()).db, quizId);

@@ -4,12 +4,12 @@
 //   add --force to re-grade probes that already have a score
 import { openBranchStore } from "../db/index.js";
 import { loadCouncilInput, runCouncil, saveCouncil } from "../council/index.js";
-import { directGemini, gmiGemini } from "../steps/llm.js";
+import { geminiModel } from "../steps/llm.js";
 
 const args = process.argv.slice(2);
 const force = args.includes("--force");
 const ids = args.filter((a) => !a.startsWith("--"));
-const models = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.1-pro-preview"].map((m) => gmiGemini(m) ?? directGemini(m));
+const models = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.1-pro-preview"].map((m) => geminiModel(m));
 if (models.some((m) => !m)) throw new Error("The council needs three Gemini models (GMI_API_KEY or GEMINI_API_KEY).");
 
 const store = await openBranchStore();

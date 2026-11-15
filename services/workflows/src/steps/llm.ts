@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { GoogleGenAI } from "@google/genai";
+import { geminiRouter, gmiMaxTokens, gmiModelId, type GeminiRoute } from "@unprompted/shared/gemini-policy";
 import { LLM_CACHE_DIR } from "../paths.js";
 import { z } from "zod";
 
@@ -78,48 +79,73 @@ export async function withRetry<T>(fn: () => Promise<T>, label: string, tries = 
   throw new InfraError(`${label} unavailable: ${msg}`);
 }
 
+type JsonOpts = { temperature?: number; system?: string; salt?: string };
+
+/** Direct Gemini API key. Every call goes through the shared routing policy (cooldown, throttle, timeout). */
 export class GeminiModel implements JsonModel {
   readonly name: string;
   private ai: GoogleGenAI;
   constructor(apiKey: string, readonly model: string) {
-    // Some listed models hang instead of erroring; never wait forever on one call.
-    this.ai = new GoogleGenAI({ apiKey, httpOptions: { timeout: 120_000 } });
+    // The router enforces the per-call timeout; this is only a last-resort ceiling.
+    this.ai = new GoogleGenAI({ apiKey, httpOptions: { timeout: 180_000 } });
     this.name = `gemini:${model}`;
   }
 
-  async json<T>(prompt: string, schema: z.ZodType<T>, opts: { temperature?: number; system?: string; salt?: string } = {}): Promise<T> {
+  /** One JSON call on the direct key, no cache, no retry, no routing. */
+  async rawJson(prompt: string, jsonSchema: unknown, opts: JsonOpts, signal?: AbortSignal): Promise<unknown> {
+    const res = await this.ai.models.generateContent({
+      model: this.model,
+      contents: prompt,
+      config: {
+        temperature: opts.temperature,
+        systemInstruction: opts.system,
+        responseMimeType: "application/json",
+        responseJsonSchema: jsonSchema,
+        ...(signal ? { abortSignal: signal } : {}),
+      },
+    });
+    return JSON.parse(res.text ?? "");
+  }
+
+  async json<T>(prompt: string, schema: z.ZodType<T>, opts: JsonOpts = {}): Promise<T> {
     const jsonSchema = z.toJSONSchema(schema);
-    const raw = await cached([this.name, "json", prompt, jsonSchema, opts.temperature, opts.system, opts.salt], () => withRetry(async () => {
-      const res = await this.ai.models.generateContent({
-        model: this.model,
-        contents: prompt,
-        config: {
-          temperature: opts.temperature,
-          systemInstruction: opts.system,
-          responseMimeType: "application/json",
-          responseJsonSchema: jsonSchema,
-        },
-      });
-      return schema.parse(JSON.parse(res.text ?? "")) as unknown;
-    }, this.name));
+    const raw = await cached([this.name, "json", prompt, jsonSchema, opts.temperature, opts.system, opts.salt], () =>
+      withRetry(async () => {
+        const { value } = await geminiRouter().call(this.model, { direct: async (signal) => schema.parse(await this.rawJson(prompt, jsonSchema, opts, signal)) as unknown });
+        return value;
+      }, this.name),
+    );
     return schema.parse(raw);
   }
 
   /**
-   * Free-form answer with Gemini's built-in Python code execution tool.
-   * Returns the response text and whether the model actually ran code.
+   * Free-form answer with Gemini's built-in Python code execution tool (direct key only: GMI has no
+   * code tool). While the model is cooling down this fails fast as a quota error, so the caller's
+   * no-code fallback takes over instead of waiting.
    */
   async withCode(prompt: string, opts: { temperature?: number; salt?: string; failFastOnQuota?: boolean } = {}): Promise<{ text: string; usedCode: boolean }> {
     return cached([this.name, "code", prompt, opts.temperature, opts.salt], () => withRetry(async () => {
-      const res = await this.ai.models.generateContent({
-        model: this.model,
-        contents: prompt,
-        config: { temperature: opts.temperature, tools: [{ codeExecution: {} }] },
-      });
-      const parts = res.candidates?.[0]?.content?.parts ?? [];
-      const usedCode = parts.some((p) => p.executableCode || p.codeExecutionResult);
-      const text = parts.map((p) => p.text ?? "").join("\n");
-      return { text, usedCode };
+      if (opts.failFastOnQuota && geminiRouter().coolingFor(this.model) > 0) {
+        throw new Error(`RESOURCE_EXHAUSTED: ${this.model} cooling down on the direct key; using the no-code fallback`);
+      }
+      const { value } = await geminiRouter().call(
+        this.model,
+        {
+          direct: async (signal) => {
+            const res = await this.ai.models.generateContent({
+              model: this.model,
+              contents: prompt,
+              config: { temperature: opts.temperature, tools: [{ codeExecution: {} }], abortSignal: signal },
+            });
+            const parts = res.candidates?.[0]?.content?.parts ?? [];
+            const usedCode = parts.some((p) => p.executableCode || p.codeExecutionResult);
+            const text = parts.map((p) => p.text ?? "").join("\n");
+            return { text, usedCode };
+          },
+        },
+        { timeoutMs: Number(envVal("GEMINI_CODE_TIMEOUT_MS") ?? 90_000) },
+      );
+      return value;
     }, `${this.name} (code)`, 6, { failFastOnQuota: opts.failFastOnQuota }));
   }
 }
@@ -136,42 +162,102 @@ export class OpenAICompatModel implements JsonModel {
     this.name = `${prefix}:${model}`;
   }
 
-  async json<T>(prompt: string, schema: z.ZodType<T>, opts: { temperature?: number; system?: string; salt?: string } = {}): Promise<T> {
+  /** One JSON call, no cache, no retry, no routing. Null or cut-off content is a failure. */
+  async rawJson(prompt: string, shape: string, opts: JsonOpts, signal?: AbortSignal): Promise<unknown> {
+    const res = await fetch(`${this.baseUrl.replace(/\/$/, "")}/chat/completions`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: this.model,
+        temperature: opts.temperature ?? 0.2,
+        // Reasoning models spend tokens thinking before the JSON; never below the floor.
+        max_tokens: gmiMaxTokens(Number(envVal("GMI_MAX_TOKENS") ?? 8192)),
+        response_format: { type: "json_object" },
+        messages: [
+          ...(opts.system ? [{ role: "system", content: opts.system }] : []),
+          { role: "user", content: `${prompt}\n\nReply with only a JSON object matching this JSON Schema:\n${shape}` },
+        ],
+      }),
+      ...(signal ? { signal } : {}),
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error(`${res.status}: ${text.slice(0, 300)}`);
+    const content: string | null | undefined = JSON.parse(text).choices?.[0]?.message?.content;
+    if (!content?.trim()) throw new Error(`${this.name} returned no content (finish_reason ${JSON.parse(text).choices?.[0]?.finish_reason ?? "unknown"})`);
+    // Some models wrap JSON in prose or fences, or emit <think> blocks first.
+    const body = content.replace(/<think>[\s\S]*?<\/think>/g, "");
+    const start = body.indexOf("{");
+    const end = body.lastIndexOf("}");
+    return JSON.parse(body.slice(start, end + 1));
+  }
+
+  async json<T>(prompt: string, schema: z.ZodType<T>, opts: JsonOpts = {}): Promise<T> {
     const shape = JSON.stringify(z.toJSONSchema(schema));
-    const raw = await cached([this.name, "json", prompt, shape, opts.temperature, opts.system, opts.salt], () => withRetry(async () => {
-      const res = await fetch(`${this.baseUrl.replace(/\/$/, "")}/chat/completions`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${this.apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: this.model,
-          temperature: opts.temperature ?? 0.2,
-          // Reasoning models spend tokens thinking before the JSON; don't cut them off.
-          max_tokens: Number(envVal("GMI_MAX_TOKENS") ?? 8192),
-          response_format: { type: "json_object" },
-          messages: [
-            ...(opts.system ? [{ role: "system", content: opts.system }] : []),
-            { role: "user", content: `${prompt}\n\nReply with only a JSON object matching this JSON Schema:\n${shape}` },
-          ],
-        }),
-      });
-      const text = await res.text();
-      if (!res.ok) throw new Error(`${res.status}: ${text.slice(0, 300)}`);
-      const content: string = JSON.parse(text).choices?.[0]?.message?.content ?? "";
-      // Some open models wrap JSON in prose or fences, or emit <think> blocks first.
-      const body = content.replace(/<think>[\s\S]*?<\/think>/g, "");
-      const start = body.indexOf("{");
-      const end = body.lastIndexOf("}");
-      return schema.parse(JSON.parse(body.slice(start, end + 1))) as unknown;
-    }, this.name));
+    const raw = await cached([this.name, "json", prompt, shape, opts.temperature, opts.system, opts.salt], () =>
+      withRetry(async () => {
+        const run = async (signal: AbortSignal) => schema.parse(await this.rawJson(prompt, shape, opts, signal)) as unknown;
+        // Gemini via GMI goes through the routing policy (logged, timed out); anything else is called as is.
+        if (this.model.startsWith("google/gemini")) return (await geminiRouter().call(this.model, { gmi: run }, { prefer: "gmi" })).value;
+        return run(new AbortController().signal);
+      }, this.name),
+    );
     return schema.parse(raw);
   }
 }
 
-/** Gemini through GMI's OpenAI-compatible API (no free-tier cap). Null without GMI_API_KEY. */
+/** Gemini through GMI's OpenAI-compatible API (no free-tier cap). Null without GMI_API_KEY or if GMI doesn't serve it. */
 export function gmiGemini(model: string, env = process.env): OpenAICompatModel | null {
   const key = envVal("GMI_API_KEY", env);
-  if (!key) return null;
-  return new OpenAICompatModel(envVal("GMI_BASE_URL", env) ?? "https://api.gmi-serving.com/v1", key, model.startsWith("google/") ? model : `google/${model}`);
+  const id = gmiModelId(model);
+  if (!key || !id) return null;
+  return new OpenAICompatModel(envVal("GMI_BASE_URL", env) ?? "https://api.gmi-serving.com/v1", key, id);
+}
+
+/**
+ * One Gemini model with both routes (direct key and GMI) under the shared policy: on 429 / 503 / timeout
+ * the call moves to the other route at once and the direct key cools down. `prefer` keeps each caller's
+ * existing first choice. The name (used in the LLM cache key and in labels) is the preferred route's.
+ */
+export class RoutedGeminiModel implements JsonModel {
+  readonly name: string;
+  constructor(
+    readonly model: string,
+    private direct: GeminiModel | null,
+    private gmi: OpenAICompatModel | null,
+    private prefer: GeminiRoute,
+  ) {
+    const first = prefer === "gmi" ? (gmi ?? direct) : (direct ?? gmi);
+    this.name = first!.name;
+  }
+
+  async json<T>(prompt: string, schema: z.ZodType<T>, opts: JsonOpts = {}): Promise<T> {
+    const jsonSchema = z.toJSONSchema(schema);
+    const shape = JSON.stringify(jsonSchema);
+    const key = this.name.startsWith("gmi:") ? shape : jsonSchema; // same cache keys as before routing
+    const raw = await cached([this.name, "json", prompt, key, opts.temperature, opts.system, opts.salt], () =>
+      withRetry(async () => {
+        const { value } = await geminiRouter().call(
+          this.model,
+          {
+            ...(this.direct ? { direct: async (signal: AbortSignal) => schema.parse(await this.direct!.rawJson(prompt, jsonSchema, opts, signal)) as unknown } : {}),
+            ...(this.gmi ? { gmi: async (signal: AbortSignal) => schema.parse(await this.gmi!.rawJson(prompt, shape, opts, signal)) as unknown } : {}),
+          },
+          { prefer: this.prefer },
+        );
+        return value;
+      }, this.name),
+    );
+    return schema.parse(raw);
+  }
+}
+
+/** A Gemini model on whichever routes are configured; null if neither key is set. Defaults to GMI first. */
+export function geminiModel(model: string, env = process.env, prefer: GeminiRoute = "gmi"): RoutedGeminiModel | null {
+  const bare = model.replace(/^google\//, "");
+  const direct = directGemini(bare, env);
+  const gmi = gmiGemini(bare, env);
+  if (!direct && !gmi) return null;
+  return new RoutedGeminiModel(bare, direct, gmi, prefer);
 }
 
 /** Direct Gemini API (needed for the code-execution tool). Null without GEMINI_API_KEY. */
