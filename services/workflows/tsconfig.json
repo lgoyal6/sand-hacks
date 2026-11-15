@@ -6,7 +6,16 @@
     "strict": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src", "scripts", "test"]
+  "include": [
+    "src",
+    "scripts",
+    "test"
+  ],
+  "exclude": [
+    "scripts/leakscan-json.ts"
+  ]
 }

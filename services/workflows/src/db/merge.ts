@@ -43,11 +43,12 @@ export async function mergeVariant(
     const it = items[0]!;
     candidateItemId = it.id as string;
     await main.db.query(
-      `insert into item (id, quiz_id, stem, type, choices_json, answer_key, objective, original_item_id)
-       values ($1,$2,$3,$4,$5,$6,$7,$8)
+      `insert into item (id, quiz_id, stem, type, choices_json, answer_key, objective, original_item_id, figure_json, figure_text)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
        on conflict (id) do update set stem = excluded.stem, type = excluded.type, choices_json = excluded.choices_json,
-         answer_key = excluded.answer_key, objective = excluded.objective, original_item_id = excluded.original_item_id`,
-      [it.id, it.quiz_id, it.stem, it.type, json(it.choices_json), json(it.answer_key), it.objective, it.original_item_id],
+         answer_key = excluded.answer_key, objective = excluded.objective, original_item_id = excluded.original_item_id,
+         figure_json = excluded.figure_json, figure_text = excluded.figure_text`,
+      [it.id, it.quiz_id, it.stem, it.type, json(it.choices_json), json(it.answer_key), it.objective, it.original_item_id, json(it.figure_json), it.figure_text ?? null],
     );
   }
 
