@@ -12,7 +12,8 @@
     "test:boot": "zsh scripts/boot-test.sh",
     "qti": "tsx --env-file-if-exists=../../.env.local src/cli/qti.ts",
     "council": "tsx --env-file-if-exists=../../.env.local src/cli/council.ts",
-    "leakscan": "tsx --env-file-if-exists=../../.env.local src/cli/leakscan.ts"
+    "leakscan": "tsx --env-file-if-exists=../../.env.local src/cli/leakscan.ts",
+    "leakwatch:daily": "tsx --env-file-if-exists=../../.env.local src/cli/leakwatch.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",

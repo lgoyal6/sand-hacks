@@ -12,6 +12,7 @@ import { getViewer } from "@/lib/auth/server";
 import { CanvasError, canvasToQuiz } from "@/lib/canvas/client";
 import { canvasFor, connectCanvas, disconnectCanvas } from "@/lib/canvas/session";
 import { qtiError, runQti } from "../../_lib/qti";
+import { autoScan } from "../../_lib/autoscan";
 
 async function professor() {
   const v = await getViewer().catch(() => null);
@@ -63,6 +64,8 @@ export async function POST(req: Request) {
       try {
         const r = await runQti(["save", tmp]);
         if (r.code !== 0 || !r.json) return Response.json({ error: `Saving failed: ${qtiError(r.out)}` }, { status: 500 });
+        const saved = r.json as { quizId?: string };
+        if (saved.quizId) autoScan(saved.quizId, "Canvas import");
         return Response.json({ ...(r.json as object), skipped: imp.skipped, canvas: imp.canvas });
       } finally {
         await fs.rm(tmp, { force: true });
