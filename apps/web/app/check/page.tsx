@@ -78,7 +78,7 @@ export default function Page() {
           <AgentAvatar agent="leak-scout" size="lg" state={phase === "scanning" ? "active" : "idle"} />
           <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.02em]">Is your question already online?</h1>
           <p className="max-w-[540px] text-[16px] leading-relaxed text-muted-foreground">
-            Paste a quiz or homework question. We search the web live and show which homework sites have it. In our study, 84% of textbook exercises were already there.
+            Paste a quiz or homework question. We search the web live and show which homework sites have it. In our 500-exercise index, 36 to 48% of textbook exercises were already there.
           </p>
         </div>
 

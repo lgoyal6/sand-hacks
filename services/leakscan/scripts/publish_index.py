@@ -40,7 +40,28 @@ def main() -> None:
     for r in rows:
         r["query_error"] = r["exercise_id"] in errored and r["match_type"] == "not_found"
     rows.sort(key=lambda r: (r["book"], r["exercise_id"], r["site"]))
-    cols = ["exercise_id", "subject", "book", "chapter", "exercise_url", "site", "result_url", "match_type", "match_score", "answer_mentioned_in_snippet", "query_error"]
+    # Three honest levels (see docs/leak-study.md): strict = the snippet shows the exercise's ask;
+    # exact phrase = strict, or a homework page whose snippet contains an exact 8-12 word window of the exercise;
+    # any overlap = text overlap >= 0.5 on a homework site (an upper bound that includes false positives).
+    import math
+    def wilson(k, n):
+        if not n: return [0, 0]
+        z = 1.96; p = k / n; den = 1 + z * z / n; c = p + z * z / (2 * n); r = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+        return [round((c - r) / den * 100, 1), round((c + r) / den * 100, 1)]
+    study = [f for f in d["findings"] if f.get("studySite")]
+    strict = {f["itemId"] for f in study if not f["partial"]}
+    exact = strict | {f["itemId"] for f in study if f["partial"] and f["matchScore"] >= 1.0}
+    anyo = {f["itemId"] for f in study if f["matchScore"] >= 0.5}
+    n = len(items)
+    levels = {name: {"found": len(sset), "pct": round(len(sset) / n * 100, 1), "ci95": wilson(len(sset), n)} for name, sset in (("strict", strict), ("exact_phrase", exact), ("any_overlap", anyo))}
+    by_book_levels = {}
+    for b in sorted({i["book"] for i in items}):
+        ids = {i["id"] for i in items if i["book"] == b}
+        by_book_levels[b] = {name: {"found": len(ids & sset), "pct": round(len(ids & sset) / len(ids) * 100, 1), "ci95": wilson(len(ids & sset), len(ids))} for name, sset in (("strict", strict), ("exact_phrase", exact), ("any_overlap", anyo))}
+    for r in rows:
+        r["level"] = "strict" if r["exercise_id"] in strict else "exact_phrase" if r["exercise_id"] in exact else "any_overlap" if r["exercise_id"] in anyo else "not_found"
+
+    cols = ["exercise_id", "subject", "book", "chapter", "exercise_url", "site", "result_url", "match_type", "match_score", "answer_mentioned_in_snippet", "query_error", "level"]
     out = ROOT / "data/open"
     with open(out / "leak-index-2026-11.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=cols)
@@ -57,6 +78,8 @@ def main() -> None:
         "queries": s["queries"],
         "query_errors": s["queryErrors"],
         "unknown_due_to_errors": sum(1 for r in rows if r["query_error"]),
+        "levels": levels,
+        "by_book_levels": by_book_levels,
         "by_book": s["byBook"],
         "by_chapter": s["byChapter"],
         "by_site": s["bySite"],
