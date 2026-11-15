@@ -223,3 +223,28 @@ def test_unisolated_results_never_reach_headline(tmp_path):
     assert json.loads((tmp_path / "attack_history_unisolated.json").read_text())["qz"][0]["isolated"] is False
     write_fixtures(tmp_path, "qz", result(True))
     assert json.loads((tmp_path / "attack_summaries.json").read_text())["qz"]["isolated"] is True
+
+
+def test_submitting_a_different_quiz_is_wrong_quiz(sandbox):
+    """B's stage-1 bug: same titles, the agent submitted another quiz. That run must not be graded against ours."""
+    other = {**QUIZ, "id": "other-quiz", "title": QUIZ["title"],
+             "items": [{**i, "id": i["id"].replace("sample-stats", "other-quiz"), "quizId": "other-quiz"} for i in QUIZ["items"]]}
+    sandbox.register(other)
+
+    def submits_other(sb, run_id, title, model):
+        c = httpx.Client(base_url=sb.base_url)
+        c.post("/login", data={"username": "student1", "password": "sandbox", "run": run_id})
+        html = c.get("/quiz/other-quiz").text
+        attempt = html.split('name="attemptId" value="')[1].split('"')[0]
+        c.post("/quiz/other-quiz/submit", data={"attemptId": attempt})
+        return RunOutcome(run_id, "browser-use", model, "completed", 10, 30.0)
+
+    res = attack(QUIZ, sandbox=sandbox, repeats=1, models=["test:wrong"], runners={"browser-use": submits_other}, log=lambda m: None)
+    m = res["runs"][0]
+    assert m["outcome"] == "wrong_quiz" and m["wrongQuiz"] == ["other-quiz"] and not m["submitted"]
+    assert res["agentRuns"] == [] and res["summary"]["wrongQuiz"] == 1
+
+
+def test_task_names_the_quiz_url(sandbox):
+    sandbox.quiz_id = "sample-stats"
+    assert f"{sandbox.base_url}/quiz/sample-stats" in sandbox.task("run-1", "Any title")

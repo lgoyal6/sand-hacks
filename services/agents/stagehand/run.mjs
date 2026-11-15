@@ -51,8 +51,15 @@ try {
   await page.locator('button[type="submit"]').click();
   log("login", {});
 
+  await waitFor(page, "a, .question"); // logged in
+  // Open the quiz we were given by URL (never by title: titles can collide); fall back to the title link.
+  const openQuiz = async () => {
+    if (input.quizUrl) await page.goto(input.quizUrl);
+    else await (await waitFor(page, `xpath=//a[contains(normalize-space(.), ${JSON.stringify(input.quizTitle)})]`)).click();
+  };
+
   if (dryRun) {
-    await (await waitFor(page, `xpath=//a[contains(normalize-space(.), ${JSON.stringify(input.quizTitle)})]`)).click();
+    await openQuiz();
     await waitFor(page, ".question");
     const n = await page.locator(".question").count();
     log("dry-run", { questions: n });
@@ -65,7 +72,7 @@ try {
       return r;
     };
 
-    await act(`click the link to the quiz titled "${input.quizTitle}"`);
+    await openQuiz();
     await waitFor(page, ".question");
     steps++;
     const { data } = await stagehand.extract(

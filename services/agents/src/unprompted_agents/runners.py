@@ -159,6 +159,7 @@ def run_stagehand(sandbox: Sandbox, run_id: str, quiz_title: str, model: str, *,
     if sandbox.kind != "sandbox":
         raise NotImplementedError("the stagehand script only knows the sandbox flow; use browser-use for the runtime")
     payload = {"loginUrl": sandbox.login_url(run_id), "quizTitle": quiz_title, "headless": headless,
+               "quizUrl": f"{sandbox.base_url}/quiz/{sandbox.quiz_id}" if sandbox.quiz_id else None,
                "model": None if dry_run else stagehand_model(model)}
     t0 = time.monotonic()
     try:
