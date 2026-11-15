@@ -92,8 +92,8 @@ class Runtime(Sandbox):
                 "attemptId": a["attemptId"],
                 "quizId": a["quizId"],
                 "startedAt": a["startedAt"],
-                # A graded attempt counts once it's finished; answered items still count if the agent stalled.
-                "submittedAt": a.get("finishedAt") or (max((x["answeredAt"] for x in got.values()), default=None)),
+                # Submitted = finished. Responses on an unfinished attempt are reported as answered-not-submitted.
+                "submittedAt": a.get("finishedAt"),
                 "finished": bool(a.get("finishedAt")),
                 "probesTriggered": a.get("probesTriggered", []),
                 "userAgent": a.get("userAgent"),

@@ -65,8 +65,8 @@ def test_attack_grades_server_side(sandbox):
 
 
 def test_crash_before_submit_is_excluded_but_unfinished_run_counts(sandbox):
-    """status=error before submitting = infrastructure, excluded. A run that hit max_steps without submitting is the
-    agent failing, and counts as incorrect on every item."""
+    """status=error before submitting = infrastructure, excluded. A run that hit max_steps without submitting is
+    "did not submit": also unscored (never counted as wrong answers), reported separately."""
     def crash(sb, run_id, title, model):
         return RunOutcome(run_id, "browser-use", model, "error", 0, 2.0, error="fatal: CDP WS handshake failed")
 
@@ -76,7 +76,26 @@ def test_crash_before_submit_is_excluded_but_unfinished_run_counts(sandbox):
     res = attack(QUIZ, sandbox=sandbox, repeats=1, models=["test:crash"], runners={"browser-use": crash}, log=lambda m: None)
     assert res["agentRuns"] == [] and res["summary"]["infraReasons"] == {"local browser failed to start": 1}
     res = attack(QUIZ, sandbox=sandbox, repeats=1, models=["test:slow"], runners={"browser-use": gave_up}, log=lambda m: None)
-    assert res["summary"]["itemRuns"] == 5 and res["summary"]["itemCorrect"] == 0 and res["summary"]["infraErrors"] == 0
+    assert res["summary"]["itemRuns"] == 0 and res["summary"]["didNotSubmit"] == 1 and res["summary"]["infraErrors"] == 0
+    assert res["runs"][0]["outcome"] == "did_not_submit"
+
+
+def test_answered_not_submitted_is_recorded(sandbox):
+    """The agent picks answers but never presses Submit: unscored, and its graded selections are kept."""
+    def picks_but_stops(sb, run_id, title, model):
+        c = httpx.Client(base_url=sb.base_url)
+        c.post("/login", data={"username": "student1", "password": "sandbox", "run": run_id})
+        html = c.get(f"/quiz/{QUIZ['id']}").text
+        attempt = html.split('name="attemptId" value="')[1].split('"')[0]
+        for item, v in (("sample-stats-q1", "b"), ("sample-stats-q2", "a")):
+            c.post(f"/api/attempts/{attempt}/events", json={"itemId": item, "value": v})
+        return RunOutcome(run_id, "browser-use", model, "max_steps", 40, 300.0)
+
+    res = attack(QUIZ, sandbox=sandbox, repeats=1, models=["test:stop"], runners={"browser-use": picks_but_stops}, log=lambda m: None)
+    meta = res["runs"][0]
+    assert meta["outcome"] == "did_not_submit" and res["agentRuns"] == []
+    assert meta["answeredNotSubmitted"] == {"sample-stats-q1": {"answer": "b", "correct": True},
+                                            "sample-stats-q2": {"answer": "a", "correct": False}}
 
 
 def test_refuses_remote_hosts():
@@ -136,8 +155,8 @@ def test_runtime_results_mapping_and_stuck_at_probe():
     attempts = rt.run_results("run-1")
     outcome = RunOutcome("run-1", "browser-use", "gemini:x", "max_steps", 40, 300.0)
     runs, meta = to_agent_runs({"id": "sample-stats"}, outcome, attempts, rt.item_ids)
-    assert [r["correct"] for r in runs] == [True, True, False, False, False]
-    assert runs[0]["seconds"] == 4.2
+    assert not meta["submitted"]  # unfinished runtime attempt: did not submit, answers kept for diagnosis
+    assert meta["answeredNotSubmitted"]["sample-stats-q1"]["correct"] is True
     assert meta["target"] == "runtime" and meta["stuckAtProbe"] is True
 
 

@@ -92,7 +92,7 @@ def _clip(v, n):
 
 
 def run_browser_use(sandbox: Sandbox, run_id: str, quiz_title: str, model: str, *, headless: bool = True,
-                    max_steps: int = 40, timeout: float = 600) -> RunOutcome:
+                    max_steps: int | None = None, timeout: float = 900) -> RunOutcome:
     from browser_use import Agent, Browser
 
     # Local Chromium only (1.0 defaults to a cloud browser), locked to the sandbox host.
@@ -101,7 +101,7 @@ def run_browser_use(sandbox: Sandbox, run_id: str, quiz_title: str, model: str, 
     agent = Agent(task_prompt(sandbox, run_id, quiz_title), llm=make_llm(model), browser=browser, workspace=workspace)
     t0 = time.monotonic()
     try:
-        result = agent.run_sync(max_steps=max_steps, timeout=timeout)
+        result = agent.run_sync(max_steps=max_steps or int(os.environ.get("ATTACK_MAX_STEPS", "60")), timeout=timeout)
     except Exception as e:  # a crashed run still counts: every item is scored incorrect
         return RunOutcome(run_id, "browser-use", model, "error", 0, time.monotonic() - t0, error=repr(e)[:500])
     return RunOutcome(

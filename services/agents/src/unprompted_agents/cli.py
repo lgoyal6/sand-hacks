@@ -70,6 +70,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--models", default="gemini:gemini-3.5-flash",
                     help="comma-separated; gemini:<id>, gmi:<id> (GMI Cloud, OpenAI-compatible)")
     ap.add_argument("--repeats", type=int, default=3)
+    ap.add_argument("--max-steps", type=int, default=60,
+                    help="browser-use step limit per run (variant pages can need more than the original's 10-30)")
     ap.add_argument("--out-dir", default=str(REPO / "data" / "fixtures"))
     ap.add_argument("--traces-dir", default=str(REPO / "traces"))
     ap.add_argument("--json", action="store_true", help="print result JSON to stdout, don't write fixtures")
@@ -78,6 +80,7 @@ def main(argv: list[str] | None = None) -> int:
                          "the last line is status 'done' with the full result. Implies --json; logs go to stderr")
     a = ap.parse_args(argv)
 
+    os.environ["ATTACK_MAX_STEPS"] = str(a.max_steps)
     if a.quiz.endswith(".md"):
         from .quiz_md import parse_quiz_md
 
