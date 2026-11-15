@@ -167,6 +167,17 @@ describe("transform runner (fake models, PGlite branches)", () => {
     await store.close();
   }, 60_000);
 
+  it("re-running after an interruption skips variant numbers whose branches already exist", async () => {
+    const store = await PGliteBranchStore.create(await loadSchema());
+    const quiz = parseMarkdownQuiz(md, { quizId: "sample-stats", courseId: "c1" });
+    await saveQuiz((await store.main()).db, quiz);
+    await store.createBranch("exp/sample-stats-q1/1"); // left behind by an interrupted run, nothing merged
+    const res = await runTransform(store, quiz, [{ item: quiz.items[0]!, solveRate: 1 }], { generator, solver, judges: [judge("j1"), judge("j2"), judge("j3")], attacker }, { candidatesPerItem: 1, strategies: ["isomorphic"] });
+    expect(res.experiments[0]!.id).toBe("sample-stats-q1-v2");
+    expect(res.experiments[0]!.status).toBe("verified");
+    await store.close();
+  }, 60_000);
+
   it("decide() applies both halves of the survival rule", () => {
     const r = (correct: number, runs = 10): SolveRate => ({ itemId: "x", runs, correct, solveRate: correct / runs, agentSolvable: false });
     expect(decide(1, r(3)).survives).toBe(true);

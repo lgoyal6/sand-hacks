@@ -72,9 +72,14 @@ export async function runTransform(
   };
 
   // Reserve variant numbers up front (sequentially) so parallel work never collides.
+  // Also skip numbers that already have a branch: a re-executed step (e.g. Mastra restarting an
+  // interrupted run) must not collide with branches its first execution created.
+  const branchNames = await store.listBranches();
   const plan: { target: TransformTarget; k: number; strategy: VariantStrategy }[] = [];
   for (const target of targets) {
-    const first = await nextVariantNumber(main.db, target.item.id);
+    const prefix = `exp/${target.item.id}/`;
+    const branchMax = Math.max(0, ...branchNames.filter((b) => b.startsWith(prefix)).map((b) => Number(b.slice(prefix.length))).filter(Number.isInteger));
+    const first = Math.max(await nextVariantNumber(main.db, target.item.id), branchMax + 1);
     for (let i = 0; i < n; i++) plan.push({ target, k: first + i, strategy: strategies[i % strategies.length]! });
   }
 
