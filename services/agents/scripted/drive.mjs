@@ -7,6 +7,7 @@
 //            JS in the page does on a React app), no pointer or key events, near-instant.
 // Practice mode, and any probe is skipped at its intro: in graded mode the probe's follow-up calls Gemini server-side.
 //
+// Labels: test-scripted-<style>-<n> (the demo account only honours agent-/e2e-/test- prefixes; checked per session).
 // usage: node scripted/drive.mjs --style cdp|jsfill --count 10 [--base http://localhost:3100] [--headed]
 import { chromium } from "playwright-core";
 import { readFileSync } from "node:fs";
@@ -20,6 +21,9 @@ const COUNT = Number(arg("count", "10"));
 const BASE = arg("base", "http://localhost:3100");
 const QUIZ = "sample-stats";
 const TOKEN = process.env.SANDBOX_RUNNER_TOKEN ?? "dev-runner-token";
+// C's runtime only lets the demo account tag attempts with agent-/e2e-/test- prefixes; anything else silently falls
+// back to the demo student's own pseudonym, which would pass scripted sessions off as a student.
+const PREFIX = "test-scripted";
 if (!["cdp", "jsfill"].includes(STYLE)) throw new Error("--style cdp|jsfill");
 if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(BASE)) throw new Error("local runtime only");
 
@@ -37,7 +41,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function nextFreeIndex() {
   for (let n = 1; ; n++) {
-    const r = await fetch(`${BASE}/api/attempts?student=scripted-${STYLE}-${n}`, { headers: { "x-runner-token": TOKEN } });
+    const r = await fetch(`${BASE}/api/attempts?student=${PREFIX}-${STYLE}-${n}`, { headers: { "x-runner-token": TOKEN } });
     if (!r.ok) throw new Error(`runner API ${r.status}`);
     if ((await r.json()).attempts.length === 0) return n;
   }
@@ -89,6 +93,18 @@ function jsStyle(page) {
   };
 }
 
+// Click `sel` until `expect` shows up (a no-move click can land before React has the selection); max 3 tries.
+async function clickUntil(page, io, sel, expect, tries = 3) {
+  for (let i = 0; i < tries; i++) {
+    await io.click(sel);
+    try {
+      await page.locator(expect).first().waitFor({ state: "visible", timeout: 8000 });
+      return;
+    } catch {}
+  }
+  throw new Error(`no ${expect} after clicking ${sel} ${tries} times`);
+}
+
 async function session(browser, label, seed) {
   const rng = mulberry(seed);
   const context = await browser.newContext();
@@ -109,13 +125,13 @@ async function session(browser, label, seed) {
       // Radios are visually hidden: cdp clicks the visible label (trusted), jsfill clicks the input itself (untrusted).
       if (a.choice) await io.click(STYLE === "cdp" ? `#item-${item.id} label:has(#choice-${a.choice})` : `#item-${item.id} #choice-${a.choice}`);
       else await io.type("#answer-input", a.text);
-      await io.click("#submit-answer");
-      await page.locator("#probe, #item-feedback").first().waitFor({ state: "visible", timeout: 20000 });
+      await clickUntil(page, io, "#submit-answer", "#probe, #item-feedback");
       if (await page.locator("#probe-skip").isVisible().catch(() => false)) {
         await io.click("#probe-skip");
         probesSkipped++;
       }
-      await io.click(i === quiz.items.length - 1 ? "#finish-quiz" : "#next-item");
+      const last = i === quiz.items.length - 1;
+      await clickUntil(page, io, last ? "#finish-quiz" : "#next-item", last ? "#quiz-done" : `#item-${quiz.items[i + 1].id}`);
     }
     await waitVisible(page, "#quiz-done");
     await sleep(1500); // let the telemetry batch flush
@@ -131,9 +147,17 @@ const browser = await chromium.launch({ channel: "chrome", headless: !process.ar
 const start = await nextFreeIndex();
 const results = [];
 for (let n = start; n < start + COUNT; n++) {
-  const r = await session(browser, `scripted-${STYLE}-${n}`, n * 7919 + (STYLE === "cdp" ? 1 : 2));
+  const label = `${PREFIX}-${STYLE}-${n}`;
+  const r = await session(browser, label, n * 7919 + (STYLE === "cdp" ? 1 : 2));
+  // Verify the label really landed on the attempt; stop the batch if it didn't.
+  const check = await fetch(`${BASE}/api/attempts?student=${label}`, { headers: { "x-runner-token": TOKEN } }).then((x) => x.json());
+  r.labelStored = (check.attempts ?? []).length > 0;
   console.log(JSON.stringify(r));
   results.push(r);
+  if (!r.labelStored) {
+    console.error(`ABORT: attempt for ${label} was not stored under that label (pseudonym rule?)`);
+    break;
+  }
 }
 await browser.close();
 console.log(`${results.filter((r) => r.ok).length}/${results.length} ${STYLE} sessions completed`);
