@@ -34,6 +34,8 @@ export interface AgentRow {
   name: AgentName;
   status: AgentStatus;
   activity: string;
+  /** Recent activity, newest last (shown when the panel row is expanded). */
+  steps: { text: string; at?: string }[];
 }
 
 export type CardStatus = "generating" | "checking" | "re-attacking" | "verified" | "rejected" | "unverified" | "approved";
@@ -63,7 +65,7 @@ export interface RunState {
 }
 
 export function initialRun(): RunState {
-  const agents = Object.fromEntries(AGENT_ORDER.map((n) => [n, { name: n, status: "idle", activity: "Waiting" }])) as Record<AgentName, AgentRow>;
+  const agents = Object.fromEntries(AGENT_ORDER.map((n): [AgentName, AgentRow] => [n, { name: n, status: "idle", activity: "Waiting", steps: [] }])) as Record<AgentName, AgentRow>;
   return { running: false, agents, cards: {}, order: [], errors: [] };
 }
 
@@ -106,14 +108,22 @@ function short(id: string) {
 /** Pure reducer: fold one event into the run state. */
 export function reduceRun(prev: RunState, e: StudioEvent): RunState {
   const s: RunState = structuredClone(prev);
-  const set = (n: AgentName, status: AgentStatus, activity: string) => (s.agents[n] = { name: n, status, activity });
+  const at = e.t != null ? `${Math.round(e.t / 1000)}s` : undefined;
+  const set = (n: AgentName, status: AgentStatus, activity: string) => {
+    const prevRow = s.agents[n];
+    const steps = activity === prevRow.activity ? prevRow.steps : [...prevRow.steps, { text: activity, at }].slice(-6);
+    s.agents[n] = { name: n, status, activity, steps };
+  };
   switch (e.type) {
     case "run_started":
       return { ...initialRun(), mode: e.mode, label: e.label, running: true };
     case "run_finished":
       s.running = false;
       s.finished = { ok: e.ok, message: e.message };
-      for (const n of AGENT_ORDER) if (s.agents[n].status === "working" || s.agents[n].status === "thinking") set(n, "idle", "Done");
+      for (const n of AGENT_ORDER) {
+        const a = s.agents[n];
+        if (a.status === "working" || a.status === "thinking") s.agents[n] = { ...a, status: "idle" };
+      }
       for (const id of s.order) {
         const c = s.cards[id]!;
         if (c.status === "generating" || c.status === "checking" || c.status === "re-attacking") {
