@@ -38,6 +38,9 @@ alter table probe add column if not exists scribe_words_json jsonb;             
 create table if not exists user_role (user_id text primary key, role text not null check (role in ('student','professor')));
 -- Figure-only items: the PNG (data URL) and its text (server-side only: answer checker, judges, accommodations).
 alter table item add column if not exists figure_json jsonb;
+-- Learning objective provenance: 'inferred' (guessed at a Canvas import) must be confirmed before a rewrite; 'professor' is confirmed.
+alter table item add column if not exists objective_source text;
+update item set objective_source = 'inferred' where objective_source is null and original_item_id is null and quiz_id in (select id from quiz where source_format in ('qti', 'canvas_api'));
 alter table item add column if not exists figure_text text;
 -- C: accessible-version requests per attempt, e.g. [{itemId, kind: "figure_text", at}]
 alter table attempt add column if not exists accommodations jsonb default '[]';
@@ -86,3 +89,6 @@ alter table leak_finding add column if not exists seen_at timestamptz;
 alter table item add column if not exists leak_scanned_at timestamptz;
 -- D's Archive watch (daily): candidate pages per question. Candidates, never confirmed leaks.
 create table if not exists leak_archive_watch (item_id text, run_at timestamptz, candidates int, error text, primary key (item_id, run_at));
+-- Retention: when the ElevenLabs call audio was deleted, and when the professor deleted our transcript.
+alter table probe add column if not exists audio_deleted_at timestamptz;
+alter table probe add column if not exists transcript_deleted_at timestamptz;

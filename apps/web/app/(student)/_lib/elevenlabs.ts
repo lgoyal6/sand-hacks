@@ -55,11 +55,12 @@ export async function getConversation(id: string, waitMs = 12000): Promise<Conve
   }
 }
 
-// Privacy (build plan 7): audio is deleted after grading. Deleting the conversation removes audio and transcript
-// at ElevenLabs; our copy of the transcript stays in probes.json for the appeal window.
+// Privacy (build plan 7): the call is deleted once our transcript is saved (lib/retention.ts). Deleting the
+// conversation removes audio and transcript at ElevenLabs; our transcript stays until the professor deletes it.
+// A 404 means it is already gone, which counts as deleted.
 export async function deleteConversation(id: string) {
   const res = await fetch(`${API}/convai/conversations/${encodeURIComponent(id)}`, { method: "DELETE", headers: { "xi-api-key": key() } });
-  return res.ok;
+  return res.ok || res.status === 404;
 }
 
 export function formatTranscript(turns: TranscriptTurn[]) {

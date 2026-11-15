@@ -10,6 +10,9 @@ export interface Item {
   choices?: { id: string; text: string }[];
   answerKey: string | string[];
   objective: string;
+  /** "inferred": guessed at import (Canvas title or a stem excerpt), so the professor must confirm it before a
+   *  rewrite. "professor": written or confirmed by the professor. Absent = authored with the quiz (Markdown). */
+  objectiveSource?: "inferred" | "professor";
   originalItemId?: string | null;
   // Optional figure. When present, data needed to answer may live only in the image; see the accessibility
   // accommodation in docs/CONTRACTS.md (an accessible version reveals the data plus a think-aloud probe).

@@ -201,8 +201,17 @@ export function selectTargets(
 ): { targets: import("./types.js").TransformTarget[]; notes: string[] } {
   const targets: import("./types.js").TransformTarget[] = [];
   const notes: string[] = [];
+  const unconfirmed = quiz.items.filter((i) => i.objectiveSource === "inferred" && opts.itemIds?.includes(i.id));
+  if (unconfirmed.length) {
+    // The rewriter and the judges hold the objective fixed, so a guessed one (a Canvas title) must be confirmed first.
+    throw new Error(`confirm the learning objective first: ${unconfirmed.map((i) => i.id).join(", ")} still has the one guessed at import`);
+  }
   for (const item of quiz.items) {
     if (opts.itemIds && !opts.itemIds.includes(item.id)) continue;
+    if (item.objectiveSource === "inferred") {
+      notes.push(`${item.id}: skipped, learning objective not confirmed by the professor`);
+      continue;
+    }
     const r = solveRates?.find((s) => s.itemId === item.id);
     const leaked = leakedItemIds.includes(item.id);
     if (!opts.itemIds && !(r?.agentSolvable || leaked)) continue;

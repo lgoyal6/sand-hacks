@@ -29,7 +29,7 @@ export function numericKey(key: string): { value: number; margin: number } {
 
 function itemXml(it: QtiItem, figureHref?: string): string {
   const id = ident(it.id);
-  const html = `<div><p>${esc(it.stem)}</p>${figureHref ? `<p><img src="$IMS-CC-FILEBASE$/${figureHref}" alt="${esc(it.figure?.alt ?? "")}"></p>` : ""}</div>`;
+  const html = `<div><p>${esc(it.stem)}</p>${figureHref ? `<p><img src="$IMS-CC-FILEBASE$/${encodeURI(figureHref)}" alt="${esc(it.figure?.alt ?? "")}"></p>` : ""}</div>`;
   const stem = `<material><mattext texttype="text/html">${esc(html)}</mattext></material>`;
   const correct = Array.isArray(it.answerKey) ? it.answerKey : [it.answerKey];
   if (it.type === "mcq" || it.type === "multi") {
@@ -143,7 +143,7 @@ export function importQti(zip: Uint8Array, opts: { quizId: string; courseId: str
       const conds = findAll(raw.resprocessing, "respcondition") as any[];
       const scoring = conds.find((c) => Number(text(c.setvar)) >= 100) ?? conds[0];
       const n = items.length + 1;
-      const base = { id: `${opts.quizId}-q${n}`, quizId: opts.quizId, stem, objective: itemTitle !== "Question" ? itemTitle : `Imported from Canvas: ${stem.slice(0, 60)}`, originalItemId: null };
+      const base = { id: `${opts.quizId}-q${n}`, quizId: opts.quizId, stem, objective: itemTitle !== "Question" ? itemTitle : `Imported from Canvas: ${stem.slice(0, 60)}`, objectiveSource: "inferred" as const, originalItemId: null };
       try {
         if (type === "multiple_choice_question" || type === "true_false_question" || type === "multiple_answers_question") {
           const labels = findAll(raw.presentation, "response_label") as any[];

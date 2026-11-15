@@ -91,10 +91,10 @@ export async function saveQuiz(db: Db, quiz: Quiz, courseTitle = quiz.title): Pr
   );
   for (const it of quiz.items) {
     await db.query(
-      `insert into item (id, quiz_id, stem, type, choices_json, answer_key, objective, original_item_id)
-       values ($1, $2, $3, $4, $5, $6, $7, $8)
+      `insert into item (id, quiz_id, stem, type, choices_json, answer_key, objective, original_item_id, objective_source)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        on conflict (id) do update set stem = excluded.stem, type = excluded.type, choices_json = excluded.choices_json,
-         answer_key = excluded.answer_key, objective = excluded.objective`,
+         answer_key = excluded.answer_key, objective = excluded.objective, objective_source = excluded.objective_source`,
       [
         it.id,
         quiz.id,
@@ -104,6 +104,7 @@ export async function saveQuiz(db: Db, quiz: Quiz, courseTitle = quiz.title): Pr
         JSON.stringify(it.answerKey),
         it.objective,
         it.originalItemId ?? null,
+        it.objectiveSource ?? null,
       ],
     );
   }
@@ -124,6 +125,7 @@ export async function loadQuiz(db: Db, quizId: string): Promise<Quiz> {
     choices_json: Item["choices"] | null;
     answer_key: Item["answerKey"];
     objective: string;
+    objective_source: Item["objectiveSource"] | null;
     original_item_id: string | null;
   }>("select * from item where quiz_id = $1 and original_item_id is null", [quizId]);
   rows.sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
@@ -140,6 +142,7 @@ export async function loadQuiz(db: Db, quizId: string): Promise<Quiz> {
       ...(r.choices_json ? { choices: r.choices_json } : {}),
       answerKey: r.answer_key,
       objective: r.objective,
+      ...(r.objective_source ? { objectiveSource: r.objective_source } : {}),
       originalItemId: r.original_item_id,
     })),
   };

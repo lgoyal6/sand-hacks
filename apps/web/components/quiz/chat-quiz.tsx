@@ -782,7 +782,10 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           {phase === "probe_consent" && (
             <label htmlFor="probe-consent-check" className="flex items-start gap-2 text-sm">
               <input id="probe-consent-check" type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-              I agree to have this short conversation recorded. I can switch to typing any time.
+              <span>
+                I agree to have this short conversation recorded. I can switch to typing any time.
+                <span className="mt-0.5 block text-xs text-muted-foreground">Audio is deleted after your explanation is transcribed.</span>
+              </span>
             </label>
           )}
           {phase === "probe_before" && <ConfidencePicker name="confidence-before" legend="How sure are you?" value={before} onChange={setBefore} />}

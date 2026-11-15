@@ -35,6 +35,7 @@ interface ItemRow {
   choices_json: Item["choices"] | null;
   answer_key: Item["answerKey"];
   objective: string;
+  objective_source?: Item["objectiveSource"] | null;
   original_item_id: string | null;
 }
 
@@ -60,6 +61,7 @@ async function quizFromNeon(db: Pool, quizId: string): Promise<Quiz | null> {
       ...(r.choices_json ? { choices: r.choices_json } : {}),
       answerKey: r.answer_key,
       objective: r.objective,
+      ...(r.objective_source ? { objectiveSource: r.objective_source } : {}),
       originalItemId: null,
     })),
   };

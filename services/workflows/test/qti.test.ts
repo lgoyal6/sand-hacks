@@ -50,6 +50,8 @@ describe("Canvas QTI 1.2", () => {
     expect(quiz.items[0]!.choices).toEqual([{ id: "a", text: "0.4" }, { id: "b", text: "2" }, { id: "c", text: "10" }]);
     expect(quiz.items[0]!.objective).toBe("Standard error");
     expect(quiz.items[1]!.objective).toMatch(/^Imported from Canvas: Which increase power/);
+    // Both are guesses (a Canvas title, a stem excerpt), so the professor confirms them before a rewrite.
+    expect(quiz.items.every((i) => i.objectiveSource === "inferred")).toBe(true);
     expect(skipped).toEqual([{ title: "Explain", type: "essay_question", reason: "question type not supported yet" }]);
   });
 
@@ -72,7 +74,12 @@ describe("Canvas QTI 1.2", () => {
     expect(names.some((n) => n.startsWith("web_resources/Uploaded Media/figure-"))).toBe(true);
     for (const n of names.filter((x) => x.endsWith(".xml"))) expect(XMLValidator.validate(strFromU8(files[n]!))).toBe(true);
     const assessment = strFromU8(files[names.find((n) => /\/g[0-9a-f]+\.xml$/.test(n) && !n.endsWith("assessment_meta.xml"))!]!);
-    expect(assessment).toContain("$IMS-CC-FILEBASE$/Uploaded Media/figure-");
+    // The img src is URL-encoded like Canvas's own exports; the manifest and zip entry keep the raw path.
+    expect(assessment).toContain("$IMS-CC-FILEBASE$/Uploaded%20Media/figure-");
+    expect(assessment).not.toContain("$IMS-CC-FILEBASE$/Uploaded Media/");
+    expect(strFromU8(files["imsmanifest.xml"]!)).toMatch(/href="web_resources\/Uploaded Media\/figure-[0-9a-f]{8}\.png"/);
+    // 1/6 keeps its rounding margin on the way out.
+    expect(assessment).toContain('<vargte respident="response1">0.1662</vargte><varlte respident="response1">0.1672</varlte>');
     expect(assessment).toContain("multiple_answers_question");
     expect(assessment).toContain("numerical_question");
 
