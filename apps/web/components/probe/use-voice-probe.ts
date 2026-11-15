@@ -69,7 +69,7 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
     if (finished.current) return;
     finished.current = true;
     go("ended");
-    emitAgentStatus("Explain coach", "finished listening", "done");
+    emitAgentStatus("explain-coach", "finished listening", "done");
     optsRef.current.onFinished(result());
   }, [result]);
 
@@ -78,7 +78,7 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
       get_followup: async (params: Record<string, unknown>) => {
         markOnce("speech_end");
         go("followup_loading");
-        emitAgentStatus("Explain coach", "preparing a follow-up");
+        emitAgentStatus("explain-coach", "preparing a follow-up");
         const said = linesRef.current.filter((l) => l.role === "user").map((l) => l.text).join(" ");
         const summary = typeof params.explanation_summary === "string" ? params.explanation_summary : "";
         try {
@@ -92,7 +92,7 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
           cfPrompt.current = FALLBACK_CF;
         }
         go("followup");
-        emitAgentStatus("Explain coach", "listening");
+        emitAgentStatus("explain-coach", "listening");
         return cfPrompt.current;
       },
       end_probe: async () => {
@@ -105,7 +105,7 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
     onConnect: ({ conversationId }) => {
       convId.current = conversationId;
       go("explain");
-      emitAgentStatus("Explain coach", "listening");
+      emitAgentStatus("explain-coach", "listening");
     },
     onDisconnect: () => finish(),
     onError: (message) => setError(String(message).slice(0, 200)),
@@ -148,7 +148,7 @@ export function useVoiceProbe(opts: { mark: (p: ProbePhase) => void; onFinished:
       setLines([]);
       setError(null);
       go("connecting");
-      emitAgentStatus("Explain coach", "connecting");
+      emitAgentStatus("explain-coach", "connecting");
       conversation.startSession({ signedUrl: args.signedUrl, connectionType: "websocket", dynamicVariables: args.dynamicVariables });
     },
     [conversation],

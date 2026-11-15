@@ -1,20 +1,23 @@
 "use client";
-// Agent-status events for D's AgentPanel. Plain browser events, so any component can listen:
-//   window.addEventListener("unprompted:agent-status", (e) => (e as CustomEvent<AgentStatus>).detail)
-// These describe what Unprompted's own helpers are doing for the student (never anything about detection).
-
-export type AgentName = "Tutor" | "Explain coach" | "Grader";
-export interface AgentStatus {
-  agent: AgentName;
-  status: string;
-  state: "working" | "idle" | "done";
-  at: string;
-}
+// Agent activity events for D's AgentPanel, in the shared AgentEvent shape (packages/shared):
+//   window.addEventListener("unprompted:agent-status", (e) => (e as CustomEvent<AgentEvent>).detail)
+// These describe what Unprompted's helpers are doing for the student (never anything about detection).
+import type { AgentEvent, AgentEventStatus, AgentId, AgentEvent as _Shape } from "@unprompted/shared";
 
 export const AGENT_STATUS_EVENT = "unprompted:agent-status";
+export type { AgentEvent, AgentId };
 
-export function emitAgentStatus(agent: AgentName, status: string, state: AgentStatus["state"] = "working") {
+const STATE: Record<"working" | "idle" | "done" | "thinking" | "needs-input" | "error", AgentEventStatus> = {
+  working: "running",
+  thinking: "thinking",
+  idle: "idle",
+  done: "done",
+  "needs-input": "needs-input",
+  error: "error",
+};
+
+export function emitAgentStatus(agentId: AgentId, label: string, state: keyof typeof STATE = "working", toolCall?: _Shape["toolCall"]) {
   if (typeof window === "undefined") return;
-  const detail: AgentStatus = { agent, status, state, at: new Date().toISOString() };
-  window.dispatchEvent(new CustomEvent<AgentStatus>(AGENT_STATUS_EVENT, { detail }));
+  const detail: AgentEvent = { agentId, status: STATE[state], label, toolCall, ts: new Date().toISOString() };
+  window.dispatchEvent(new CustomEvent<AgentEvent>(AGENT_STATUS_EVENT, { detail }));
 }

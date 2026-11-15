@@ -87,8 +87,8 @@ interface ChatQuizProps {
 
 const AGENTS: AgentInfo[] = [
   { id: "tutor", name: "Tutor", status: "ready when you are", state: "idle" },
-  { id: "explain", name: "Explain coach", status: "joins for think-alouds", state: "idle" },
-  { id: "grader", name: "Grader", status: "reviews explanations later", state: "idle" },
+  { id: "explain-coach", name: "Explain coach", status: "joins for think-alouds", state: "idle" },
+  { id: "judge-panel", name: "Judge panel", status: "reviews explanations later", state: "idle" },
 ];
 
 export function ChatQuiz(props: ChatQuizProps) {
@@ -198,7 +198,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
       setAnswer("");
       shownAt.current = now();
       setPhase("question");
-      emitAgentStatus("Tutor", `presenting question 1 of ${target.items.length}`);
+      emitAgentStatus("tutor", `presenting question 1 of ${target.items.length}`);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -208,11 +208,11 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
 
   const finishQuiz = async () => {
     if (!attemptId) return;
-    emitAgentStatus("Tutor", "adding up your results");
+    emitAgentStatus("tutor", "adding up your results");
     const s = await post<NonNullable<typeof summary>>(`/api/attempts/${attemptId}/finish`);
     setSummary(s);
     setPhase("done");
-    emitAgentStatus("Tutor", "results ready", "done");
+    emitAgentStatus("tutor", "results ready", "done");
   };
 
   const nextQuestion = async () => {
@@ -224,7 +224,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     shownAt.current = now();
     setPhase("question");
     telemetry.emit("answer", { type: "item_shown", index: index + 2 }, quiz.items[index + 1]?.id);
-    emitAgentStatus("Tutor", `presenting question ${index + 2} of ${quiz.items.length}`);
+    emitAgentStatus("tutor", `presenting question ${index + 2} of ${quiz.items.length}`);
   };
 
   const changeAnswer = (v: Answer) => {
@@ -237,14 +237,14 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     setBusy(true);
     setError(null);
     setPhase("checking");
-    emitAgentStatus("Tutor", "checking your answer");
+    emitAgentStatus("tutor", "checking your answer");
     try {
       const seconds = Math.round(((now() - shownAt.current) / 1000) * 10) / 10;
       const d = await post<{ correct?: boolean; probe?: boolean; correctAnswer?: string[] }>(`/api/attempts/${attemptId}/responses`, { itemId: item.id, answer, seconds });
       telemetry.emit("answer", { type: "submit", value: answer, seconds });
       telemetry.flush();
       markAnswered(attemptId);
-      emitAgentStatus("Tutor", `answer ${index + 1} saved`, "done");
+      emitAgentStatus("tutor", `answer ${index + 1} saved`, "done");
       // Keep the card in the thread, locked. In practice the result shows after any think-aloud.
       const cardId = nextId.current++;
       setEntries((e) => [...e, { id: cardId, who: "card", itemId: item.id, index, answer, mode }]);
@@ -257,7 +257,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
       if (d.probe) {
         // The think-aloud comes before any feedback, so knowing the result doesn't color the explanation.
         say("tutor", "Before I tell you how that went: quick think-aloud. Explaining your reasoning is one of the best ways to lock it in, and only your reasoning counts, never wording or accent.", { agent: "Explain coach" });
-        emitAgentStatus("Explain coach", "starting a think-aloud");
+        emitAgentStatus("explain-coach", "starting a think-aloud");
         setBefore(null);
         setAfter(null);
         setConsent(false);
@@ -315,7 +315,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
       }
       setPhase("probe_explain");
       mark("prompt");
-      emitAgentStatus("Explain coach", "waiting for your explanation", "idle");
+      emitAgentStatus("explain-coach", "waiting for your explanation", "idle");
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -343,12 +343,12 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     say("student", text);
     setDraft("");
     setPhase("probe_cf_loading");
-    emitAgentStatus("Explain coach", "preparing a follow-up");
+    emitAgentStatus("explain-coach", "preparing a follow-up");
     try {
       const d = await post<{ prompt: string }>(`/api/probes/${probeId}/counterfactual`, { explanation: text });
       setCfPrompt(d.prompt);
       setPhase("probe_cf");
-      emitAgentStatus("Explain coach", "waiting for your answer", "idle");
+      emitAgentStatus("explain-coach", "waiting for your answer", "idle");
     } catch (e) {
       setError((e as Error).message);
       setPhase("probe_explain");
@@ -398,8 +398,8 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
         "PATCH",
       );
       say("student", `Confidence: ${after} of 7`);
-      emitAgentStatus("Explain coach", "think-aloud saved", "done");
-      emitAgentStatus("Grader", "explanation queued for review", "idle");
+      emitAgentStatus("explain-coach", "think-aloud saved", "done");
+      emitAgentStatus("judge-panel", "explanation queued for review", "idle");
       setPhase("probe_done");
     } catch (e) {
       setError((e as Error).message);
@@ -492,6 +492,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
         phase === "probe_voice"
           ? {
               state: voice.orb,
+              agent: "explain-coach",
               transcript: voice.error ? `Voice hit a problem (${voice.error}). Type instead, no penalty.` : voice.lines.at(-1)?.text,
               onStop: voice.stop,
               onSwitchToTyping: switchToTyping,
