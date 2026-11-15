@@ -4,6 +4,7 @@
 import * as React from "react";
 import { ArrowUp, Keyboard, Mic, Paperclip, Square } from "lucide-react";
 import { VoiceOrb, type VoiceOrbState } from "@/components/ui/siri-orb";
+import { agentOrbColors, resolveAgent } from "@/components/ui/agent-avatar";
 import { cn } from "@/lib/utils";
 
 export interface ComposerVoice {
@@ -13,6 +14,8 @@ export interface ComposerVoice {
   onStop?: () => void;
   /** Shows a "Type instead" affordance. */
   onSwitchToTyping?: () => void;
+  /** The agent speaking or listening (e.g. "explain-coach"): the orb takes its hue and the label names it. */
+  agent?: string;
 }
 
 export interface ComposerProps {
@@ -77,7 +80,8 @@ export function Composer({
     return (
       <div className={cn("rounded-[28px] border border-border bg-background px-5 pb-4 pt-5 shadow-[0_2px_12px_rgba(0,0,0,0.05)]", className)}>
         <div className="flex flex-col items-center gap-3">
-          <VoiceOrb state={voice.state} size="88px" showLabel />
+          <VoiceOrb state={voice.state} size="88px" showLabel colors={agentOrbColors(voice.agent)} />
+          {resolveAgent(voice.agent) && <p className="-mt-2 text-xs text-muted-foreground">{resolveAgent(voice.agent)!.name}</p>}
           {voice.transcript && <p className="max-w-[560px] text-center text-[15px] leading-relaxed text-foreground/80">{voice.transcript}</p>}
           <div className="flex items-center gap-2">
             {voice.onSwitchToTyping && (

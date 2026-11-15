@@ -223,12 +223,14 @@ export interface VoiceOrbProps {
   size?: string;
   /** Show the state label under the orb. */
   showLabel?: boolean;
+  /** Override orb colors (e.g. agentOrbColors(agent) so the orb takes the speaking agent's hue). */
+  colors?: SiriOrbProps["colors"];
   className?: string;
 }
 
 /** The think-aloud interviewer. Rotation speeds up while it speaks and settles while it listens. */
-export function VoiceOrb({ state = "idle", size = "160px", showLabel = false, className }: VoiceOrbProps) {
-  const colors =
+export function VoiceOrb({ state = "idle", size = "160px", showLabel = false, colors: override, className }: VoiceOrbProps) {
+  const colors = override ??
     state === "thinking"
       ? { c1: "var(--chart-3)", c2: "var(--agent)", c3: "var(--chart-2)" }
       : state === "speaking"

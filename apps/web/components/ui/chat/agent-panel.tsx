@@ -3,7 +3,8 @@
 // animates; the rest are static and muted. A row expands to a short step log.
 import * as React from "react";
 import { ChevronRight, PanelRightClose } from "lucide-react";
-import { AgentState, type AgentStatus } from "@/components/ui/agent-state";
+import { type AgentStatus } from "@/components/ui/agent-state";
+import { AgentAvatar, resolveAgent } from "@/components/ui/agent-avatar";
 import { cn } from "@/lib/utils";
 
 export interface AgentStep {
@@ -128,8 +129,15 @@ export function AgentPanel({ agents: base, activeId, title = "Agents", onClose, 
                   expanded && "bg-muted",
                 )}
               >
-                <span className="grid size-7 shrink-0 place-items-center">
-                  {isActive ? <AgentState status={a.state} size="sm" label="" className="[&_.v-agent-state__copy]:hidden [&_.v-agent-state__field]:w-7" /> : <StaticMark state={a.state} />}
+                <span className="relative grid size-7 shrink-0 place-items-center">
+                  {resolveAgent(a.name) || resolveAgent(a.id) ? (
+                    <AgentAvatar agent={resolveAgent(a.id) ? a.id : a.name} size={26} state={isActive ? "active" : a.state === "idle" ? "muted" : "idle"} />
+                  ) : (
+                    <StaticMark state={a.state} />
+                  )}
+                  {(a.state === "needs-input" || a.state === "error") && (
+                    <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full ring-2 ring-background" style={{ background: a.state === "error" ? "var(--destructive)" : "var(--gap)" }} />
+                  )}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className={cn("block truncate text-sm", isActive ? "font-medium text-foreground" : "text-foreground/80")}>{a.name}</span>
