@@ -7,6 +7,8 @@ const FILES: Record<string, string> = {
   "leaked-homework-2026-11.csv": "text/csv; charset=utf-8",
   "leaked-homework-2026-11.json": "application/json; charset=utf-8",
   "LICENSE.md": "text/markdown; charset=utf-8",
+  "leak-index-2026-11.csv": "text/csv; charset=utf-8",
+  "leak-index-2026-11.json": "application/json; charset=utf-8",
 };
 
 export async function GET(_req: Request, ctx: RouteContext<"/study/data/[file]">) {
