@@ -13,17 +13,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ConversationProvider } from "@elevenlabs/react";
 import { Button } from "@/components/ui/button";
-import { VoiceOrb } from "@/components/ui/siri-orb";
-import { OrbAvatar } from "@/components/ui/orb-avatar";
+import { ChatLayout, Chip, Composer, Message, QuestionCard, Thinking, Thread, type AgentInfo } from "@/components/ui/chat";
 import { useTelemetry } from "@/lib/telemetry/use-telemetry";
 import { emitAgentStatus } from "@/lib/telemetry/agent-status";
 import { ConfidenceScale } from "@/components/probe/confidence-scale";
 import { useVoiceProbe, type ProbePhase, type VoiceResult } from "@/components/probe/use-voice-probe";
 import { ItemView } from "./item-view";
 import type { Answer, Mode, PublicItem, PublicQuiz } from "./types";
-import { rememberSession } from "./sessions";
+import { rememberSession, useSessions } from "./sessions";
 
 type Phase =
+  | "home"
   | "intro"
   | "question"
   | "checking"
@@ -55,7 +55,21 @@ async function post<T>(url: string, body?: unknown, method = "POST"): Promise<T>
   return res.json() as Promise<T>;
 }
 
-export function ChatQuiz(props: { quiz: PublicQuiz; suggestedMode?: Mode; student?: string }) {
+interface ChatQuizProps {
+  quiz: PublicQuiz;
+  suggestedMode?: Mode;
+  student?: string;
+  /** Home page: start in the empty state (greeting, centered composer, chips). */
+  startEmpty?: boolean;
+}
+
+const AGENTS: AgentInfo[] = [
+  { id: "tutor", name: "Tutor", status: "ready when you are", state: "idle" },
+  { id: "explain", name: "Explain coach", status: "joins for think-alouds", state: "idle" },
+  { id: "grader", name: "Grader", status: "reviews explanations later", state: "idle" },
+];
+
+export function ChatQuiz(props: ChatQuizProps) {
   return (
     <ConversationProvider>
       <ChatQuizInner {...props} />
@@ -63,8 +77,9 @@ export function ChatQuiz(props: { quiz: PublicQuiz; suggestedMode?: Mode; studen
   );
 }
 
-function ChatQuizInner({ quiz, suggestedMode = "practice", student }: { quiz: PublicQuiz; suggestedMode?: Mode; student?: string }) {
-  const [phase, setPhase] = useState<Phase>("intro");
+function ChatQuizInner({ quiz, suggestedMode = "practice", student, startEmpty = false }: ChatQuizProps) {
+  const [phase, setPhase] = useState<Phase>(startEmpty ? "home" : "intro");
+  const sessions = useSessions();
   const [mode, setMode] = useState<Mode>(suggestedMode);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
@@ -97,7 +112,7 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student }: { quiz: Pu
 
   const item = quiz.items[index];
   const isLast = index === quiz.items.length - 1;
-  const telemetry = useTelemetry(attemptId, item?.id, phase !== "intro" && phase !== "done");
+  const telemetry = useTelemetry(attemptId, item?.id, phase !== "home" && phase !== "intro" && phase !== "done");
 
   const say = useCallback((who: Entry["who"], text: string, extra: Partial<Entry> = {}) => {
     setEntries((e) => [...e, { id: nextId.current++, who, text, ...extra }]);
@@ -130,6 +145,7 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student }: { quiz: Pu
       setMode(m);
       setAttemptId(d.attemptId);
       rememberSession({ id: d.attemptId, quizId: quiz.id, title: quiz.title, mode: m, startedAt: new Date().toISOString() });
+      if (window.location.pathname === "/") window.history.replaceState(null, "", `/quiz/${quiz.id}?mode=${m}`);
       say("student", m === "practice" ? "Let's practice." : "I'm ready for the graded quiz.");
       say(
         "tutor",
@@ -373,16 +389,99 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student }: { quiz: Pu
 
   const probeStep = phase.startsWith("probe_") ? phase.slice(6) : null;
 
+  // Free text outside a probe step: the tutor's open chat arrives with B's agent API. Until then, steer to the quiz.
+  const freeText = (text: string) => {
+    say("student", text);
+    say("tutor", `I can walk you through ${quiz.title} as a practice run or as the graded quiz. Pick one below and we'll start.`, { agent: "Tutor" });
+    setPhase("intro");
+  };
+
+  const today = new Date().toDateString();
+  const sidebarGroups = [
+    { label: "Today", items: sessions.filter((x) => new Date(x.startedAt).toDateString() === today) },
+    { label: "Earlier", items: sessions.filter((x) => new Date(x.startedAt).toDateString() !== today) },
+  ]
+    .filter((g) => g.items.length)
+    .map((g) => ({ label: g.label, items: g.items.map((x) => ({ id: x.id, title: x.title, href: `/quiz/${x.quizId}?mode=${x.mode}`, subtitle: `${x.mode === "practice" ? "Practice" : "Quiz"} · ${new Date(x.startedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` })) }));
+
+  const composerProps = composer
+    ? { textareaId: composer.textareaId, submitId: composer.submitId, placeholder: composer.placeholder, disabled: false }
+    : phase === "home" || phase === "intro"
+      ? { textareaId: "composer-input", submitId: "composer-send", placeholder: "Ask about statistics, or say \"quiz me\"...", disabled: false }
+      : { textareaId: "composer-input", submitId: "composer-send", placeholder: phase === "done" ? "Nice work. Start a new session from the sidebar." : "Answer the question above", disabled: true };
+
+  const composerEl = (
+    <Composer
+      key="composer"
+      {...composerProps}
+      value={draft}
+      onChange={(v) => {
+        if (v && composer) composerFirstKey();
+        setDraft(v);
+      }}
+      onSubmit={(v) => {
+        if (composer) composerSubmit();
+        else if (v.trim()) {
+          setDraft("");
+          freeText(v.trim());
+        }
+      }}
+      voice={
+        phase === "probe_voice"
+          ? {
+              state: voice.orb,
+              transcript: voice.error ? `Voice hit a problem (${voice.error}). Type instead, no penalty.` : voice.lines.at(-1)?.text,
+              onStop: voice.stop,
+              onSwitchToTyping: switchToTyping,
+            }
+          : null
+      }
+    />
+  );
+
   return (
-    <div className="flex min-h-[70vh] flex-col">
-      <div className="flex-1 space-y-4 pb-6" id="chat-thread">
-        {/* Intro */}
-        <TutorBubble agent="Tutor">
-          <p>
-            Ready for <strong>{quiz.title}</strong>? {quiz.items.length} questions. Practice tells you how you did after each one; the graded quiz shows results at the end.
-          </p>
+    <ChatLayout
+      sidebar={{ groups: sidebarGroups, newHref: "/", newLabel: "New session", user: { name: student ?? "Student", detail: "Intro Statistics" } }}
+      agents={AGENTS}
+      empty={phase === "home"}
+      home={{
+        greeting: "What are we learning today?",
+        sub: `${quiz.title} · ${quiz.items.length} questions`,
+        chips: (
+          <>
+            <Chip onClick={() => start("graded")}>Start Quiz 1</Chip>
+            <Chip onClick={() => start("practice")}>Practice a weak topic</Chip>
+            <Chip onClick={() => freeText("Can you explain a concept?")}>Explain a concept</Chip>
+          </>
+        ),
+      }}
+      composer={composerEl}
+      composerNote={phase === "home" ? undefined : mode === "practice" ? "Practice mode · nothing here counts toward your grade" : "Graded quiz · think-alouds count for 10%"}
+    >
+      <Thread>
+        <div id="chat-thread" className="space-y-6">
+          {!startEmpty && (
+          <Message role="tutor" agentName="Tutor">
+            <p>
+              Ready for <strong>{quiz.title}</strong>? {quiz.items.length} questions. Practice tells you how you did after each one; the graded quiz shows results at the end.
+            </p>
+          </Message>
+          )}
+
+          {entries.map((e) =>
+            e.who === "tutor" ? (
+              <Message key={e.id} role="tutor" agentName={e.agent}>
+                <p className={e.tone === "good" ? "text-verified" : e.tone === "review" ? "text-gap" : undefined}>{e.text}</p>
+              </Message>
+            ) : (
+              <Message key={e.id} role="student">
+                {e.text}
+              </Message>
+            ),
+          )}
+
           {phase === "intro" && (
-            <div id="quiz-start" className="mt-3 flex flex-wrap gap-2">
+            <div id="quiz-start" className="flex flex-wrap gap-2">
               <Button id="start-practice" variant={suggestedMode === "practice" ? "default" : "outline"} onClick={() => start("practice")} disabled={busy}>
                 Start practice
               </Button>
@@ -391,267 +490,182 @@ function ChatQuizInner({ quiz, suggestedMode = "practice", student }: { quiz: Pu
               </Button>
             </div>
           )}
-        </TutorBubble>
 
-        {entries.map((e) =>
-          e.who === "tutor" ? (
-            <TutorBubble key={e.id} agent={e.agent}>
-              <p className={e.tone === "good" ? "text-green-700 dark:text-green-400" : e.tone === "review" ? "text-amber-700 dark:text-amber-400" : undefined}>{e.text}</p>
-            </TutorBubble>
-          ) : (
-            <StudentBubble key={e.id}>{e.text}</StudentBubble>
-          ),
-        )}
-
-        {/* Active question (UI: D's QuestionCard) */}
-        {(phase === "question" || phase === "checking") && item && (
-          <form
-            id="quiz-item-form"
-            data-attempt-id={attemptId ?? ""}
-            data-mode={mode}
-            className="rounded-2xl border bg-card p-5 shadow-sm"
-            onSubmit={(e) => {
-              e.preventDefault();
-              submitAnswer();
-            }}
-          >
-            <p id="item-progress" className="mb-3 text-xs text-muted-foreground">
-              Question {index + 1} of {quiz.items.length} · {mode === "practice" ? "Practice" : "Graded"}
-            </p>
-            <ItemView key={item.id} item={item} value={answer} onChange={changeAnswer} disabled={phase !== "question" || busy} />
-            <div className="mt-4">
-              <Button id="submit-answer" type="submit" disabled={busy || isEmpty(answer)}>
-                {phase === "checking" ? "Checking..." : mode === "graded" && isLast ? "Submit quiz" : "Submit answer"}
-              </Button>
-            </div>
-          </form>
-        )}
-
-        {phase === "feedback" && lastCorrect !== null && (
-          <TutorBubble agent="Tutor">
-            <p id="item-feedback" role="status" data-correct={lastCorrect} className={lastCorrect ? "text-green-700 dark:text-green-400" : "text-amber-700 dark:text-amber-400"}>
-              {lastCorrect ? "Correct." : "Not quite. Worth a second look before the graded quiz."}
-            </p>
-            <div className="mt-3">
-              <Button id={isLast ? "finish-quiz" : "next-item"} onClick={nextQuestion}>
-                {isLast ? "See results" : "Next question"}
-              </Button>
-            </div>
-          </TutorBubble>
-        )}
-
-        {/* Active probe step */}
-        {probeStep && (
-          <div id="probe" data-step={probeStep} data-probe-id={probeId ?? ""} className="space-y-4">
-            {phase === "probe_choice" && (
-              <TutorBubble agent="Explain coach">
-                <p>Rate how sure you are, explain your thinking, then answer one short &quot;what if&quot;. About a minute. Talk or type, whichever you like.</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button id="probe-type" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>
-                    Type it
+          {(phase === "question" || phase === "checking") && item && (
+            <form
+              id="quiz-item-form"
+              data-attempt-id={attemptId ?? ""}
+              data-mode={mode}
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitAnswer();
+              }}
+            >
+              <QuestionCard
+                label={`Question ${index + 1} of ${quiz.items.length} · ${mode === "practice" ? "Practice" : "Graded"}`}
+                stem={item.stem}
+                footer={
+                  <Button id="submit-answer" type="submit" disabled={busy || isEmpty(answer)}>
+                    {phase === "checking" ? "Checking..." : mode === "graded" && isLast ? "Submit quiz" : "Submit answer"}
                   </Button>
-                  <Button id="probe-voice" variant="outline" disabled={!voiceAvailable} title={voiceAvailable ? undefined : "Voice isn't set up yet"} onClick={() => { setChannel("voice"); setPhase("probe_consent"); }}>
-                    Talk it through
-                  </Button>
-                  {mode === "practice" && (
-                    <Button id="probe-skip" variant="ghost" onClick={() => setPhase("feedback")}>
-                      Skip this time
+                }
+              >
+                <p id="item-progress" className="sr-only">
+                  Question {index + 1} of {quiz.items.length}
+                </p>
+                <ItemView key={item.id} item={item} value={answer} onChange={changeAnswer} disabled={phase !== "question" || busy} hideStem />
+              </QuestionCard>
+            </form>
+          )}
+          {phase === "checking" && <Thinking label="Tutor is checking your answer" />}
+
+          {phase === "feedback" && lastCorrect !== null && (
+            <Message role="tutor" agentName="Tutor">
+              <p id="item-feedback" role="status" data-correct={lastCorrect} className={lastCorrect ? "text-verified" : "text-gap"}>
+                {lastCorrect ? "Correct." : "Not quite. Worth a second look before the graded quiz."}
+              </p>
+              <div className="mt-3">
+                <Button id={isLast ? "finish-quiz" : "next-item"} onClick={nextQuestion}>
+                  {isLast ? "See results" : "Next question"}
+                </Button>
+              </div>
+            </Message>
+          )}
+
+          {probeStep && (
+            <div id="probe" data-step={probeStep} data-probe-id={probeId ?? ""} className="space-y-6">
+              {phase === "probe_choice" && (
+                <Message role="tutor" agentName="Explain coach">
+                  <p>Rate how sure you are, explain your thinking, then answer one short &quot;what if&quot;. About a minute. Talk or type, whichever you like.</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Button id="probe-type" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>
+                      Type it
                     </Button>
-                  )}
-                </div>
-              </TutorBubble>
-            )}
+                    <Button id="probe-voice" variant="outline" disabled={!voiceAvailable} title={voiceAvailable ? undefined : "Voice isn't set up yet"} onClick={() => { setChannel("voice"); setPhase("probe_consent"); }}>
+                      Talk it through
+                    </Button>
+                    {mode === "practice" && (
+                      <Button id="probe-skip" variant="ghost" onClick={() => setPhase("feedback")}>
+                        Skip this time
+                      </Button>
+                    )}
+                  </div>
+                </Message>
+              )}
 
-            {phase === "probe_consent" && (
-              <TutorBubble agent="Explain coach">
-                <div id="probe-consent" className="space-y-3">
-                  <p>Talking it through records your voice so it can be transcribed. The audio is deleted after grading. You can switch to typing at any time.</p>
-                  <label htmlFor="probe-consent-check" className="flex items-start gap-2 text-sm">
-                    <input id="probe-consent-check" type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-                    I agree to have this short conversation recorded.
-                  </label>
-                  <div className="flex gap-2">
-                    <Button id="probe-consent-continue" onClick={() => setPhase("probe_before")} disabled={!consent}>
+              {phase === "probe_consent" && (
+                <Message role="tutor" agentName="Explain coach">
+                  <div id="probe-consent" className="space-y-3">
+                    <p>Talking it through records your voice so it can be transcribed. The audio is deleted after grading. You can switch to typing at any time.</p>
+                    <label htmlFor="probe-consent-check" className="flex items-start gap-2 text-sm">
+                      <input id="probe-consent-check" type="checkbox" className="mt-1" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+                      I agree to have this short conversation recorded.
+                    </label>
+                    <div className="flex gap-2">
+                      <Button id="probe-consent-continue" onClick={() => setPhase("probe_before")} disabled={!consent}>
+                        Continue
+                      </Button>
+                      <Button id="probe-consent-type" variant="ghost" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>
+                        Type instead
+                      </Button>
+                    </div>
+                  </div>
+                </Message>
+              )}
+
+              {phase === "probe_before" && (
+                <Message role="tutor" agentName="Explain coach">
+                  <ConfidenceScale name="confidence-before" legend="How sure are you that you understand why your answer is right?" value={before} onChange={setBefore} />
+                  <div className="mt-3">
+                    <Button id="probe-begin" onClick={beginProbe} disabled={before === null || busy}>
                       Continue
                     </Button>
-                    <Button id="probe-consent-type" variant="ghost" onClick={() => { setChannel("typed"); setPhase("probe_before"); }}>
-                      Type instead
-                    </Button>
                   </div>
-                </div>
-              </TutorBubble>
-            )}
+                </Message>
+              )}
 
-            {phase === "probe_before" && (
-              <TutorBubble agent="Explain coach">
-                <ConfidenceScale name="confidence-before" legend="How sure are you that you understand why your answer is right?" value={before} onChange={setBefore} />
-                <div className="mt-3">
-                  <Button id="probe-begin" onClick={beginProbe} disabled={before === null || busy}>
-                    Continue
-                  </Button>
-                </div>
-              </TutorBubble>
-            )}
+              {phase === "probe_explain" && (
+                <Message role="tutor" agentName="Explain coach">
+                  <p id="probe-opening">{opening}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Type below. Just your own words, no need to be polished.</p>
+                  {!retried && (
+                    <Button id="probe-start-over" variant="ghost" size="sm" className="mt-2" onClick={startOver}>
+                      Start over
+                    </Button>
+                  )}
+                </Message>
+              )}
 
-            {phase === "probe_explain" && (
-              <TutorBubble agent="Explain coach">
-                <p id="probe-opening">{opening}</p>
-                {!retried && (
-                  <Button id="probe-start-over" variant="ghost" size="sm" className="mt-2" onClick={startOver}>
-                    Start over
-                  </Button>
-                )}
-              </TutorBubble>
-            )}
+              {phase === "probe_cf_loading" && <Thinking label="Explain coach is preparing a follow-up" />}
 
-            {phase === "probe_cf_loading" && (
-              <TutorBubble agent="Explain coach">
-                <p className="text-muted-foreground">Thinking of a follow-up...</p>
-              </TutorBubble>
-            )}
+              {phase === "probe_cf" && (
+                <Message role="tutor" agentName="Explain coach">
+                  <p id="probe-counterfactual">{cfPrompt}</p>
+                </Message>
+              )}
 
-            {phase === "probe_cf" && (
-              <TutorBubble agent="Explain coach">
-                <p id="probe-counterfactual">{cfPrompt}</p>
-              </TutorBubble>
-            )}
-
-            {phase === "probe_voice" && (
-              <>
-                {voice.lines.map((l, i) =>
+              {phase === "probe_voice" &&
+                voice.lines.map((l, i) =>
                   l.role === "agent" ? (
-                    <TutorBubble key={`v${i}`} agent="Explain coach">
+                    <Message key={`v${i}`} role="tutor" agentName="Explain coach">
                       <p>{l.text}</p>
-                    </TutorBubble>
+                    </Message>
                   ) : (
-                    <StudentBubble key={`v${i}`}>{l.text}</StudentBubble>
+                    <Message key={`v${i}`} role="student">
+                      {l.text}
+                    </Message>
                   ),
                 )}
-                {voice.error && (
-                  <p role="alert" className="text-sm text-destructive">
-                    Voice hit a problem ({voice.error}). You can switch to typing with no penalty.
-                  </p>
-                )}
-              </>
-            )}
 
-            {phase === "probe_after" && (
-              <TutorBubble agent="Explain coach">
-                <ConfidenceScale name="confidence-after" legend="How sure are you now?" value={after} onChange={setAfter} />
-                <div className="mt-3">
-                  <Button id="probe-finish" onClick={finishProbe} disabled={after === null || busy}>
-                    Finish
-                  </Button>
-                </div>
-              </TutorBubble>
-            )}
+              {phase === "probe_after" && (
+                <Message role="tutor" agentName="Explain coach">
+                  <ConfidenceScale name="confidence-after" legend="How sure are you now?" value={after} onChange={setAfter} />
+                  <div className="mt-3">
+                    <Button id="probe-finish" onClick={finishProbe} disabled={after === null || busy}>
+                      Finish
+                    </Button>
+                  </div>
+                </Message>
+              )}
 
-            {phase === "probe_done" && (
-              <TutorBubble agent="Explain coach">
-                <p id="probe-done">Got it, thank you.</p>
-                <div className="mt-3">
-                  <Button id="probe-continue" onClick={probeContinue}>
-                    {mode === "practice" ? "See how I did" : "Back to the quiz"}
-                  </Button>
-                </div>
-              </TutorBubble>
-            )}
-          </div>
-        )}
-
-        {phase === "done" && summary && (
-          <TutorBubble agent="Tutor">
-            <div id="quiz-done" className="space-y-2">
-              <p id="quiz-score" className="font-medium">
-                You got {summary.score} of {summary.total}.
-              </p>
-              <ol className="list-decimal space-y-1 pl-6 text-sm">
-                {summary.results.map((r, i) => (
-                  <li key={r.itemId} data-item-id={r.itemId} data-correct={r.correct}>
-                    Question {i + 1}: {r.answered ? (r.correct ? "correct" : "worth another look") : "skipped"}
-                  </li>
-                ))}
-              </ol>
+              {phase === "probe_done" && (
+                <Message role="tutor" agentName="Explain coach">
+                  <p id="probe-done">Got it, thank you.</p>
+                  <div className="mt-3">
+                    <Button id="probe-continue" onClick={probeContinue}>
+                      {mode === "practice" ? "See how I did" : "Back to the quiz"}
+                    </Button>
+                  </div>
+                </Message>
+              )}
             </div>
-          </TutorBubble>
-        )}
+          )}
 
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
-        <div ref={bottom} />
-      </div>
+          {phase === "done" && summary && (
+            <Message role="tutor" agentName="Tutor">
+              <div id="quiz-done" className="space-y-2">
+                <p id="quiz-score" className="font-medium">
+                  You got {summary.score} of {summary.total}.
+                </p>
+                <ol className="list-decimal space-y-1 pl-6 text-sm">
+                  {summary.results.map((r, i) => (
+                    <li key={r.itemId} data-item-id={r.itemId} data-correct={r.correct}>
+                      Question {i + 1}: {r.answered ? (r.correct ? "correct" : "worth another look") : "skipped"}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </Message>
+          )}
 
-      {/* Composer (UI: D's Composer) */}
-      <div className="sticky bottom-0 bg-background pb-4 pt-2">
-        {phase === "probe_voice" ? (
-          <div className="flex items-center justify-between gap-4 rounded-3xl border p-4 shadow-sm">
-            <VoiceOrb state={voice.orb} size="64px" showLabel />
-            <div className="flex gap-2">
-              <Button id="probe-voice-done" variant="outline" onClick={voice.stop}>
-                I&apos;m done
-              </Button>
-              <Button id="probe-switch-typing" variant="ghost" onClick={switchToTyping}>
-                Switch to typing
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <form
-            className="flex items-end gap-2 rounded-3xl border p-3 shadow-sm"
-            onSubmit={(e) => {
-              e.preventDefault();
-              composerSubmit();
-            }}
-          >
-            <label htmlFor={composer?.textareaId ?? "composer-input"} className="sr-only">
-              Message
-            </label>
-            <textarea
-              id={composer?.textareaId ?? "composer-input"}
-              className="max-h-48 min-h-12 flex-1 resize-none bg-transparent px-2 py-2 outline-none"
-              placeholder={composer?.placeholder ?? (phase === "intro" ? "Pick practice or the graded quiz above to begin" : "Answer the question above")}
-              disabled={!composer}
-              value={composer ? draft : ""}
-              onChange={(e) => {
-                if (e.target.value) composerFirstKey();
-                setDraft(e.target.value);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  composerSubmit();
-                }
-              }}
-            />
-            <Button id={composer?.submitId ?? "composer-send"} type="submit" disabled={!composer || !draft.trim()}>
-              Send
-            </Button>
-          </form>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// UI: replace with D's Message.
-function TutorBubble({ agent, children }: { agent?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-3">
-      <OrbAvatar size="sm" />
-      <div className="max-w-[85%] space-y-1">
-        {agent && <p className="text-xs text-muted-foreground">{agent}</p>}
-        <div className="text-[15px] leading-relaxed">{children}</div>
-      </div>
-    </div>
-  );
-}
-function StudentBubble({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex justify-end">
-      <div className="max-w-[80%] rounded-2xl bg-muted px-4 py-2 text-[15px]">{children}</div>
-    </div>
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+          <div ref={bottom} />
+        </div>
+      </Thread>
+    </ChatLayout>
   );
 }

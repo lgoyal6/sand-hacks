@@ -8,7 +8,9 @@ export function ItemView({
   value,
   onChange,
   disabled,
+  hideStem,
 }: {
+  hideStem?: boolean; // the stem is shown by the surrounding card; keep it for screen readers
   item: PublicItem;
   value: Answer;
   onChange: (v: Answer) => void;
@@ -17,7 +19,7 @@ export function ItemView({
   const stemId = `stem-${item.id}`;
   return (
     <fieldset id={`item-${item.id}`} data-item-id={item.id} data-item-type={item.type} aria-labelledby={stemId} className="space-y-4" disabled={disabled}>
-      <legend id={stemId} className="text-lg font-medium leading-snug">
+      <legend id={stemId} className={hideStem ? "sr-only" : "text-lg font-medium leading-snug"}>
         {item.stem}
       </legend>
 
