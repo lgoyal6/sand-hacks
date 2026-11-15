@@ -1,11 +1,10 @@
 // Runs the workflows QTI CLI (owner: B). apps/web can't import services/workflows, so it spawns it.
 import "server-only";
-import { spawn } from "node:child_process";
-import { REPO_ROOT } from "@/lib/db/fixtures";
+import { spawnWorkflow } from "@/lib/workflows";
 
 export function runQti(args: string[]): Promise<{ code: number | null; json: unknown; out: string }> {
   return new Promise((resolve) => {
-    const child = spawn("pnpm", ["-s", "--filter", "@unprompted/workflows", "qti", ...args], { cwd: REPO_ROOT, env: process.env });
+    const child = spawnWorkflow("qti", args);
     let out = "";
     child.stdout.on("data", (d) => (out += d));
     child.stderr.on("data", (d) => (out += d));

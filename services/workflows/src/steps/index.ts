@@ -208,6 +208,12 @@ export function selectTargets(
     if (!opts.itemIds && !(r?.agentSolvable || leaked)) continue;
     let solveRate = r?.solveRate;
     if (solveRate == null) {
+      if (leaked && opts.assumeSolveRate == null) {
+        // Leaked questions are worth rewriting even without an agent baseline (e.g. a fresh Canvas import).
+        targets.push({ item, solveRate: 0, leaked });
+        notes.push(`${item.id}: no agent baseline; chosen because it was found online`);
+        continue;
+      }
       if (opts.assumeSolveRate == null) throw new Error(`no solve rate for ${item.id} (A's solve_rates.json); pass assumeSolveRate to proceed`);
       solveRate = opts.assumeSolveRate;
       notes.push(`${item.id}: original solve rate ASSUMED ${opts.assumeSolveRate} (no agent runs yet)`);

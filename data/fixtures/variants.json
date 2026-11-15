@@ -463,5 +463,90 @@
     "reasons": [
       "answer key \"id_b\" not reproduced: solver gave id_b, b, b"
     ]
+  },
+  {
+    "id": "sample-stats-q1-v11",
+    "itemId": "sample-stats-q1",
+    "neonBranch": "exp/sample-stats-q1/11",
+    "strategy": "isomorphic",
+    "candidate": {
+      "stem": "A quality control manager measures a sample of 64 battery cells, finding an average lifespan of 150 hours with a sample standard deviation of 24 hours. What is the standard error of the sample mean?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0.375"
+        },
+        {
+          "id": "b",
+          "text": "3"
+        },
+        {
+          "id": "c",
+          "text": "24"
+        },
+        {
+          "id": "d",
+          "text": "192"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "compute standard error from s and n",
+      "originalItemId": "sample-stats-q1"
+    },
+    "status": "verified",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": true
+    },
+    "reasons": [
+      "agent solve rate not measured: agent retake not run yet (checks passed; the retake runs separately)"
+    ]
+  },
+  {
+    "id": "sample-stats-q1-v12",
+    "itemId": "sample-stats-q1",
+    "neonBranch": "exp/sample-stats-q1/12",
+    "strategy": "application",
+    "candidate": {
+      "stem": "A quality control engineer at an automotive parts plant measures the ultimate tensile strength of 64 randomly selected steel bolts. The sample mean strength is 520 MPa with a sample standard deviation of 24 MPa. What is the standard error of the mean tensile strength for this batch?",
+      "type": "mcq",
+      "choices": [
+        {
+          "id": "a",
+          "text": "0.375 MPa"
+        },
+        {
+          "id": "b",
+          "text": "3.0 MPa"
+        },
+        {
+          "id": "c",
+          "text": "8.125 MPa"
+        },
+        {
+          "id": "d",
+          "text": "24.0 MPa"
+        }
+      ],
+      "answerKey": "b",
+      "objective": "compute standard error from s and n",
+      "originalItemId": "sample-stats-q1"
+    },
+    "status": "rejected",
+    "checks": {
+      "answerKeyConsistent": true,
+      "objectivePreserved": true,
+      "unambiguous": true,
+      "leakFree": false,
+      "leakSources": [
+        "transtutors.com"
+      ]
+    },
+    "reasons": [
+      "already online: transtutors.com"
+    ]
   }
 ]

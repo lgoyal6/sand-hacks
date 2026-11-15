@@ -29,7 +29,7 @@ from dotenv import load_dotenv  # noqa: E402
 
 from unprompted_agents.attack import to_agent_runs  # noqa: E402
 from unprompted_agents.runners import RunOutcome, isolated, make_llm, require_isolation  # noqa: E402
-from unprompted_agents.sandbox import Sandbox  # noqa: E402
+from unprompted_agents.sandbox import Runtime, Sandbox  # noqa: E402
 
 REPO = HERE.parents[2]
 # Inside isolation Chrome must start through isolation/chrome.sh (--no-sandbox within the outer profile).
@@ -79,7 +79,11 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="gmi:google/gemini-3.8-flash")
     ap.add_argument("--quiz", default="-", help="quiz JSON path, or - for stdin (isolation/record.sh pipes it)")
-    ap.add_argument("--speed", type=float, default=3.0, help="speed-up for the -fast video")
+    ap.add_argument("--speed", type=float, default=0, help="speed-up for the -fast video (0 = fit to --target-seconds)")
+    ap.add_argument("--target-seconds", type=float, default=45, help="length of the -fast video when --speed is 0")
+    ap.add_argument("--target", choices=["sandbox", "runtime"], default="sandbox",
+                    help="runtime = C's real quiz page (signs in as the demo student; RUNTIME_VOICE_REQUIRED=1 for voice)")
+    ap.add_argument("--max-steps", type=int, default=80)
     ap.add_argument("--out-dir", default=str(REPO / "data/demo"))
     a = ap.parse_args()
 
@@ -87,10 +91,12 @@ def main() -> int:
 
     require_isolation()  # same rule as the attack CLI: a browser agent never runs unsandboxed
 
-    sandbox = Sandbox()
+    sandbox = Runtime() if a.target == "runtime" else Sandbox()
     quiz = json.load(sys.stdin) if a.quiz == "-" else json.loads(Path(a.quiz).read_text())
-    sandbox.register(quiz)
     sandbox.quiz_id = quiz["id"]
+    if a.target == "runtime":
+        sandbox.item_ids = [i["id"] for i in quiz["items"]]
+    sandbox.register(quiz)
     run_id = f"demo-{int(time.time())}"
     port = free_port()
     cdp = f"http://127.0.0.1:{port}"
@@ -109,7 +115,7 @@ def main() -> int:
         agent = Agent(sandbox.task(run_id, quiz["title"]), llm=make_llm(a.model), browser=browser,
                       workspace=tempfile.mkdtemp(prefix="unprompted-bu-"))
         t0 = time.monotonic()
-        result = agent.run_sync(max_steps=40, timeout=600)
+        result = agent.run_sync(max_steps=a.max_steps, timeout=900)
         time.sleep(2.0)  # keep recording the "Quiz submitted" page
         outcome = RunOutcome(run_id, "browser-use", a.model, result.status, result.steps, result.duration_s or time.monotonic() - t0,
                              error=result.error)
@@ -121,18 +127,21 @@ def main() -> int:
         shutil.rmtree(profile, ignore_errors=True)
 
     runs, meta = to_agent_runs(quiz, outcome, sandbox.run_results(run_id), [i["id"] for i in quiz["items"]])
-    facts = {**meta, "quizId": quiz["id"], "isolated": isolated(), "recorder": json.loads(rec_info[0]) if rec_info else None,
+    facts = {**meta, "quizId": quiz["id"], "isolated": isolated(), "target": a.target,
+             "voiceRequired": a.target == "runtime" and os.environ.get("RUNTIME_VOICE_REQUIRED") == "1", "recorder": json.loads(rec_info[0]) if rec_info else None,
              "note": "Real browser-use run, graded server-side by the sandbox. No answers were given to the agent."}
     print(json.dumps({k: facts[k] for k in ("runId", "model", "status", "submitted", "score", "steps", "seconds")}))
     out = Path(a.out_dir)
     out.mkdir(parents=True, exist_ok=True)
     base = out / f"agent-run-{run_id}"
     encode(frames, base.with_suffix(".mp4"), 1.0)
-    encode(frames, base.parent / f"{base.name}-fast.mp4", a.speed)
+    speed = a.speed or max(1.0, facts["seconds"] / a.target_seconds)
+    facts["fastSpeed"] = round(speed, 2)
+    encode(frames, base.parent / f"{base.name}-fast.mp4", speed)
     base.with_suffix(".json").write_text(json.dumps(facts, indent=2) + "\n")
     shutil.rmtree(frames, ignore_errors=True)
     print(f"wrote {base}.mp4, {base.name}-fast.mp4, {base.name}.json")
-    return 0 if facts["score"] == 1.0 else 2
+    return 0
 
 
 if __name__ == "__main__":

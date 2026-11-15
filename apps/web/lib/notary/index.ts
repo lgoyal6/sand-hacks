@@ -6,7 +6,7 @@
 // SOLANA_DEVNET_SECRET (shared .env.local only; never committed, never logged). Anchoring is async and must
 // never block a student: callers record "not anchored yet" on failure and retry later.
 import "server-only";
-import { createHash } from "node:crypto";
+import { createHash, createHmac } from "node:crypto";
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction, sendAndConfirmTransaction } from "@solana/web3.js";
 
 export type AnchorKind = "quiz_version" | "attack_summary" | "study_dataset" | "appeal";
@@ -40,6 +40,29 @@ export function canonicalJson(v: unknown): string {
 
 export const sha256Hex = (data: string | Uint8Array) => createHash("sha256").update(data).digest("hex");
 export const fingerprint = (record: unknown) => sha256Hex(canonicalJson(record));
+/**
+ * Keyed fingerprint for records that contain answers (quiz versions, appeals): HMAC-SHA256 with the server-only
+ * NOTARY_SALT, so a public hash can't be brute-forced back to an answer key (5 MCQs is only ~1,024 options).
+ * Returns null when NOTARY_SALT is missing: callers must not anchor such records with a plain hash.
+ */
+export function keyedFingerprint(record: unknown, salt = process.env.NOTARY_SALT?.trim()): string | null {
+  if (!salt) return null;
+  return createHmac("sha256", salt).update(canonicalJson(record)).digest("hex");
+}
+
+/** Kinds whose records may contain answers: only keyed fingerprints are allowed for these. */
+export const KEYED_KINDS: ReadonlySet<AnchorKind> = new Set(["quiz_version", "appeal"]);
+
+/** Fingerprint + anchor in one step, choosing the keyed form where answers may be present. Never throws. */
+export async function anchorRecord(kind: AnchorKind, record: unknown): Promise<AnchorRecord> {
+  if (KEYED_KINDS.has(kind)) {
+    const sha = keyedFingerprint(record);
+    if (!sha) return { kind, sha256: "", memo: "", signature: null, status: "not_anchored", error: "NOTARY_SALT is not set; refusing to anchor a record with answers as a plain hash" };
+    return anchor(kind, sha);
+  }
+  return anchor(kind, fingerprint(record));
+}
+
 export const memoFor = (kind: AnchorKind, sha256: string) => `unprompted:v1:${kind}:${sha256}`;
 export const explorerUrl = (signature: string) => `https://explorer.solana.com/tx/${signature}?cluster=devnet`;
 

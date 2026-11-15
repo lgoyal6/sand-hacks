@@ -11,7 +11,8 @@
     "mastra:dev": "mastra dev --env ../../.env.local",
     "test:boot": "zsh scripts/boot-test.sh",
     "qti": "tsx --env-file-if-exists=../../.env.local src/cli/qti.ts",
-    "council": "tsx --env-file-if-exists=../../.env.local src/cli/council.ts"
+    "council": "tsx --env-file-if-exists=../../.env.local src/cli/council.ts",
+    "leakscan": "tsx --env-file-if-exists=../../.env.local src/cli/leakscan.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.16",

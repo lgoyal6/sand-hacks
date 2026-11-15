@@ -102,6 +102,7 @@ const CHECK_LABEL: Record<string, string> = {
   answerKeyConsistent: "Answer key reproduced",
   objectivePreserved: "Same skill",
   unambiguous: "One clear answer",
+  leakFree: "Not online",
   newSolveRate: "Agents fail it",
 };
 
@@ -180,6 +181,8 @@ export function reduceRun(prev: RunState, e: StudioEvent): RunState {
       c.checks.push({ key: e.check, label: CHECK_LABEL[e.check] ?? e.check, passed: e.passed, detail: e.detail });
       if (e.check === "answerKeyConsistent") {
         set("Answer checker", e.passed ? "complete" : "complete", `${short(e.experimentId)}: ${e.passed ? "key reproduced 3/3" : "key not reproduced"}`);
+      } else if (e.check === "leakFree") {
+        // Not a judge vote: the race card's "Not online" column shows it; no panel slot here.
       } else {
         // Older recordings have no vote counts; their detail reads "panel 3/3: ...".
         const m = e.detail.match(/panel (\d+)\/(\d+)/);

@@ -12,6 +12,9 @@ for (const f of [".env.local", ".env"]) {
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // Self-contained server for the container image (D's Vultr deploy); dev and start are unaffected.
+  output: "standalone",
+  outputFileTracingRoot: path.resolve(__dirname, "../.."),
   transpilePackages: ["@unprompted/shared", "@unprompted/probe-core"],
   cacheComponents: true,
   partialPrefetching: true,

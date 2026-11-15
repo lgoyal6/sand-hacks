@@ -2,11 +2,12 @@
 //   GET /studio/api/run?mode=replay&recording=variants_events.q1-real-partial.jsonl
 //   GET /studio/api/run?mode=live&items=sample-stats-q1&n=2&attack=0
 // Live mode spawns the workflows CLI (one run at a time: the Gemini key is free tier).
-import { spawn, type ChildProcess } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { FIXTURES_DIR, REPO_ROOT } from "@/lib/db/fixtures";
+import { FIXTURES_DIR } from "@/lib/db/fixtures";
+import { spawnWorkflow } from "@/lib/workflows";
 import { mastraAvailable, streamTransform } from "../../_lib/mastra";
 
 const g = globalThis as unknown as { __studioLiveRun?: ChildProcess | null };
@@ -66,7 +67,14 @@ async function replay(url: URL, send: (d: unknown) => void, closed: () => boolea
     prevT = e.t ?? prevT;
     send(e);
   }
-  send({ type: "run_finished", ok: true, message: "Replay finished. This recording stopped early (quota), so nothing in it was re-attacked." });
+  // Say why nothing was re-attacked from what the recording itself shows, not a fixed guess.
+  const text = lines.join("\n");
+  const why = /"attack_done"/.test(text)
+    ? "Replay finished."
+    : /agent retake not run yet/.test(text)
+      ? "Replay finished. The agent retake was not part of this run, so the agent solve rate is not measured here."
+      : "Replay finished. This recording stopped early (quota), so nothing in it was re-attacked.";
+  send({ type: "run_finished", ok: true, message: why });
 }
 
 async function live(url: URL, send: (d: unknown) => void, closed: () => boolean, signal: AbortSignal) {
@@ -80,9 +88,10 @@ async function live(url: URL, send: (d: unknown) => void, closed: () => boolean,
 
   const eventsFile = path.join(os.tmpdir(), `unprompted-run-${Date.now()}.jsonl`);
   await fs.writeFile(eventsFile, "");
-  const args = ["--filter", "@unprompted/workflows", "transform", "--quiz", `data/quizzes/${quiz}.md`, "--items", items.join(","), "--n", String(n), "--events", eventsFile];
+  const args = ["--quiz", `data/quizzes/${quiz}.md`, "--items", items.join(","), "--n", String(n), "--events", eventsFile];
   if (!attack) args.push("--no-attack");
-  const child = spawn("pnpm", ["-s", ...args], { cwd: REPO_ROOT, env: process.env, stdio: ["ignore", "pipe", "pipe"] });
+  const child = spawnWorkflow("transform", args);
+  child.stdin.end(); // nothing to send (was stdio "ignore")
   g.__studioLiveRun = child;
   let tail = "";
   const keep = (d: Buffer) => (tail = (tail + d.toString()).slice(-2000));

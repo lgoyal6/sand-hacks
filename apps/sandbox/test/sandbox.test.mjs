@@ -92,3 +92,10 @@ test("figure items render an img, only from data: URLs or /figures/", async () =
   assert.ok(!html.includes("example.com"), "remote figure URLs are not rendered");
   assert.ok(html.includes(`<img src="${png}" alt=""`), "image alias renders with empty alt");
 });
+
+test("public test course site needs no login", async () => {
+  const r = await fetch(`${base}/course-site/`);
+  assert.equal(r.status, 200);
+  assert.match(await r.text(), /Stats 101/);
+  assert.match(await (await fetch(`${base}/course-site/hw1.html`)).text(), /standard error/);
+});
