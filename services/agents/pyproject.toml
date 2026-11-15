@@ -12,6 +12,7 @@ dependencies = [
 [project.scripts]
 attack = "unprompted_agents.cli:main"
 attack-merge = "unprompted_agents.cli:merge_main"
+coursescan = "unprompted_agents.coursescan:main"
 
 [dependency-groups]
 dev = [

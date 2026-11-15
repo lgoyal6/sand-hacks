@@ -11,6 +11,9 @@ cd $AGENTS
 import sys
 from dotenv import dotenv_values
 v = dotenv_values(sys.argv[1])
+import os
+for k in ("GMI_REASONING_EFFORT", "RUNTIME_VOICE_REQUIRED"):
+    if os.environ.get(k): print(f"{k}={os.environ[k]}")
 for k in ("GEMINI_API_KEY", "GMI_API_KEY", "GMI_BASE_URL", "SANDBOX_RUNNER_TOKEN"):
     if v.get(k): print(f"{k}={v[k]}")
 PY
@@ -23,5 +26,7 @@ env $(cat $WORK/env | xargs) ANONYMIZED_TELEMETRY=false BH_CHROME_PATH=$HERE/chr
   HTTPS_PROXY=$PROXY https_proxy=$PROXY NO_PROXY=localhost,127.0.0.1 no_proxy=localhost,127.0.0.1 \
   sandbox-exec -f $HERE/attack.sb -D REPO=$REPO -D PROJECTS=$PROJECTS -D HOME=$HOME -D WORK=${WORK:A} \
   .venv/bin/python demo/record_demo.py --quiz - --out-dir $OUT "$@" < $WORK/quiz.json
-mkdir -p $REPO/data/demo && cp $OUT/* $REPO/data/demo/ && ls -1 $OUT
+# Demo videos stay out of git: they go to the shared context folder.
+DEST=${DEMO_VIDEO_DIR:-$PROJECTS/sand-hacks-context/demo-videos}
+mkdir -p $DEST && cp $OUT/* $DEST/ && ls -1 $OUT && echo "saved to $DEST"
 grep DENY $WORK/egress.log >&2 || true
