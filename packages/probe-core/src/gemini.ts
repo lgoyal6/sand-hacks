@@ -45,3 +45,40 @@ export async function geminiJson<T>(prompt: string, schema: object, opts: Gemini
   }
   throw new Error(`all Gemini models failed (${errors.join("; ")})`);
 }
+
+// Fallback through GMI Cloud's OpenAI-compatible API, still Gemini models only (team rule).
+export const GMI_GEMINI_CHAIN = ["google/gemini-3.5-flash-lite", "google/gemini-3.5-flash"];
+
+export async function gmiGeminiJson<T>(prompt: string, opts: { apiKey: string; baseUrl: string; models?: string[]; timeoutMs?: number }): Promise<T & { _model: string }> {
+  const errors: string[] = [];
+  for (const model of opts.models?.length ? opts.models : GMI_GEMINI_CHAIN) {
+    if (!model.startsWith("google/gemini")) continue;
+    try {
+      const res = await fetch(`${opts.baseUrl.replace(/\/$/, "")}/chat/completions`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${opts.apiKey}` },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: "Reply with a single JSON object only, no prose, no code fences." },
+            { role: "user", content: prompt },
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.7,
+          max_tokens: 300,
+        }),
+        signal: AbortSignal.timeout(opts.timeoutMs ?? 10000),
+      });
+      if (!res.ok) {
+        errors.push(`${model}: ${res.status}`);
+        continue;
+      }
+      const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+      const text = (data.choices?.[0]?.message?.content ?? "").replace(/^```(?:json)?\s*|\s*```$/g, "");
+      return { ...(JSON.parse(text) as T), _model: `gmi:${model}` };
+    } catch (err) {
+      errors.push(`${model}: ${(err as Error).message.slice(0, 80)}`);
+    }
+  }
+  throw new Error(`GMI Gemini failed (${errors.join("; ")})`);
+}

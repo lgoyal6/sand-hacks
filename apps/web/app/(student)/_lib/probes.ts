@@ -8,7 +8,7 @@ import { appendJsonl, DATA_DIR, fixturePath, readJson, updateJson } from "@/lib/
 import { tiger } from "@/lib/db/tiger";
 import { DEFAULT_GEMINI_CHAIN, fallbackFollowup, generateFollowup, openingPrompt } from "@unprompted/probe-core";
 
-const geminiAvailable = () => Boolean(process.env.GEMINI_API_KEY?.trim());
+const geminiAvailable = () => Boolean(process.env.GEMINI_API_KEY?.trim() || process.env.GMI_API_KEY?.trim());
 
 // Probe plus runtime fields that don't belong in the shared contract.
 export type ProbeRecord = Probe & {
@@ -91,7 +91,7 @@ export async function counterfactualFor(item: Item, answer: string | string[] | 
   const hit = cache[exactKey] ?? (process.env.NODE_ENV !== "production" && process.env.GEMINI_LIVE !== "1" ? Object.values(cache).find((c) => c.itemAnswer === itemAnswer) : undefined);
   if (hit) return { prompt: hit.prompt, source: "gemini" as const, model: hit.model ? `${hit.model.replace(/ \(cached\)$/, "")} (cached)` : "cached" };
   const models = process.env.GEMINI_MODEL?.trim() ? [process.env.GEMINI_MODEL.trim(), ...DEFAULT_GEMINI_CHAIN] : undefined;
-  const f = await generateFollowup({ item, answer, explanation }, { apiKey: process.env.GEMINI_API_KEY!.trim(), models });
+  const f = await generateFollowup({ item, answer, explanation }, { apiKey: process.env.GEMINI_API_KEY?.trim(), models });
   if (f.source !== "gemini") return { prompt: f.question, source: "template" as const };
   await updateJson<CfCache>(CF_CACHE, {}, (c) => ({ ...c, [exactKey]: { prompt: f.question, model: f.model, itemAnswer, at: new Date().toISOString() } }));
   return { prompt: f.question, source: "gemini" as const, model: f.model };

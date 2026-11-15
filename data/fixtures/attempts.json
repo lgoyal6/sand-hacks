@@ -22,5 +22,68 @@
       "sample-stats-q4"
     ],
     "probesTriggered": []
+  },
+  {
+    "id": "att_7874d205-d6d",
+    "studentPseudonym": "e2e-1794704272535",
+    "quizId": "sample-stats",
+    "mode": "practice",
+    "startedAt": "2026-11-15T00:57:54.937Z",
+    "consentAudio": false,
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/157.0.0.0 Safari/537.36",
+    "responses": [
+      {
+        "id": "resp_792698df-2a6",
+        "attemptId": "att_7874d205-d6d",
+        "answeredAt": "2026-11-15T00:57:55.568Z",
+        "itemId": "sample-stats-q1",
+        "answer": "b",
+        "correct": true,
+        "seconds": 0.5
+      },
+      {
+        "id": "resp_93767d8d-d3e",
+        "attemptId": "att_7874d205-d6d",
+        "answeredAt": "2026-11-15T00:57:57.688Z",
+        "itemId": "sample-stats-q2",
+        "answer": "b",
+        "correct": true,
+        "seconds": 0.5
+      },
+      {
+        "id": "resp_4a39d4d8-c09",
+        "attemptId": "att_7874d205-d6d",
+        "answeredAt": "2026-11-15T00:58:00.972Z",
+        "itemId": "sample-stats-q3",
+        "answer": "1/6",
+        "correct": true,
+        "seconds": 1.8
+      },
+      {
+        "id": "resp_1c230aca-f0e",
+        "attemptId": "att_7874d205-d6d",
+        "answeredAt": "2026-11-15T00:58:39.626Z",
+        "itemId": "sample-stats-q4",
+        "answer": "b",
+        "correct": true,
+        "seconds": 3.9
+      },
+      {
+        "id": "resp_f36f9347-068",
+        "attemptId": "att_7874d205-d6d",
+        "answeredAt": "2026-11-15T00:58:42.507Z",
+        "itemId": "sample-stats-q5",
+        "answer": "b",
+        "correct": true,
+        "seconds": 1.1
+      }
+    ],
+    "probePlan": [
+      "sample-stats-q3"
+    ],
+    "probesTriggered": [
+      "sample-stats-q3"
+    ],
+    "finishedAt": "2026-11-15T00:58:52.253Z"
   }
 ]
