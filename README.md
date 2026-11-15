@@ -152,6 +152,7 @@ sequenceDiagram
 | Check | Result |
 |---|---|
 | Agents ace our quizzes | browser-use + Gemini: **20/20** answers on the stats quiz (95% CI 84–100%) and **42/42** on stats inference (CI 92–100%). Runs that crashed before submitting are reported separately as infrastructure, never as agent failures |
+| **Leak study (Bright Data)** | **78 of 92 real textbook end-of-chapter exercises (85%) are already on homework sites** (stats 95%, calculus 100%, biology 90%, micro 95%, physics 50%). Top sites: Quizlet, Brainly, Vaia, Chegg. 8 of 8 hand-checked hits were genuine. 114 searches, about $0.17. Full method in [`docs/leak-study.md`](docs/leak-study.md) |
 | Questions already online | **10/10** OpenStax exercises found on study sites; 2/5 of our own items matched (1 real, 1 likely false positive, shown with evidence) |
 | Behavior beats bot flags | Automated sessions passed `webdriver` and BotD checks, but were caught by *clicks with no pointer movement* and *answers with no input events* |
 | Voice probe | Tool loop verified against the live ElevenLabs agent in text mode |
