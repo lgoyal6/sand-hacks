@@ -2,7 +2,7 @@
 // One avatar family for every Unprompted agent (owner: D). Siblings of the AI Orb Avatar / Siri Orb:
 // the same glossy sphere, but each agent has its own hue (evenly spaced oklch hues at one lightness and
 // chroma, so they harmonise), its own inner pattern and its own idle motion. Motion plays only while the
-// agent is active, and never under prefers-reduced-motion.
+// agent is active, and never under prefers-reduced-motion. Every agent has two eyes (the family trait).
 //   <AgentAvatar agent="researcher" state="active" size="sm" />
 import * as React from "react";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,9 @@ export type AgentKey =
   | "judge-panel"
   | "leak-scout";
 
-type Pattern = "hub" | "eyes" | "waves" | "rings" | "grid" | "facets" | "dots" | "radar";
+type Pattern = "hub" | "sheen" | "waves" | "rings" | "grid" | "facets" | "dots" | "radar";
+/** Every agent has two eyes (the family trait); the style varies. */
+type EyeStyle = "round" | "oval" | "arc" | "curious" | "pill" | "tilted" | "lidded" | "squint";
 
 export interface AgentIdentity {
   key: AgentKey;
@@ -28,17 +30,18 @@ export interface AgentIdentity {
   /** Supervisor is deliberately low-chroma: it routes, it doesn't speak for itself. */
   chroma?: number;
   pattern: Pattern;
+  eyes: EyeStyle;
 }
 
 export const AGENTS: Record<AgentKey, AgentIdentity> = {
-  supervisor: { key: "supervisor", name: "Supervisor", role: "routes your message to the right helper", hue: 255, chroma: 0.03, pattern: "hub" },
-  tutor: { key: "tutor", name: "Tutor", role: "teaches and asks the questions", hue: 255, pattern: "eyes" },
-  "explain-coach": { key: "explain-coach", name: "Explain coach", role: "listens to your reasoning", hue: 195, pattern: "waves" },
-  researcher: { key: "researcher", name: "Researcher", role: "finds sources and examples", hue: 290, pattern: "rings" },
-  "quiz-checker": { key: "quiz-checker", name: "Quiz checker", role: "tests questions against agents", hue: 150, pattern: "grid" },
-  rewriter: { key: "rewriter", name: "Rewriter", role: "writes question variants", hue: 75, pattern: "facets" },
-  "judge-panel": { key: "judge-panel", name: "Judge panel", role: "three models score explanations", hue: 330, pattern: "dots" },
-  "leak-scout": { key: "leak-scout", name: "Leak scout", role: "watches the web for leaked questions", hue: 40, pattern: "radar" },
+  supervisor: { key: "supervisor", name: "Supervisor", role: "routes your message to the right helper", hue: 255, chroma: 0.03, pattern: "hub", eyes: "round" },
+  tutor: { key: "tutor", name: "Tutor", role: "teaches and asks the questions", hue: 255, pattern: "sheen", eyes: "oval" },
+  "explain-coach": { key: "explain-coach", name: "Explain coach", role: "listens to your reasoning", hue: 195, pattern: "waves", eyes: "arc" },
+  researcher: { key: "researcher", name: "Researcher", role: "finds sources and examples", hue: 290, pattern: "rings", eyes: "curious" },
+  "quiz-checker": { key: "quiz-checker", name: "Quiz checker", role: "tests questions against agents", hue: 150, pattern: "grid", eyes: "pill" },
+  rewriter: { key: "rewriter", name: "Rewriter", role: "writes question variants", hue: 75, pattern: "facets", eyes: "tilted" },
+  "judge-panel": { key: "judge-panel", name: "Judge panel", role: "three models score explanations", hue: 330, pattern: "dots", eyes: "lidded" },
+  "leak-scout": { key: "leak-scout", name: "Leak scout", role: "watches the web for leaked questions", hue: 40, pattern: "radar", eyes: "squint" },
 };
 
 /** Accepts a key, a display name ("Explain coach") or a loose id ("explain_coach", "QuizChecker"). */
@@ -78,12 +81,17 @@ export function agentColors(a: AgentIdentity) {
   };
 }
 
+export type AvatarState = "idle" | "active" | "thinking" | "speaking" | "muted";
+
 const SIZES = { xs: 16, sm: 22, md: 32, lg: 48, xl: 72 } as const;
 
 export interface AgentAvatarProps {
   agent: AgentKey | string;
-  /** "active" plays this agent's idle motion; "idle" is static; "muted" is static and desaturated. */
-  state?: "active" | "idle" | "muted";
+  /**
+   * idle: occasional blink. active: looks toward the content, texture moves. thinking: glances sideways and
+   * squints. speaking: eyes open wider with the pulse. muted: still and desaturated (inactive rows).
+   */
+  state?: AvatarState;
   size?: keyof typeof SIZES | number;
   className?: string;
   title?: string;
@@ -92,37 +100,45 @@ export interface AgentAvatarProps {
 const CSS = `
 [data-slot="agent-avatar"] .aa-anim{transform-box:fill-box;transform-origin:center}
 [data-slot="agent-avatar"][data-state="muted"]{filter:saturate(.35);opacity:.75}
-[data-slot="agent-avatar"][data-state="active"] .aa-blink{animation:aa-blink 3.6s ease-in-out infinite}
-[data-slot="agent-avatar"][data-state="active"] .aa-wave{animation:aa-wave 2.4s ease-in-out infinite}
-[data-slot="agent-avatar"][data-state="active"] .aa-ring{animation:aa-ring 2.6s ease-out infinite}
-[data-slot="agent-avatar"][data-state="active"] .aa-ring2{animation:aa-ring 2.6s ease-out 1.3s infinite}
-[data-slot="agent-avatar"][data-state="active"] .aa-scan{animation:aa-scan 1.8s linear infinite}
-[data-slot="agent-avatar"][data-state="active"] .aa-spin{animation:aa-spin 9s linear infinite}
-[data-slot="agent-avatar"][data-state="active"] .aa-dot1{animation:aa-turn 1.8s ease-in-out infinite}
-[data-slot="agent-avatar"][data-state="active"] .aa-dot2{animation:aa-turn 1.8s ease-in-out .6s infinite}
-[data-slot="agent-avatar"][data-state="active"] .aa-dot3{animation:aa-turn 1.8s ease-in-out 1.2s infinite}
-[data-slot="agent-avatar"][data-state="active"] .aa-sweep{animation:aa-spin 2.4s linear infinite}
-[data-slot="agent-avatar"][data-state="active"] .aa-breathe{animation:aa-breathe 3s ease-in-out infinite}
-[data-slot="agent-avatar"][data-state="active"] .aa-body{animation:aa-glow 2.4s ease-in-out infinite}
-@keyframes aa-blink{0%,88%,100%{transform:scaleY(1)}93%,97%{transform:scaleY(.1)}}
+[data-slot="agent-avatar"]:is([data-state="active"],[data-state="thinking"],[data-state="speaking"]) .aa-wave{animation:aa-wave 2.4s ease-in-out infinite}
+[data-slot="agent-avatar"]:is([data-state="active"],[data-state="thinking"],[data-state="speaking"]) .aa-ring{animation:aa-ring 2.6s ease-out infinite}
+[data-slot="agent-avatar"]:is([data-state="active"],[data-state="thinking"],[data-state="speaking"]) .aa-ring2{animation:aa-ring 2.6s ease-out 1.3s infinite}
+[data-slot="agent-avatar"]:is([data-state="active"],[data-state="thinking"],[data-state="speaking"]) .aa-scan{animation:aa-scan 1.8s linear infinite}
+[data-slot="agent-avatar"]:is([data-state="active"],[data-state="thinking"],[data-state="speaking"]) .aa-spin{animation:aa-spin 9s linear infinite}
+[data-slot="agent-avatar"]:is([data-state="active"],[data-state="thinking"],[data-state="speaking"]) .aa-dot1{animation:aa-turn 1.8s ease-in-out infinite}
+[data-slot="agent-avatar"]:is([data-state="active"],[data-state="thinking"],[data-state="speaking"]) .aa-dot2{animation:aa-turn 1.8s ease-in-out .6s infinite}
+[data-slot="agent-avatar"]:is([data-state="active"],[data-state="thinking"],[data-state="speaking"]) .aa-dot3{animation:aa-turn 1.8s ease-in-out 1.2s infinite}
+[data-slot="agent-avatar"]:is([data-state="active"],[data-state="thinking"],[data-state="speaking"]) .aa-sweep{animation:aa-spin 2.4s linear infinite}
+[data-slot="agent-avatar"]:is([data-state="active"],[data-state="thinking"],[data-state="speaking"]) .aa-breathe{animation:aa-breathe 3s ease-in-out infinite}
+/* Eyes. Each agent's blink cadence comes from --aa-blink. */
+[data-slot="agent-avatar"] .aa-eyes{transition:transform .35s ease}
+[data-slot="agent-avatar"]:is([data-state="idle"],[data-state="active"]) .aa-lids{animation:aa-blink var(--aa-blink,6s) ease-in-out infinite}
+[data-slot="agent-avatar"][data-state="active"] .aa-eyes{transform:translate(1.6px,1.2px)}
+[data-slot="agent-avatar"][data-state="thinking"] .aa-eyes{animation:aa-glance 2.8s ease-in-out infinite}
+[data-slot="agent-avatar"][data-state="thinking"] .aa-lids{transform:scaleY(.55)}
+[data-slot="agent-avatar"][data-state="speaking"] .aa-lids{animation:aa-open 1.1s ease-in-out infinite}
+[data-slot="agent-avatar"][data-state="speaking"] .aa-body{animation:aa-pulse 1.1s ease-in-out infinite}
+@keyframes aa-blink{0%,92%,100%{transform:scaleY(1)}95%,97%{transform:scaleY(.1)}}
+@keyframes aa-glance{0%,100%{transform:translate(0,-.6px)}30%{transform:translate(-2.4px,-1px)}65%{transform:translate(2.4px,-1px)}}
+@keyframes aa-open{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.28)}}
+@keyframes aa-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.035)}}
 @keyframes aa-wave{0%,100%{transform:translateX(-2px)}50%{transform:translateX(2px)}}
 @keyframes aa-ring{0%{transform:scale(.55);opacity:.9}100%{transform:scale(1.25);opacity:0}}
 @keyframes aa-scan{0%{transform:translateY(-12px)}100%{transform:translateY(12px)}}
 @keyframes aa-spin{to{transform:rotate(360deg)}}
 @keyframes aa-turn{0%,100%{opacity:.45;transform:scale(1)}30%{opacity:1;transform:scale(1.35)}}
 @keyframes aa-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
-@keyframes aa-glow{0%,100%{opacity:1}50%{opacity:.88}}
-@media (prefers-reduced-motion:reduce){[data-slot="agent-avatar"] *{animation:none!important}}
+@media (prefers-reduced-motion:reduce){[data-slot="agent-avatar"] *{animation:none!important;transition:none!important}}
 `;
 
 function PatternLayer({ pattern }: { pattern: Pattern }) {
   const w = "white";
   switch (pattern) {
-    case "eyes":
+    case "sheen":
       return (
-        <g className="aa-anim aa-blink">
-          <rect x="15" y="15.5" width="3" height="6" rx="1.5" fill={w} />
-          <rect x="22" y="15.5" width="3" height="6" rx="1.5" fill={w} />
+        <g fill={w}>
+          <ellipse cx="13" cy="30" rx="9" ry="3" opacity=".35" />
+          <ellipse cx="29" cy="9" rx="5" ry="2" opacity=".3" />
         </g>
       );
     case "waves":
@@ -159,17 +175,17 @@ function PatternLayer({ pattern }: { pattern: Pattern }) {
     case "facets":
       return (
         <g className="aa-anim aa-spin" fill={w}>
-          <path d="M20 9l4.5 7.8H15.5z" opacity=".95" />
-          <path d="M29.5 24.5L20 31l-1-9z" opacity=".6" />
-          <path d="M10.5 24.5l8.5-2.5-1 9z" opacity=".75" />
+          <path d="M20 3l4 6h-8z" opacity=".95" />
+          <path d="M35 27l-6 6-1.5-7z" opacity=".7" />
+          <path d="M5 27l7.5-1-1.5 7z" opacity=".8" />
         </g>
       );
     case "dots":
       return (
         <g fill={w}>
-          <circle className="aa-anim aa-dot1" cx="13" cy="21" r="2.6" />
-          <circle className="aa-anim aa-dot2" cx="20" cy="21" r="2.6" />
-          <circle className="aa-anim aa-dot3" cx="27" cy="21" r="2.6" />
+          <circle className="aa-anim aa-dot1" cx="14" cy="29" r="2" />
+          <circle className="aa-anim aa-dot2" cx="20" cy="30" r="2" />
+          <circle className="aa-anim aa-dot3" cx="26" cy="29" r="2" />
         </g>
       );
     case "radar":
@@ -180,7 +196,7 @@ function PatternLayer({ pattern }: { pattern: Pattern }) {
             <circle cx="20" cy="20" r="11" />
           </g>
           <g className="aa-anim aa-sweep">
-            <path d="M20 20L20 7A13 13 0 0 1 31 13.5Z" fill={w} opacity=".55" />
+            <path d="M20 20L20 7A13 13 0 0 1 31 13.5Z" fill={w} opacity=".35" />
             <line x1="20" y1="20" x2="20" y2="7" stroke={w} strokeWidth="1.6" strokeLinecap="round" />
           </g>
           <circle cx="26" cy="24" r="1.6" fill={w} />
@@ -200,11 +216,74 @@ function PatternLayer({ pattern }: { pattern: Pattern }) {
   }
 }
 
+
+/** Eye shapes per style, drawn around (cx, cy). `lids` scales vertically for blinks/squints. */
+function Eyes({ style, simple }: { style: EyeStyle; simple: boolean }) {
+  const w = "white";
+  const y = 19;
+  const L = 15.5;
+  const R = 24.5;
+  if (simple) {
+    // Tiny sizes: two clear dots, nothing else.
+    return (
+      <g className="aa-eyes">
+        <g className="aa-anim aa-lids">
+          <circle cx={L} cy={y} r="2.6" fill={w} />
+          <circle cx={R} cy={y} r="2.6" fill={w} />
+        </g>
+      </g>
+    );
+  }
+  const shape = (cx: number, i: number) => {
+    switch (style) {
+      case "oval":
+        return <rect key={i} x={cx - 1.6} y={y - 3.2} width="3.2" height="6.4" rx="1.6" fill={w} />;
+      case "arc":
+        return <path key={i} d={`M${cx - 2.6} ${y + 1}q2.6 -3.6 5.2 0`} fill="none" stroke={w} strokeWidth="1.9" strokeLinecap="round" />;
+      case "curious":
+        return (
+          <g key={i}>
+            <circle cx={cx} cy={y} r="2.9" fill={w} />
+            <circle cx={cx + 0.9} cy={y - 0.9} r="1.2" fill="rgba(0,0,0,.28)" />
+          </g>
+        );
+      case "pill":
+        return <rect key={i} x={cx - 1.5} y={y - 3} width="3" height="6" rx="0.9" fill={w} />;
+      case "tilted":
+        return <ellipse key={i} cx={cx} cy={y} rx="1.8" ry="3.1" fill={w} transform={`rotate(${i ? 14 : -14} ${cx} ${y})`} />;
+      case "lidded":
+        return <path key={i} d={`M${cx - 2.6} ${y - 0.6}h5.2a2.6 2.6 0 0 1 -5.2 0z`} fill={w} />;
+      case "squint":
+        return <ellipse key={i} cx={cx - 0.6} cy={y} rx="2.8" ry="1.6" fill={w} />;
+      case "round":
+      default:
+        return <circle key={i} cx={cx} cy={y} r="2.3" fill={w} />;
+    }
+  };
+  return (
+    <g className="aa-eyes">
+      <g className="aa-anim aa-lids">{[L, R].map((cx, i) => shape(cx, i))}</g>
+    </g>
+  );
+}
+
+const BLINK: Record<EyeStyle, string> = {
+  round: "7s",
+  oval: "4.6s",
+  arc: "6.2s",
+  curious: "3.8s",
+  pill: "5.4s",
+  tilted: "6.8s",
+  lidded: "8.5s",
+  squint: "5s",
+};
+
 export function AgentAvatar({ agent, state = "idle", size = "sm", className, title }: AgentAvatarProps) {
   const id = React.useId().replace(/:/g, "");
   const a = resolveAgent(agent) ?? AGENTS.supervisor;
   const col = agentColors(a);
   const px = typeof size === "number" ? size : SIZES[size];
+  const simple = px <= 24;
   return (
     <>
       <style href="unprompted-agent-avatar" precedence="default">
@@ -220,6 +299,7 @@ export function AgentAvatar({ agent, state = "idle", size = "sm", className, tit
         role="img"
         aria-label={title ?? a.name}
         className={cn("shrink-0", className)}
+        style={{ ["--aa-blink" as string]: BLINK[a.eyes] }}
       >
         <title>{title ?? a.name}</title>
         <defs>
@@ -238,8 +318,13 @@ export function AgentAvatar({ agent, state = "idle", size = "sm", className, tit
         </defs>
         <circle className="aa-anim aa-body" cx="20" cy="20" r="19" fill={`url(#${id}-b)`} />
         <g clipPath={`url(#${id}-c)`}>
-          <PatternLayer pattern={a.pattern} />
+          {!simple && (
+            <g opacity=".28">
+              <PatternLayer pattern={a.pattern} />
+            </g>
+          )}
           <circle cx="20" cy="20" r="19" fill={`url(#${id}-s)`} />
+          <Eyes style={a.eyes} simple={simple} />
         </g>
         <circle cx="20" cy="20" r="18.5" fill="none" stroke={col.deep} strokeOpacity=".25" />
       </svg>

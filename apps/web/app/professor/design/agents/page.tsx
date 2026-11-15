@@ -7,18 +7,20 @@ import { VoiceOrb } from "@/components/ui/siri-orb";
 import { agentOrbColors } from "@/components/ui/agent-avatar";
 
 const PATTERN_NOTE: Record<string, string> = {
-  hub: "hub and spokes · breathes",
-  eyes: "eyes · blinks",
-  waves: "sound waves · drift",
-  rings: "ripples · pulse outward",
-  grid: "grid · scan line",
-  facets: "facets · slow turn",
-  dots: "three judges · take turns",
-  radar: "radar · sweep",
+  hub: "round eyes · hub texture",
+  sheen: "soft oval eyes · plain sheen",
+  waves: "smiling arc eyes · sound waves",
+  rings: "curious eyes · ripples",
+  grid: "focused pill eyes · scan grid",
+  facets: "tilted eyes · facets",
+  dots: "half-lidded eyes · three judges",
+  radar: "squinting eyes · radar sweep",
 };
+const STATES = ["idle", "active", "thinking", "speaking", "muted"] as const;
 
 export default function Page() {
   const [active, setActive] = React.useState<AgentKey | "all" | "none">("all");
+  const [cardState, setCardState] = React.useState<(typeof STATES)[number]>("active");
   const keys = Object.keys(AGENTS) as AgentKey[];
   return (
     <main className="mx-auto max-w-5xl px-8 py-10">
@@ -26,7 +28,7 @@ export default function Page() {
         <div>
           <h1 className="text-[26px] font-semibold tracking-tight">Agent family</h1>
           <p className="mt-1 text-[15px] text-muted-foreground">
-            One sphere, eight siblings: each agent has its own hue, inner pattern and idle motion. Motion plays only while that agent is active.
+            One sphere with eyes, eight siblings: each agent has its own hue, texture and eye style. Eyes react to state; at 24px and below they simplify to two dots.
           </p>
         </div>
         <Link href="/professor/design" className="text-sm text-brand hover:underline">
@@ -35,13 +37,16 @@ export default function Page() {
       </div>
 
       <div className="mt-6 flex flex-wrap gap-2 text-sm">
-        {(["all", "none"] as const).map((v) => (
+        {STATES.map((s) => (
           <button
-            key={v}
-            onClick={() => setActive(v)}
-            className={`h-8 rounded-full border px-3 ${active === v ? "border-foreground/70 bg-muted" : "border-border hover:bg-muted"}`}
+            key={s}
+            onClick={() => {
+              setCardState(s);
+              setActive("all");
+            }}
+            className={`h-8 rounded-full border px-3 ${cardState === s ? "border-foreground/70 bg-muted" : "border-border hover:bg-muted"}`}
           >
-            {v === "all" ? "All active" : "All idle"}
+            {s}
           </button>
         ))}
       </div>
@@ -58,7 +63,7 @@ export default function Page() {
               className="flex flex-col items-center gap-3 rounded-2xl border border-border p-5 text-center transition-colors hover:bg-muted/50"
               style={{ background: on ? agentColors(a).soft : undefined }}
             >
-              <AgentAvatar agent={k} size="xl" state={on ? "active" : "idle"} />
+              <AgentAvatar agent={k} size="xl" state={on ? cardState : "idle"} />
               <div>
                 <p className="text-[15px] font-medium">{a.name}</p>
                 <p className="text-xs text-muted-foreground">{a.role}</p>
@@ -71,7 +76,7 @@ export default function Page() {
 
       <h2 className="mt-10 text-lg font-semibold">Sizes and states</h2>
       <div className="mt-3 space-y-3 rounded-2xl border border-border p-5">
-        {(["active", "idle", "muted"] as const).map((s) => (
+        {STATES.map((s) => (
           <div key={s} className="flex items-center gap-4">
             <span className="w-14 text-xs text-muted-foreground">{s}</span>
             {keys.map((k) => (

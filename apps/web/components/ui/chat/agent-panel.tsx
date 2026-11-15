@@ -131,7 +131,7 @@ export function AgentPanel({ agents: base, activeId, title = "Agents", onClose, 
               >
                 <span className="relative grid size-7 shrink-0 place-items-center">
                   {resolveAgent(a.name) || resolveAgent(a.id) ? (
-                    <AgentAvatar agent={resolveAgent(a.id) ? a.id : a.name} size={26} state={isActive ? "active" : a.state === "idle" ? "muted" : "idle"} />
+                    <AgentAvatar agent={resolveAgent(a.id) ? a.id : a.name} size={26} state={isActive ? (a.state === "thinking" ? "thinking" : "active") : a.state === "idle" ? "muted" : "idle"} />
                   ) : (
                     <StaticMark state={a.state} />
                   )}

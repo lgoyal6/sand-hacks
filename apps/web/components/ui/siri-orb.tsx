@@ -230,12 +230,13 @@ export interface VoiceOrbProps {
 
 /** The think-aloud interviewer. Rotation speeds up while it speaks and settles while it listens. */
 export function VoiceOrb({ state = "idle", size = "160px", showLabel = false, colors: override, className }: VoiceOrbProps) {
-  const colors = override ??
-    state === "thinking"
+  const colors =
+    override ??
+    (state === "thinking"
       ? { c1: "var(--chart-3)", c2: "var(--agent)", c3: "var(--chart-2)" }
       : state === "speaking"
         ? { c1: "var(--brand)", c2: "var(--chart-2)", c3: "var(--near-miss)" }
-        : undefined;
+        : undefined);
   return (
     <div className={cn("inline-flex flex-col items-center gap-3", className)} data-slot="voice-orb" data-state={state}>
       <div
