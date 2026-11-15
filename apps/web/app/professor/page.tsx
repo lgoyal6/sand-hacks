@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import type { ExplainGapCell } from "@unprompted/shared";
 import { AppShell } from "@/components/ui/app-shell";
+import { AnchorBadge } from "@/components/dashboard/anchor-badge";
+import { loadAnchors } from "@/lib/notary/registry";
 import { TreeCard } from "@/app/studio/_components/tree-card";
 import { loadTree } from "@/app/studio/_lib/tree";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -100,7 +102,10 @@ async function KpiRow() {
   const cells = buildCells(attempts.data, probes.data);
   const gaps = cells.filter((c) => c.quadrant === "explain_gap").length;
 
+  const anchors = await loadAnchors();
+  const attackAnchor = anchors["attack_summaries.json"];
   return (
+    <div className="space-y-2">
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <Kpi
         label="Agent accuracy on this quiz"
@@ -122,6 +127,8 @@ async function KpiRow() {
         sub={cells.length ? `of ${cells.length} probed answers` : variants.data.length ? `${verified} variants verified` : "No think-aloud probes yet"}
         tone="gap"
       />
+    </div>
+    {attackAnchor && <AnchorBadge file="attack_summaries.json" sha256={attackAnchor.sha256} signature={attackAnchor.signature} label="Agent results fingerprint" className="px-1" />}
     </div>
   );
 }
