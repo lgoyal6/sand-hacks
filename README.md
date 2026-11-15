@@ -135,6 +135,13 @@ sequenceDiagram
     EC->>St: confidence 1–7 again (the calibration lesson)
 ```
 
+## Public tools (no sign-in)
+
+| Page | What it does |
+|---|---|
+| `/check` | **Is your question already online?** Paste any quiz question; Bright Data searches homework sites live and returns which sites have it, with public links. Rate-limited, at most 4 searches per check, and the pasted text is never stored (only a hash for the cache). |
+| `/study` | **The State of Leaked Homework.** The 85% finding with charts by subject and site, the method and limits, and the open dataset (CSV/JSON, CC BY 4.0: links and match scores only, no copied text). |
+
 ## Sponsors: how each one is used
 
 | Sponsor | What it does in Unprompted |
