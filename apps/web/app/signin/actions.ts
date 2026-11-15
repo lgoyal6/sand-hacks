@@ -2,7 +2,7 @@
 // Sign-in server actions. Demo sign-in never stalls: if the demo account doesn't exist yet it is created
 // (sign-up) with its password from the server env, then signed in.
 import { redirect } from "next/navigation";
-import { auth, authConfigured, DEMO } from "@/lib/auth/server";
+import { auth, authConfigured, DEMO, setRole } from "@/lib/auth/server";
 
 function safeNext(next: FormDataEntryValue | null, fallback: string) {
   const n = typeof next === "string" ? next : "";
@@ -21,6 +21,9 @@ export async function demoSignIn(formData: FormData) {
     res = await auth().signIn.email({ email: acct.email, password });
   }
   if (res.error) redirect(`/signin?error=${encodeURIComponent(res.error.message ?? "demo")}`);
+  // Keep the demo accounts' roles in Neon (no-op until user_role exists).
+  const userId = (res.data as { user?: { id?: string } } | null)?.user?.id;
+  if (userId) await setRole(userId, role);
   redirect(safeNext(formData.get("next"), role === "professor" ? "/studio" : "/"));
 }
 

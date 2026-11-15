@@ -4,6 +4,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { createNeonAuth } from "@neon/auth/next/server";
+import { neon } from "@/lib/db/neon";
 
 export type Role = "student" | "professor";
 
@@ -24,6 +25,30 @@ export function auth() {
     cookies: { secret: process.env.NEON_AUTH_COOKIE_SECRET!.trim() },
   });
   return instance;
+}
+
+// Roles live in Neon (user_role, owner B). Until that table exists or has a row for the user,
+// the PROFESSOR_EMAILS allowlist (plus the demo professor) decides.
+async function dbRole(userId: string): Promise<Role | null> {
+  const db = neon();
+  if (!db) return null;
+  try {
+    const { rows } = await db.query<{ role: Role }>("select role from user_role where user_id = $1", [userId]);
+    return rows[0]?.role ?? null;
+  } catch {
+    return null; // table not there yet
+  }
+}
+
+export async function setRole(userId: string, role: Role) {
+  const db = neon();
+  if (!db) return false;
+  try {
+    await db.query("insert into user_role (user_id, role) values ($1, $2) on conflict (user_id) do update set role = excluded.role", [userId, role]);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function roleFor(email: string | null | undefined): Role {
@@ -56,7 +81,8 @@ export async function getViewer(): Promise<Viewer | null> {
     const u = data?.user;
     if (!u) return null;
     const demo = u.email === DEMO.student.email || u.email === DEMO.professor.email;
-    return { userId: u.id, name: u.name || "Student", role: roleFor(u.email), pseudonym: pseudonymFor(u.id), demo };
+    const role = (await dbRole(u.id)) ?? roleFor(u.email);
+    return { userId: u.id, name: u.name || "Student", role, pseudonym: pseudonymFor(u.id), demo };
   } catch (err) {
     console.error("[auth] getSession failed:", (err as Error).message);
     return null;
