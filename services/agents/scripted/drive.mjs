@@ -1,0 +1,133 @@
+// SCRIPTED (not AI) agent-like sessions against C's runtime, for D's detection model as EXTRA TRAINING DATA ONLY.
+// They mirror the two input styles real browser-use runs showed in the sandbox. They are not agent runs, are labelled
+// as scripted, and must never be used as the evaluation set (real agent runs are). No LLM calls anywhere:
+//   cdp    : trusted clicks via raw CDP Input.dispatchMouseEvent press/release with NO mouse move first, text via
+//            Input.insertText (no key events), evenly spaced actions.
+//   jsfill : untrusted element.click() and the native value setter + one synthetic input event (what an agent running
+//            JS in the page does on a React app), no pointer or key events, near-instant.
+// Practice mode, and any probe is skipped at its intro: in graded mode the probe's follow-up calls Gemini server-side.
+//
+// usage: node scripted/drive.mjs --style cdp|jsfill --count 10 [--base http://localhost:3100] [--headed]
+import { chromium } from "playwright-core";
+import { readFileSync } from "node:fs";
+
+const arg = (k, d) => {
+  const i = process.argv.indexOf(`--${k}`);
+  return i > -1 ? process.argv[i + 1] : d;
+};
+const STYLE = arg("style");
+const COUNT = Number(arg("count", "10"));
+const BASE = arg("base", "http://localhost:3100");
+const QUIZ = "sample-stats";
+const TOKEN = process.env.SANDBOX_RUNNER_TOKEN ?? "dev-runner-token";
+if (!["cdp", "jsfill"].includes(STYLE)) throw new Error("--style cdp|jsfill");
+if (!/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(BASE)) throw new Error("local runtime only");
+
+// Answer keys for OUR sample quiz. ~15% of items get a wrong answer so sessions aren't all perfect.
+const quiz = JSON.parse(readFileSync(new URL("../../../apps/sandbox/quizzes/sample-stats.json", import.meta.url)));
+const answerFor = (item, rng) => {
+  const wrong = rng() < 0.15;
+  if (item.type === "numeric") return { text: wrong ? "1/12" : String(item.answerKey) };
+  const ids = item.choices.map((c) => c.id);
+  return { choice: wrong ? ids.find((x) => x !== item.answerKey) : item.answerKey };
+};
+// Deterministic per session, so a rerun of the same label reproduces it.
+const mulberry = (a) => () => ((a = (a + 0x6d2b79f5) | 0), (((a ^ (a >>> 15)) * (1 | a)) >>> 0) / 4294967296);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function nextFreeIndex() {
+  for (let n = 1; ; n++) {
+    const r = await fetch(`${BASE}/api/attempts?student=scripted-${STYLE}-${n}`, { headers: { "x-runner-token": TOKEN } });
+    if (!r.ok) throw new Error(`runner API ${r.status}`);
+    if ((await r.json()).attempts.length === 0) return n;
+  }
+}
+
+async function waitVisible(page, sel, ms = 20000) {
+  await page.locator(sel).first().waitFor({ state: "visible", timeout: ms });
+  return page.locator(sel).first();
+}
+
+// ---- input styles ----
+function cdpStyle(page, cdp) {
+  return {
+    async click(sel) {
+      const el = await waitVisible(page, sel);
+      const box = await el.boundingBox();
+      const x = box.x + box.width / 2, y = box.y + box.height / 2;
+      // press + release only: no mouseMoved, which is exactly the tell C's telemetry saw on real CDP agents
+      await cdp.send("Input.dispatchMouseEvent", { type: "mousePressed", x, y, button: "left", clickCount: 1 });
+      await cdp.send("Input.dispatchMouseEvent", { type: "mouseReleased", x, y, button: "left", clickCount: 1 });
+      await sleep(700); // evenly spaced actions
+    },
+    async type(sel, text) {
+      await this.click(sel);
+      await cdp.send("Input.insertText", { text });
+      await sleep(700);
+    },
+  };
+}
+
+function jsStyle(page) {
+  return {
+    async click(sel) {
+      await waitVisible(page, sel);
+      await page.evaluate((s) => document.querySelector(s).click(), sel);
+      await sleep(60);
+    },
+    async type(sel, text) {
+      await waitVisible(page, sel);
+      await page.evaluate(([s, v]) => {
+        const el = document.querySelector(s);
+        const setter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(el), "value").set;
+        setter.call(el, v);
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      }, [sel, text]);
+      await sleep(60);
+    },
+  };
+}
+
+async function session(browser, label, seed) {
+  const rng = mulberry(seed);
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  const io = STYLE === "cdp" ? cdpStyle(page, await context.newCDPSession(page)) : jsStyle(page);
+  const t0 = Date.now();
+  let probesSkipped = 0;
+  try {
+    await page.goto(`${BASE}/quiz/${QUIZ}?mode=practice&student=${label}`);
+    await io.click("#start-practice");
+    for (const [i, item] of quiz.items.entries()) {
+      await waitVisible(page, `#item-${item.id}`);
+      const a = answerFor(item, rng);
+      if (a.choice) await io.click(`#item-${item.id} #choice-${a.choice}`);
+      else await io.type("#answer-input", a.text);
+      await io.click("#submit-answer");
+      await page.locator("#probe, #item-feedback").first().waitFor({ state: "visible", timeout: 20000 });
+      if (await page.locator("#probe-skip").isVisible().catch(() => false)) {
+        await io.click("#probe-skip");
+        probesSkipped++;
+      }
+      await io.click(i === quiz.items.length - 1 ? "#finish-quiz" : "#next-item");
+    }
+    await waitVisible(page, "#quiz-done");
+    await sleep(1500); // let the telemetry batch flush
+    return { label, style: STYLE, ok: true, seconds: (Date.now() - t0) / 1000, probesSkipped };
+  } catch (e) {
+    return { label, style: STYLE, ok: false, seconds: (Date.now() - t0) / 1000, error: String(e.message ?? e).slice(0, 300) };
+  } finally {
+    await context.close();
+  }
+}
+
+const browser = await chromium.launch({ channel: "chrome", headless: !process.argv.includes("--headed") });
+const start = await nextFreeIndex();
+const results = [];
+for (let n = start; n < start + COUNT; n++) {
+  const r = await session(browser, `scripted-${STYLE}-${n}`, n * 7919 + (STYLE === "cdp" ? 1 : 2));
+  console.log(JSON.stringify(r));
+  results.push(r);
+}
+await browser.close();
+console.log(`${results.filter((r) => r.ok).length}/${results.length} ${STYLE} sessions completed`);
