@@ -69,7 +69,9 @@ class Runtime(Sandbox):
     def register(self, quiz: dict) -> str:
         # The runtime serves its own quizzes; we can only attack ones it already has (no variant registration yet).
         r = self.http.get(f"/quiz/{quiz['id']}")
-        if r.status_code != 200:
+        # Pages need a session (Neon Auth), so an unauthenticated check is redirected to /signin: that's fine.
+        signin = r.is_redirect and "/signin" in r.headers.get("location", "")
+        if r.status_code != 200 and not signin:
             raise ValueError(f"runtime has no quiz {quiz['id']!r} (HTTP {r.status_code})")
         return self.start_url("check")
 
