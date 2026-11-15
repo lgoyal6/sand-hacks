@@ -15,6 +15,7 @@ import { anchor, devnetConnection, devnetSigner, sha256Hex, verify, type AnchorK
 const PUBLISHED: Record<string, { kind: AnchorKind; file: string }> = {
   "leak-index-2026-11.csv": { kind: "study_dataset", file: "data/open/leak-index-2026-11.csv" },
   "leaked-homework-2026-11.csv": { kind: "study_dataset", file: "data/open/leaked-homework-2026-11.csv" },
+  "leaked-homework-2026-11.json": { kind: "study_dataset", file: "data/open/leaked-homework-2026-11.json" },
   "attack_summaries.json": { kind: "attack_summary", file: "data/fixtures/attack_summaries.json" },
 };
 
