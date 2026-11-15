@@ -82,6 +82,15 @@ function choiceText(item: PublicItem, a: Answer) {
 
 const qs = (n: number) => `${n} question${n === 1 ? "" : "s"}`;
 
+// Plain-language help for voice problems; each comes with Retry and Type instead.
+const VOICE_ISSUE: Record<NonNullable<ReturnType<typeof useVoiceProbe>["issue"]>, string> = {
+  denied: "Your browser blocked the microphone. Click the mic icon in the address bar, choose Allow, then press Retry.",
+  "no-mic": "No microphone was found. Plug one in and press Retry, or type instead.",
+  slow: "Still connecting. The network is slow; press Retry if this takes much longer.",
+  silent: "We can't hear you yet. Check that your mic is unmuted and the right input is selected, then keep talking.",
+  dropped: "The call dropped. Press Retry to pick up where you left off, or type instead.",
+};
+
 // Friendly in-thread names for agent tool steps (the raw labels still go to the Agents panel).
 const TOOL_LABEL: Record<string, string> = {
   todaysPractice: "Tutor is building a practice question from today's official data",
@@ -171,6 +180,8 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
   const [lastKey, setLastKey] = useState<string[] | null>(null);
   const [tutorLive, setTutorLive] = useState<string | null>(null); // streaming agent reply
   const [figureTexts, setFigureTexts] = useState<Record<string, string>>({}); // accessible versions shown
+  // Council feedback after the think-aloud: "waiting" (first ~10 s), then "later" while still polling in the background.
+  const [feedback, setFeedback] = useState<{ state: "waiting" | "ready" | "later"; score?: number; text?: string | null; preliminary?: boolean } | null>(null);
   // Typed-input signals per probe textarea (evidence for the professor, never a verdict).
   const trackers = useRef<Record<string, ReturnType<typeof trackTextSignals>>>({});
   const signals = useRef<Record<string, TextSignals>>({});
@@ -363,6 +374,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
         setProbeId(null);
         probeIdRef.current = null;
         signals.current = {};
+        setFeedback(null);
         setPhase("probe_choice");
       } else if (mode === "practice") setPhase("feedback");
       else await nextQuestion();
@@ -416,6 +428,16 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
       setError((e as Error).message);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const retryVoice = async () => {
+    if (!probeIdRef.current) return;
+    try {
+      const fresh = await post<{ signedUrl: string; dynamicVariables: Record<string, string> }>(`/api/probes/${probeIdRef.current}/voice`, { consent: true });
+      await voice.retry(fresh);
+    } catch (e) {
+      setError((e as Error).message);
     }
   };
 
@@ -502,6 +524,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
         "PATCH",
       );
       say("student", `Confidence: ${after} of 7`);
+      pollFeedback(probeId);
       emitAgentStatus("explain-coach", "think-aloud saved", "done");
       emitAgentStatus("judge-panel", "explanation queued for review", "idle");
       setPhase("probe_done");
@@ -512,13 +535,44 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
     }
   };
 
+  // The council grades in the background (about 30-60 s). Show it if it lands quickly, else say so honestly
+  // and keep checking for up to a minute.
+  const pollFeedback = (id: string) => {
+    setFeedback({ state: "waiting" });
+    emitAgentStatus("judge-panel", "reading your explanation");
+    const started = Date.now();
+    const tick = async () => {
+      try {
+        const r = await fetch(`/api/probes/${id}`);
+        const d = (await r.json()) as { graded: boolean; finalScore: number | null; feedback: string | null; preliminary: boolean };
+        if (d.graded && d.finalScore !== null) {
+          setFeedback({ state: "ready", score: d.finalScore, text: d.feedback, preliminary: d.preliminary });
+          emitAgentStatus("judge-panel", "feedback ready", "done");
+          return;
+        }
+      } catch {
+        /* keep trying */
+      }
+      const waited = Date.now() - started;
+      if (waited > 10_000) setFeedback((f) => (f?.state === "ready" ? f : { state: "later" }));
+      if (waited < 60_000) setTimeout(tick, waited > 10_000 ? 5000 : 2000);
+    };
+    setTimeout(tick, 1500);
+  };
+
   const probeContinue = () => {
-    const dropped = before !== null && after !== null && after < before;
-    say(
-      "tutor",
-      dropped ? "Your confidence moved after explaining. That's normal and useful: it points at exactly what to review." : "Thanks. Explaining it is what makes it stick.",
-      { agent: "Explain coach" },
-    );
+    // Keep the calibration moment (and any feedback) in the thread after moving on.
+    if (before !== null && after !== null)
+      say(
+        "tutor",
+        after < before
+          ? `You felt ${before}/7 sure before explaining and ${after}/7 after. That drop is normal: explaining reveals what we half-know.`
+          : after > before
+            ? `You felt ${before}/7 sure before explaining and ${after}/7 after. Explaining it made you more sure.`
+            : `You felt ${before}/7 sure before and after explaining.`,
+        { agent: "Explain coach" },
+      );
+    if (feedback?.state === "ready") say("tutor", `Explanation: ${feedback.score} of 4${feedback.preliminary ? " (preliminary, your teacher reviews it)" : ""}.${feedback.text ? ` ${feedback.text}` : ""}`, { agent: "Judge panel" });
     if (mode === "practice") {
       if (lastCardId !== null && lastCorrect !== null) revealResult(lastCardId, lastCorrect, lastKey ?? undefined);
       setPhase("feedback");
@@ -647,7 +701,9 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
                   : phase === "probe_explain"
                     ? <span id="probe-opening">{opening}</span>
                     : phase === "probe_voice"
-                      ? voice.lines.filter((l) => l.role === "agent").at(-1)?.text ?? "Connecting..."
+                      ? voice.issue
+                        ? VOICE_ISSUE[voice.issue]
+                        : voice.lines.filter((l) => l.role === "agent").at(-1)?.text ?? "Connecting..."
                       : phase === "probe_cf_loading"
                         ? "Thinking of a follow-up..."
                         : phase === "probe_cf"
@@ -711,6 +767,7 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
               </>
             ) : phase === "probe_voice" ? (
               <>
+                {voice.issue && voice.issue !== "silent" && <PillButton id="probe-voice-retry" onClick={retryVoice}>Retry</PillButton>}
                 <PillButton id="probe-switch-typing" variant="secondary" onClick={switchToTyping}>Type instead</PillButton>
                 <PillButton id="probe-voice-done" onClick={voice.stop}>Done explaining</PillButton>
               </>
@@ -930,8 +987,28 @@ function ChatQuizInner({ quizzes, initialQuizId, suggestedMode = "practice", stu
           {phase === "probe_done" && (
             <div id="probe" data-step="done" data-probe-id={probeId ?? ""}>
               <Message role="tutor" agentName="Explain coach">
-                <p id="probe-done">Got it, thank you.</p>
-                <div className="mt-3">
+                <div className="space-y-3">
+                  <p id="probe-done">Thanks for thinking out loud.</p>
+                  {before !== null && after !== null && (
+                    <p id="probe-calibration" data-before={before} data-after={after} className="rounded-xl bg-muted px-4 py-3">
+                      {after < before
+                        ? `You felt ${before}/7 sure before explaining and ${after}/7 after. That drop is normal: explaining reveals what we half-know, and it points at exactly what to review.`
+                        : after > before
+                          ? `You felt ${before}/7 sure before explaining and ${after}/7 after. Explaining it made you more sure.`
+                          : `You felt ${before}/7 sure before and after explaining. Steady confidence after explaining is a good sign.`}
+                    </p>
+                  )}
+                  <div id="probe-feedback" data-state={feedback?.state ?? "none"} className="text-sm">
+                    {feedback?.state === "waiting" && <Thinking label="Reading your explanation" />}
+                    {feedback?.state === "later" && <p className="text-muted-foreground">Your teacher will see feedback on your explanation soon.</p>}
+                    {feedback?.state === "ready" && (
+                      <p>
+                        <span className="font-medium">Explanation: {feedback.score} of 4</span>
+                        {feedback.preliminary ? <span className="text-muted-foreground"> (preliminary, your teacher reviews it)</span> : null}
+                        {feedback.text ? <span className="mt-1 block text-muted-foreground">{feedback.text}</span> : null}
+                      </p>
+                    )}
+                  </div>
                   <PillButton id="probe-continue" onClick={probeContinue}>
                     {mode === "practice" ? "See how I did" : "Back to the quiz"}
                   </PillButton>
