@@ -65,7 +65,9 @@ browser-use 1.0 runs model-written Python on the host as your user; its own docs
 runs the agent ran `ps aux` looking for the server's code. `isolation/run.sh` wraps the attack in a macOS
 `sandbox-exec` profile (`isolation/attack.sb`): the agent process cannot read `.env` files, `sand-hacks-context`, other
 worktrees, this repo's quiz or fixture files (answer keys), `~/.ssh`, `~/.aws` or `~/.claude`, and cannot run `ps`, `pgrep`,
-`lsof` or `top`. Only the model keys and the runner token are passed in, as environment variables. Fixtures are merged
+`lsof` or `top`, and cannot open any network connection except to localhost: model API calls leave through
+`isolation/egress_proxy.py`, which runs outside the sandbox and only connects to the GMI and Gemini API hosts. (browser-use's
+own `allowed_domains` only guards main-frame navigation, not page `fetch()` or the agent's Python.) Only the model keys and the runner token are passed in, as environment variables. Fixtures are merged
 outside the sandbox (`attack-merge`). This is defense in depth, not a VM.
 
 ```sh
